@@ -1,3 +1,46 @@
 <resources>
-    <string name="app_name">TrainingDairyMobile</string>
+    <string name="app_name">Дневник тренировок</string>
+
+    <!-- Login Screen -->
+    <string name="login_subtitle">Войдите в свой аккаунт</string>
+    <string name="hint_email">Email</string>
+    <string name="hint_password">Пароль</string>
+    <string name="action_login">Войти</string>
+    <string name="no_account_register">Нет аккаунта? Зарегистрироваться</string>
+
+    <!-- Register Screen -->
+    <string name="register_title">Регистрация</string>
+    <string name="register_subtitle">Создайте аккаунт для начала</string>
+    <string name="hint_name">Имя</string>
+    <string name="hint_confirm_password">Подтвердите пароль</string>
+    <string name="action_register">Зарегистрироваться</string>
+    <string name="have_account_login">Уже есть аккаунт? Войти</string>
+
+    <!-- Errors -->
+    <string name="error_empty_email">Введите email</string>
+    <string name="error_invalid_email">Некорректный email</string>
+    <string name="error_empty_password">Введите пароль</string>
+    <string name="error_short_password">Пароль должен содержать минимум 8 символов</string>
+    <string name="error_passwords_mismatch">Пароли не совпадают</string>
+    <string name="error_empty_name">Введите имя</string>
+    <string name="error_network">Ошибка сети. Проверьте подключение.</string>
+    <string name="error_unknown">Произошла ошибка. Попробуйте позже.</string>
+
+    <!-- Main Navigation -->
+    <string name="nav_trainings">Тренировки</string>
+    <string name="nav_statistics">Статистика</string>
+    <string name="nav_exercises">Упражнения</string>
+    <string name="nav_info">Информация</string>
+    <string name="nav_profile">Профиль</string>
+
+    <!-- Common -->
+    <string name="loading">Загрузка…</string>
+    <string name="success">Успешно</string>
+    <string name="cancel">Отмена</string>
+    <string name="save">Сохранить</string>
+    <string name="delete">Удалить</string>
+    <string name="edit">Редактировать</string>
+    <string name="add">Добавить</string>
+    <string name="confirm">Подтвердить</string>
+    <string name="logout">Выйти</string>
 </resources>

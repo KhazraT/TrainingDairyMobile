@@ -6,4 +6,10 @@
     </style>
 
     <style name="Theme.TrainingDairyMobile" parent="Base.Theme.TrainingDairyMobile" />
+    
+    <!-- Splash screen theme - без Action Bar и с полным экраном -->
+    <style name="Theme.TrainingDairyMobile.NoActionBar" parent="Theme.TrainingDairyMobile">
+        <item name="windowActionBar">false</item>
+        <item name="windowNoTitle">true</item>
+    </style>
 </resources>

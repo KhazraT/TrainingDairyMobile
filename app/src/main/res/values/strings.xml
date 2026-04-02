@@ -30,7 +30,7 @@
     <string name="nav_trainings">Тренировки</string>
     <string name="nav_statistics">Статистика</string>
     <string name="nav_exercises">Упражнения</string>
-    <string name="nav_info">Информация</string>
+    <string name="nav_articles">Информация</string>
     <string name="nav_profile">Профиль</string>
 
     <!-- Common -->
@@ -43,4 +43,45 @@
     <string name="add">Добавить</string>
     <string name="confirm">Подтвердить</string>
     <string name="logout">Выйти</string>
+
+    <!-- Fragments -->
+    <string name="fragment_trainings">Тренировки</string>
+    <string name="fragment_statistics">Статистика</string>
+    <string name="fragment_exercises">Упражнения</string>
+    <string name="fragment_articles">Информация</string>
+    <string name="fragment_profile">Профиль</string>
+    
+    <!-- Exercises -->
+    <string name="no_exercises">Нет упражнений</string>
+    <string name="all_muscles">Все мышцы</string>
+    <string name="all_equipment">Все оборудование</string>
+    <string name="exercise_type_reps_weight">Повторения/Вес</string>
+    <string name="exercise_type_time_weight">Время/Вес</string>
+    <string name="exercise_type_time_distance">Время/Дистанция</string>
+    <string name="exercise_type_time_weight_distance">Время/Вес/Дистанция</string>
+    <string name="exercise_detail">Детали упражнения</string>
+    <string name="technique">Техника выполнения</string>
+    <string name="video">Видео</string>
+    <string name="play_video">Воспроизвести видео</string>
+    <string name="create_exercise">Создать упражнение</string>
+    <string name="edit_exercise">Редактировать упражнение</string>
+    <string name="delete_exercise_confirm">Удалить это упражнение?</string>
+    
+    <!-- Programs -->
+    <string name="my_programs">Мои программы</string>
+    <string name="no_programs">Нет программ тренировок</string>
+    <string name="create_program">Создать программу</string>
+    <string name="edit_program">Редактировать программу</string>
+    <string name="delete_program_confirm">Удалить эту программу?</string>
+    <string name="program_name">Название программы</string>
+    <string name="program_description">Описание программы</string>
+    <string name="workouts_count">Тренировок: %d</string>
+    <string name="create_workout">Создать тренировку</string>
+    <string name="workout_name">Название тренировки</string>
+    <string name="workout_comment">Комментарий</string>
+    <string name="add_exercise">Добавить упражнение</string>
+    <string name="superset">Суперсет</string>
+    <string name="sets_count">Подходы: %d</string>
+    <string name="dropset">Дропсет</string>
+    <string name="regular_set">Обычный подход</string>
 </resources>

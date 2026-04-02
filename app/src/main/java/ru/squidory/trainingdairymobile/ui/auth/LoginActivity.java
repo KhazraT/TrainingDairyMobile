@@ -1,5 +1,6 @@
 package ru.squidory.trainingdairymobile.ui.auth;
 
+import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.text.TextUtils;
@@ -122,5 +123,15 @@ public class LoginActivity extends AppCompatActivity {
     private void showError(String error) {
         String message = error != null && !error.isEmpty() ? error : getString(R.string.error_unknown);
         Toast.makeText(this, message, Toast.LENGTH_LONG).show();
+    }
+
+    /**
+     * Запуск LoginActivity с очисткой стека задач.
+     * Используется для выхода из аккаунта.
+     */
+    public static void startActivityClearTop(Context context) {
+        Intent intent = new Intent(context, LoginActivity.class);
+        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        context.startActivity(intent);
     }
 }

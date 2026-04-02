@@ -24,11 +24,16 @@ public class NetworkClient {
 
     private static Retrofit getRetrofit() {
         if (retrofit == null) {
+            // Логирование для отладки
             HttpLoggingInterceptor loggingInterceptor = new HttpLoggingInterceptor();
             loggingInterceptor.setLevel(HttpLoggingInterceptor.Level.BODY);
 
+            // Interceptor для авторизации
+            AuthInterceptor authInterceptor = new AuthInterceptor();
+
             OkHttpClient client = new OkHttpClient.Builder()
                     .addInterceptor(loggingInterceptor)
+                    .addInterceptor(authInterceptor)
                     .build();
 
             retrofit = new Retrofit.Builder()

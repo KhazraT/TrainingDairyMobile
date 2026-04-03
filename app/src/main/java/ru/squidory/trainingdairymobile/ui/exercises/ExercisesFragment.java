@@ -2,47 +2,68 @@ package ru.squidory.trainingdairymobile.ui.exercises;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ArrayAdapter;
+import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ProgressBar;
-import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.Toolbar;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.google.android.material.button.MaterialButton;
+import com.google.android.material.chip.Chip;
+import com.google.android.material.chip.ChipGroup;
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
+
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 import ru.squidory.trainingdairymobile.R;
+import ru.squidory.trainingdairymobile.data.model.EquipmentResponse;
 import ru.squidory.trainingdairymobile.data.model.ExerciseResponse;
+import ru.squidory.trainingdairymobile.data.model.MuscleGroupResponse;
 import ru.squidory.trainingdairymobile.data.repository.ExerciseRepository;
 import ru.squidory.trainingdairymobile.ui.main.BaseFragment;
 
 /**
  * Фрагмент раздела "Упражнения".
- * Отображает список упражнений с фильтрацией по мышцам и оборудованию.
+ * Отображает список упражнений с фильтрацией по мышцам и поиском.
  */
 public class ExercisesFragment extends BaseFragment {
 
+    private Toolbar toolbar;
+    private EditText searchEditText;
+    private ImageButton clearSearchButton;
+    private MaterialButton allExercisesButton;
+    private ChipGroup musclesChipGroup;
+    private ChipGroup equipmentChipGroup;
     private RecyclerView exercisesRecyclerView;
     private ProgressBar progressBar;
     private TextView emptyText;
-    private Spinner muscleSpinner;
-    private Spinner equipmentSpinner;
-    private ImageButton addExerciseButton;
+    private FloatingActionButton addExerciseButton;
 
     private ExerciseAdapter adapter;
     private ExerciseRepository repository;
 
+    private final List<ExerciseResponse> allExercises = new ArrayList<>();
+    private final Map<String, Long> muscleGroupIds = new HashMap<>();
+    private final Map<String, Long> equipmentIds = new HashMap<>();
     private String selectedMuscle = null;
     private String selectedEquipment = null;
+    private String searchQuery = "";
 
     @Nullable
     @Override
@@ -57,19 +78,165 @@ public class ExercisesFragment extends BaseFragment {
         repository = ExerciseRepository.getInstance();
 
         initViews(view);
+        setupToolbar();
         setupRecyclerView();
-        setupSpinners();
+        setupSearch();
         setupListeners();
+        loadMuscleGroupsAndEquipment();
         loadExercises();
     }
 
     private void initViews(View view) {
+        toolbar = view.findViewById(R.id.toolbar);
+        searchEditText = view.findViewById(R.id.searchEditText);
+        clearSearchButton = view.findViewById(R.id.clearSearchButton);
+        allExercisesButton = view.findViewById(R.id.allExercisesButton);
+        musclesChipGroup = view.findViewById(R.id.musclesChipGroup);
+        equipmentChipGroup = view.findViewById(R.id.equipmentChipGroup);
         exercisesRecyclerView = view.findViewById(R.id.exercisesRecyclerView);
         progressBar = view.findViewById(R.id.progressBar);
         emptyText = view.findViewById(R.id.emptyText);
-        muscleSpinner = view.findViewById(R.id.muscleSpinner);
-        equipmentSpinner = view.findViewById(R.id.equipmentSpinner);
         addExerciseButton = view.findViewById(R.id.addExerciseButton);
+    }
+
+    private void setupToolbar() {
+        toolbar.setTitle(R.string.fragment_exercises);
+    }
+
+    private void loadMuscleGroupsAndEquipment() {
+        // Загрузка групп мышц
+        repository.getMuscleGroups(new ExerciseRepository.MuscleGroupsCallback() {
+            @Override
+            public void onSuccess(List<MuscleGroupResponse> muscleGroups) {
+                if (isAdded()) {
+                    getActivity().runOnUiThread(() -> {
+                        musclesChipGroup.removeAllViews();
+                        muscleGroupIds.clear();
+
+                        for (MuscleGroupResponse mg : muscleGroups) {
+                            final String name = mg.getName();
+                            final long id = mg.getId();
+
+                            Chip chip = new Chip(getContext());
+                            chip.setText(name);
+                            chip.setCheckable(true);
+                            chip.setId(View.generateViewId());
+
+                            muscleGroupIds.put(name, id);
+
+                            chip.setOnCheckedChangeListener((buttonView, isChecked) -> {
+                                if (isChecked) {
+                                    selectedMuscle = name;
+                                    applyFilters();
+                                }
+                            });
+
+                            musclesChipGroup.addView(chip);
+                        }
+                    });
+                }
+            }
+
+            @Override
+            public void onError(String error) {
+                // Использовать заглушку
+                setupMusclesChipsFallback();
+            }
+        });
+
+        // Загрузка оборудования
+        repository.getEquipment(new ExerciseRepository.EquipmentCallback() {
+            @Override
+            public void onSuccess(List<EquipmentResponse> equipmentList) {
+                if (isAdded()) {
+                    getActivity().runOnUiThread(() -> {
+                        equipmentChipGroup.removeAllViews();
+                        equipmentIds.clear();
+
+                        for (EquipmentResponse eq : equipmentList) {
+                            final String name = eq.getName();
+                            final long id = eq.getId();
+
+                            Chip chip = new Chip(getContext());
+                            chip.setText(name);
+                            chip.setCheckable(true);
+                            chip.setId(View.generateViewId());
+
+                            equipmentIds.put(name, id);
+
+                            chip.setOnCheckedChangeListener((buttonView, isChecked) -> {
+                                if (isChecked) {
+                                    selectedEquipment = name;
+                                    applyFilters();
+                                }
+                            });
+
+                            equipmentChipGroup.addView(chip);
+                        }
+                    });
+                }
+            }
+
+            @Override
+            public void onError(String error) {
+                // Использовать заглушку
+                setupEquipmentChipsFallback();
+            }
+        });
+    }
+
+    private void setupMusclesChipsFallback() {
+        // Заглушка на случай ошибки API
+        String[] muscles = {"Грудь", "Спина", "Ноги", "Плечи", "Бицепсы", "Трицепсы", "Пресс", "Предплечья", "Икры", "Ягодицы"};
+        long[] ids = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
+
+        if (isAdded()) {
+            for (int i = 0; i < muscles.length; i++) {
+                final int index = i;
+                Chip chip = new Chip(getContext());
+                chip.setText(muscles[index]);
+                chip.setCheckable(true);
+                chip.setId(View.generateViewId());
+
+                muscleGroupIds.put(muscles[index], ids[index]);
+
+                chip.setOnCheckedChangeListener((buttonView, isChecked) -> {
+                    if (isChecked) {
+                        selectedMuscle = muscles[index];
+                        applyFilters();
+                    }
+                });
+
+                musclesChipGroup.addView(chip);
+            }
+        }
+    }
+
+    private void setupEquipmentChipsFallback() {
+        // Заглушка на случай ошибки API
+        String[] equipment = {"Штанга", "Гантели", "Тренажёр", "Собственный вес", "Эспандер", "Гиря", "Тросовый тренажёр", "Smith machine"};
+        long[] ids = {1, 2, 3, 4, 5, 6, 7, 8};
+
+        if (isAdded()) {
+            for (int i = 0; i < equipment.length; i++) {
+                final int index = i;
+                Chip chip = new Chip(getContext());
+                chip.setText(equipment[index]);
+                chip.setCheckable(true);
+                chip.setId(View.generateViewId());
+
+                equipmentIds.put(equipment[index], ids[index]);
+
+                chip.setOnCheckedChangeListener((buttonView, isChecked) -> {
+                    if (isChecked) {
+                        selectedEquipment = equipment[index];
+                        applyFilters();
+                    }
+                });
+
+                equipmentChipGroup.addView(chip);
+            }
+        }
     }
 
     private void setupRecyclerView() {
@@ -80,93 +247,68 @@ public class ExercisesFragment extends BaseFragment {
         adapter.setOnExerciseClickListener(new ExerciseAdapter.OnExerciseClickListener() {
             @Override
             public void onExerciseClick(ExerciseResponse exercise) {
-                // Открыть детали упражнения
-                openExerciseDetail(exercise);
+                Intent intent = new Intent(getContext(), ExerciseDetailActivity.class);
+                intent.putExtra(ExerciseDetailActivity.EXTRA_EXERCISE_ID, exercise.getId());
+                intent.putExtra(ExerciseDetailActivity.EXTRA_EXERCISE_NAME, exercise.getName());
+                startActivity(intent);
             }
 
             @Override
             public void onExerciseLongClick(ExerciseResponse exercise) {
-                // Показать меню действий (редактировать/удалить)
-                showExerciseOptions(exercise);
+                Toast.makeText(getContext(), "Долгий клик: " + exercise.getName(), Toast.LENGTH_SHORT).show();
             }
         });
     }
 
-    private void setupSpinners() {
-        // Фильтр по мышцам
-        List<String> muscles = new ArrayList<>();
-        muscles.add(getString(R.string.all_muscles));
-        muscles.add("Грудь");
-        muscles.add("Спина");
-        muscles.add("Ноги");
-        muscles.add("Плечи");
-        muscles.add("Бицепсы");
-        muscles.add("Трицепсы");
-        muscles.add("Пресс");
-        muscles.add("Предплечья");
-        muscles.add("Икры");
-        muscles.add("Ягодицы");
-
-        ArrayAdapter<String> muscleAdapter = new ArrayAdapter<>(requireContext(),
-                android.R.layout.simple_spinner_item, muscles);
-        muscleAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        muscleSpinner.setAdapter(muscleAdapter);
-
-        muscleSpinner.setOnItemSelectedListener(new android.widget.AdapterView.OnItemSelectedListener() {
+    private void setupSearch() {
+        searchEditText.addTextChangedListener(new TextWatcher() {
             @Override
-            public void onItemSelected(android.widget.AdapterView<?> parent, View view, int position, long id) {
-                if (position == 0) {
-                    selectedMuscle = null;
-                } else {
-                    selectedMuscle = muscles.get(position);
-                }
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+                searchQuery = s.toString().trim();
+                clearSearchButton.setVisibility(searchQuery.isEmpty() ? View.GONE : View.VISIBLE);
                 applyFilters();
             }
 
             @Override
-            public void onNothingSelected(android.widget.AdapterView<?> parent) {
-                selectedMuscle = null;
-            }
+            public void afterTextChanged(Editable s) {}
         });
 
-        // Фильтр по оборудованию
-        List<String> equipment = new ArrayList<>();
-        equipment.add(getString(R.string.all_equipment));
-        equipment.add("Штанга");
-        equipment.add("Гантели");
-        equipment.add("Тренажёр");
-        equipment.add("Собственный вес");
-        equipment.add("Эспандер");
-        equipment.add("Гиря");
-
-        ArrayAdapter<String> equipmentAdapter = new ArrayAdapter<>(requireContext(),
-                android.R.layout.simple_spinner_item, equipment);
-        equipmentAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        equipmentSpinner.setAdapter(equipmentAdapter);
-
-        equipmentSpinner.setOnItemSelectedListener(new android.widget.AdapterView.OnItemSelectedListener() {
-            @Override
-            public void onItemSelected(android.widget.AdapterView<?> parent, View view, int position, long id) {
-                if (position == 0) {
-                    selectedEquipment = null;
-                } else {
-                    selectedEquipment = equipment.get(position);
-                }
-                applyFilters();
-            }
-
-            @Override
-            public void onNothingSelected(android.widget.AdapterView<?> parent) {
-                selectedEquipment = null;
-            }
+        clearSearchButton.setOnClickListener(v -> {
+            searchEditText.setText("");
+            searchQuery = "";
+            clearSearchButton.setVisibility(View.GONE);
+            applyFilters();
         });
     }
 
     private void setupListeners() {
+        allExercisesButton.setOnClickListener(v -> {
+            selectedMuscle = null;
+            selectedEquipment = null;
+            musclesChipGroup.clearCheck();
+            equipmentChipGroup.clearCheck();
+            applyFilters();
+        });
+
         addExerciseButton.setOnClickListener(v -> {
-            Toast.makeText(getContext(), "Создание упражнения (в разработке)", Toast.LENGTH_SHORT).show();
+            Intent intent = new Intent(getContext(), CreateExerciseActivity.class);
+            startActivityForResult(intent, REQUEST_CREATE_EXERCISE);
         });
     }
+
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == REQUEST_CREATE_EXERCISE && resultCode == AppCompatActivity.RESULT_OK) {
+            // Перезагрузить список упражнений
+            loadExercises();
+        }
+    }
+
+    private static final int REQUEST_CREATE_EXERCISE = 1;
 
     private void loadExercises() {
         showLoading(true);
@@ -174,24 +316,15 @@ public class ExercisesFragment extends BaseFragment {
             @Override
             public void onSuccess(List<ExerciseResponse> exercises) {
                 showLoading(false);
-                adapter.setExercises(exercises);
-                checkEmptyState();
+                allExercises.clear();
+                allExercises.addAll(exercises);
+                applyFilters();
             }
 
             @Override
             public void onError(String error) {
                 showLoading(false);
                 String message = error != null && !error.isEmpty() ? error : getString(R.string.error_unknown);
-                // Показываем более подробное сообщение об ошибке
-                if (message.contains("401") || message.contains("Unauthorized")) {
-                    message = "Сессия истекла. Пожалуйста, войдите заново.";
-                } else if (message.contains("500") || message.contains("Internal")) {
-                    message = "Ошибка сервера. Попробуйте позже.";
-                } else if (message.contains("timeout") || message.contains("Unable to resolve host")) {
-                    message = "Нет подключения к серверу. Проверьте, запущен ли бэкенд.";
-                } else if (message.contains("connection") || message.contains("refused")) {
-                    message = "Нет подключения. Выполните: adb reverse tcp:8080 tcp:8080";
-                }
                 Toast.makeText(getContext(), message, Toast.LENGTH_LONG).show();
                 emptyText.setText(message);
                 emptyText.setVisibility(View.VISIBLE);
@@ -200,7 +333,40 @@ public class ExercisesFragment extends BaseFragment {
     }
 
     private void applyFilters() {
-        adapter.filter(selectedMuscle, selectedEquipment);
+        List<ExerciseResponse> filtered = allExercises.stream()
+            .filter(exercise -> {
+                // Фильтр по мышцам (только целевые)
+                if (selectedMuscle != null && !selectedMuscle.isEmpty()) {
+                    boolean hasTargetMuscle = exercise.getMuscleGroups() != null &&
+                        exercise.getMuscleGroups().stream()
+                            .anyMatch(m -> m.getName().equals(selectedMuscle) && 
+                                         m.getIsPrimary() != null && m.getIsPrimary());
+                    if (!hasTargetMuscle) return false;
+                }
+
+                // Фильтр по оборудованию
+                if (selectedEquipment != null && !selectedEquipment.isEmpty()) {
+                    boolean hasEquipment = exercise.getEquipment() != null &&
+                        exercise.getEquipment().stream()
+                            .anyMatch(e -> e.getName().equals(selectedEquipment));
+                    if (!hasEquipment) return false;
+                }
+
+                // Фильтр по поиску
+                if (!searchQuery.isEmpty()) {
+                    String query = searchQuery.toLowerCase();
+                    boolean matchesName = exercise.getName() != null &&
+                        exercise.getName().toLowerCase().contains(query);
+                    boolean matchesDescription = exercise.getDescription() != null &&
+                        exercise.getDescription().toLowerCase().contains(query);
+                    if (!matchesName && !matchesDescription) return false;
+                }
+
+                return true;
+            })
+            .collect(Collectors.toList());
+
+        adapter.setExercises(filtered);
         checkEmptyState();
     }
 
@@ -219,20 +385,11 @@ public class ExercisesFragment extends BaseFragment {
         if (adapter.getItemCount() == 0) {
             exercisesRecyclerView.setVisibility(View.GONE);
             emptyText.setVisibility(View.VISIBLE);
+            emptyText.setText(R.string.no_exercises);
         } else {
             exercisesRecyclerView.setVisibility(View.VISIBLE);
             emptyText.setVisibility(View.GONE);
         }
-    }
-
-    private void openExerciseDetail(ExerciseResponse exercise) {
-        // TODO: Открыть ExerciseDetailActivity
-        Toast.makeText(getContext(), "Детали: " + exercise.getName(), Toast.LENGTH_SHORT).show();
-    }
-
-    private void showExerciseOptions(ExerciseResponse exercise) {
-        // TODO: Показать диалог с опциями
-        Toast.makeText(getContext(), "Удержание: " + exercise.getName(), Toast.LENGTH_SHORT).show();
     }
 
     @Override

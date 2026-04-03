@@ -91,6 +91,11 @@ public class ProgramAdapter extends RecyclerView.Adapter<ProgramAdapter.ProgramV
                 createdAtText.setVisibility(View.GONE);
             }
 
+            // Количество тренировок (заглушка)
+            if (workoutsCountText != null) {
+                workoutsCountText.setText("Тренировок: 0");
+            }
+
             // Обработчики кликов
             itemView.setOnClickListener(v -> {
                 if (listener != null) {

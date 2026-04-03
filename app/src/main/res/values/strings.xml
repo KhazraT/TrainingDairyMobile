@@ -55,6 +55,12 @@
     <string name="no_exercises">Нет упражнений</string>
     <string name="all_muscles">Все мышцы</string>
     <string name="all_equipment">Все оборудование</string>
+    <string name="all_exercises">Все упражнения</string>
+    <string name="search">Поиск</string>
+    <string name="search_exercises">Поиск упражнений…</string>
+    <string name="clear_search">Очистить поиск</string>
+    <string name="filter_by_muscle">Группы мышц:</string>
+    <string name="filter_by_equipment">Оборудование:</string>
     <string name="exercise_type_reps_weight">Повторения/Вес</string>
     <string name="exercise_type_time_weight">Время/Вес</string>
     <string name="exercise_type_time_distance">Время/Дистанция</string>
@@ -84,4 +90,34 @@
     <string name="sets_count">Подходы: %d</string>
     <string name="dropset">Дропсет</string>
     <string name="regular_set">Обычный подход</string>
+    <string name="program_detail">Детали программы</string>
+    <string name="workouts">Тренировки</string>
+    <string name="start_workout">Начать тренировку</string>
+    <string name="exercises_in_workout">Упражнений: %d</string>
+    <string name="workout_detail">Детали тренировки</string>
+    <string name="planned_sets">Планируемые подходы</string>
+    <string name="target_weight">Вес: %s кг</string>
+    <string name="target_reps">Повторения: %d</string>
+    <string name="dropset_entry">%s кг × %d</string>
+    
+    <!-- Create Exercise -->
+    <string name="create_exercise_title">Создать упражнение</string>
+    <string name="exercise_name">Название упражнения</string>
+    <string name="exercise_type">Тип упражнения</string>
+    <string name="exercise_description">Описание</string>
+    <string name="exercise_technique">Техника выполнения</string>
+    <string name="exercise_video_url">Ссылка на видео (YouTube)</string>
+    <string name="target_muscles">Целевые мышцы</string>
+    <string name="secondary_muscles">Дополнительные мышцы</string>
+    <string name="equipment">Оборудование</string>
+    <string name="tap_to_toggle_primary">Нажмите чтобы сделать целевой/дополнительной</string>
+    <string name="primary">Целевая</string>
+    <string name="secondary">Дополнительная</string>
+    <string name="exercise_created">Упражнение создано</string>
+    <string name="exercise_updated">Упражнение обновлено</string>
+    <string name="error_fill_required">Заполните обязательные поля</string>
+    <string name="type_reps_weight">Повторения + Вес</string>
+    <string name="type_time_weight">Время + Вес</string>
+    <string name="type_time_distance">Время + Дистанция</string>
+    <string name="type_time_weight_distance">Время + Вес + Дистанция</string>
 </resources>

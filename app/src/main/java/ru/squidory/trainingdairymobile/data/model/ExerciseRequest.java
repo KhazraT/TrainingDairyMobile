@@ -20,11 +20,31 @@ public class ExerciseRequest {
     @SerializedName("exerciseType")
     private String exerciseType;
 
-    @SerializedName("muscleGroupIds")
-    private List<Long> muscleGroupIds;
+    @SerializedName("muscles")
+    private List<MuscleRequest> muscles;
 
     @SerializedName("equipmentIds")
     private List<Long> equipmentIds;
+
+    // Вложенный класс для мышцы с типом
+    public static class MuscleRequest {
+        @SerializedName("muscleGroupId")
+        private Long muscleGroupId;
+
+        @SerializedName("isPrimary")
+        private Boolean isPrimary;
+
+        public MuscleRequest(Long muscleGroupId, Boolean isPrimary) {
+            this.muscleGroupId = muscleGroupId;
+            this.isPrimary = isPrimary;
+        }
+
+        public Long getMuscleGroupId() { return muscleGroupId; }
+        public void setMuscleGroupId(Long muscleGroupId) { this.muscleGroupId = muscleGroupId; }
+
+        public Boolean getIsPrimary() { return isPrimary; }
+        public void setIsPrimary(Boolean isPrimary) { this.isPrimary = isPrimary; }
+    }
 
     public ExerciseRequest() {}
 
@@ -44,8 +64,8 @@ public class ExerciseRequest {
     public String getExerciseType() { return exerciseType; }
     public void setExerciseType(String exerciseType) { this.exerciseType = exerciseType; }
 
-    public List<Long> getMuscleGroupIds() { return muscleGroupIds; }
-    public void setMuscleGroupIds(List<Long> muscleGroupIds) { this.muscleGroupIds = muscleGroupIds; }
+    public List<MuscleRequest> getMuscles() { return muscles; }
+    public void setMuscles(List<MuscleRequest> muscles) { this.muscles = muscles; }
 
     public List<Long> getEquipmentIds() { return equipmentIds; }
     public void setEquipmentIds(List<Long> equipmentIds) { this.equipmentIds = equipmentIds; }

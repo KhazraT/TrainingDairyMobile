@@ -12,41 +12,53 @@
         android:layout_height="wrap_content"
         android:padding="16dp">
 
-        <!-- Название упражнения -->
+        <!-- Название тренировки -->
         <TextView
-            android:id="@+id/exerciseNameText"
+            android:id="@+id/workoutNameText"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:textSize="18sp"
+            android:textSize="16sp"
             android:textStyle="bold"
             android:textColor="?android:attr/textColorPrimary"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
 
-        <!-- Группы мышц -->
+        <!-- Комментарий -->
         <TextView
-            android:id="@+id/muscleGroupsText"
+            android:id="@+id/workoutCommentText"
             android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:maxLines="2"
+            android:ellipsize="end"
+            android:textSize="14sp"
+            android:textColor="?android:attr/textColorSecondary"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/workoutNameText" />
+
+        <!-- Количество упражнений -->
+        <TextView
+            android:id="@+id/exercisesCountText"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
             android:textSize="12sp"
             android:textColor="?attr/colorPrimary"
-            app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/exerciseNameText" />
+            app:layout_constraintTop_toBottomOf="@id/workoutCommentText" />
 
-        <!-- Оборудование -->
-        <TextView
-            android:id="@+id/equipmentText"
-            android:layout_width="0dp"
+        <!-- Кнопка начать -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/startWorkoutButton"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
+            android:layout_marginTop="8dp"
+            android:text="@string/start_workout"
             android:textSize="12sp"
-            android:textColor="@android:color/darker_gray"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/muscleGroupsText" />
+            app:layout_constraintTop_toBottomOf="@id/workoutCommentText" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 

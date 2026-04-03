@@ -1,5 +1,6 @@
 package ru.squidory.trainingdairymobile.ui.trainings;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -69,7 +70,10 @@ public class TrainingsFragment extends BaseFragment {
             @Override
             public void onProgramClick(ProgramResponse program) {
                 // Открыть детали программы
-                Toast.makeText(getContext(), "Программа: " + program.getName(), Toast.LENGTH_SHORT).show();
+                Intent intent = new Intent(getContext(), ProgramDetailActivity.class);
+                intent.putExtra(ProgramDetailActivity.EXTRA_PROGRAM_ID, program.getId());
+                intent.putExtra(ProgramDetailActivity.EXTRA_PROGRAM_NAME, program.getName());
+                startActivity(intent);
             }
 
             @Override

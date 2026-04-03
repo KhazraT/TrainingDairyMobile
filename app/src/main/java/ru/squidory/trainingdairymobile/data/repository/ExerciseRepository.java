@@ -49,6 +49,56 @@ public class ExerciseRepository {
         void onError(String error);
     }
 
+    public interface MuscleGroupsCallback {
+        void onSuccess(List<MuscleGroupResponse> muscleGroups);
+        void onError(String error);
+    }
+
+    public interface EquipmentCallback {
+        void onSuccess(List<EquipmentResponse> equipment);
+        void onError(String error);
+    }
+
+    // ==================== Группы мышц ====================
+
+    public void getMuscleGroups(MuscleGroupsCallback callback) {
+        exerciseApi.getMuscleGroups().enqueue(new Callback<List<MuscleGroupResponse>>() {
+            @Override
+            public void onResponse(Call<List<MuscleGroupResponse>> call, Response<List<MuscleGroupResponse>> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    callback.onSuccess(response.body());
+                } else {
+                    callback.onError(getErrorMessage(response));
+                }
+            }
+
+            @Override
+            public void onFailure(Call<List<MuscleGroupResponse>> call, Throwable t) {
+                callback.onError(t.getMessage());
+            }
+        });
+    }
+
+    // ==================== Оборудование ====================
+
+    public void getEquipment(EquipmentCallback callback) {
+        exerciseApi.getEquipment().enqueue(new Callback<List<EquipmentResponse>>() {
+            @Override
+            public void onResponse(Call<List<EquipmentResponse>> call, Response<List<EquipmentResponse>> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    callback.onSuccess(response.body());
+                } else {
+                    callback.onError(getErrorMessage(response));
+                }
+            }
+
+            @Override
+            public void onFailure(Call<List<EquipmentResponse>> call, Throwable t) {
+                callback.onError(t.getMessage());
+            }
+        });
+    }
+
     /**
      * Получить все упражнения с фильтрацией.
      */

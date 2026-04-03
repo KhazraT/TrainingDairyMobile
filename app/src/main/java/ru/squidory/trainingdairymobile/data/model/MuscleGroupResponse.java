@@ -10,6 +10,9 @@ public class MuscleGroupResponse {
     @SerializedName("name")
     private String name;
 
+    @SerializedName("isPrimary")
+    private Boolean isPrimary;
+
     public MuscleGroupResponse() {}
 
     public long getId() { return id; }
@@ -17,4 +20,7 @@ public class MuscleGroupResponse {
 
     public String getName() { return name; }
     public void setName(String name) { this.name = name; }
+
+    public Boolean getIsPrimary() { return isPrimary; }
+    public void setIsPrimary(Boolean isPrimary) { this.isPrimary = isPrimary; }
 }

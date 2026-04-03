@@ -43,7 +43,25 @@
         <activity
             android:name=".ui.main.MainActivity"
             android:exported="false" />
-        
+
+        <!-- Program Detail Activity -->
+        <activity
+            android:name=".ui.trainings.ProgramDetailActivity"
+            android:exported="false"
+            android:parentActivityName=".ui.main.MainActivity" />
+
+        <!-- Create Exercise Activity -->
+        <activity
+            android:name=".ui.exercises.CreateExerciseActivity"
+            android:exported="false"
+            android:parentActivityName=".ui.main.MainActivity" />
+
+        <!-- Exercise Detail Activity -->
+        <activity
+            android:name=".ui.exercises.ExerciseDetailActivity"
+            android:exported="false"
+            android:parentActivityName=".ui.main.MainActivity" />
+
     </application>
 
 </manifest>

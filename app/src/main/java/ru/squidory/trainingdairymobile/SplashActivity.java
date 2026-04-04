@@ -18,6 +18,7 @@ import ru.squidory.trainingdairymobile.ui.main.MainActivity;
 public class SplashActivity extends AppCompatActivity {
 
     private static final int SPLASH_DELAY = 500; // Задержка 500мс для показа заставки
+    private boolean hasNavigated = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -29,23 +30,29 @@ public class SplashActivity extends AppCompatActivity {
     }
 
     private void checkAuthAndNavigate() {
+        if (hasNavigated) return;
+        hasNavigated = true;
+
         AuthRepository authRepository = AuthRepository.getInstance();
-        
+
+        Intent intent;
         if (authRepository.isLoggedIn()) {
             // Пользователь авторизован - переходим на главный экран
-            startActivity(new Intent(this, MainActivity.class));
+            intent = new Intent(this, MainActivity.class);
         } else {
             // Пользователь не авторизован - переходим на экран входа
-            startActivity(new Intent(this, LoginActivity.class));
+            intent = new Intent(this, LoginActivity.class);
         }
-        
+
+        // Отключаем анимацию перехода
+        startActivity(intent);
+        overridePendingTransition(0, 0);
         finish();
     }
 
     @Override
     protected void onResume() {
         super.onResume();
-        // Проверяем авторизацию при возврате в приложение
-        checkAuthAndNavigate();
+        // Не вызываем checkAuthAndNavigate() здесь чтобы избежать двойной навигации
     }
 }

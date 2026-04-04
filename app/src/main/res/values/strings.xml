@@ -78,6 +78,9 @@
     <string name="no_programs">Нет программ тренировок</string>
     <string name="create_program">Создать программу</string>
     <string name="edit_program">Редактировать программу</string>
+    <string name="edit_workout">Редактировать тренировку</string>
+    <string name="tap_to_edit_program">Нажмите чтобы изменить название и описание</string>
+    <string name="no_description">Описание отсутствует</string>
     <string name="delete_program_confirm">Удалить эту программу?</string>
     <string name="program_name">Название программы</string>
     <string name="program_description">Описание программы</string>
@@ -95,6 +98,8 @@
     <string name="start_workout">Начать тренировку</string>
     <string name="exercises_in_workout">Упражнений: %d</string>
     <string name="workout_detail">Детали тренировки</string>
+    <string name="no_workouts">Нет тренировок в программе</string>
+    <string name="manage_exercises">Управление упражнениями</string>
     <string name="planned_sets">Планируемые подходы</string>
     <string name="target_weight">Вес: %s кг</string>
     <string name="target_reps">Повторения: %d</string>

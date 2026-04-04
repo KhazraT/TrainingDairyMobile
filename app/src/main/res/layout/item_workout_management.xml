@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_margin="8dp"
+    app:cardCornerRadius="8dp"
+    app:cardElevation="2dp">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="16dp">
+
+        <!-- Название тренировки -->
+        <TextView
+            android:id="@+id/workoutNameText"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:textColor="?android:attr/textColorPrimary"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <!-- Комментарий -->
+        <TextView
+            android:id="@+id/workoutCommentText"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:maxLines="2"
+            android:ellipsize="end"
+            android:textSize="14sp"
+            android:textColor="?android:attr/textColorSecondary"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/workoutNameText" />
+
+        <!-- Кнопка управления упражнениями -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/manageExercisesButton"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="@string/manage_exercises"
+            android:textSize="12sp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/workoutCommentText"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton" />
+
+        <!-- Кнопка удаления тренировки -->
+        <ImageButton
+            android:id="@+id/deleteWorkoutButton"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_marginTop="8dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/delete"
+            android:src="@android:drawable/ic_menu_delete"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/manageExercisesButton"
+            app:tint="@android:color/holo_red_dark" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+</com.google.android.material.card.MaterialCardView>

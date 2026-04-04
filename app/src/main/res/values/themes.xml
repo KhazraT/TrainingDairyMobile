@@ -6,10 +6,11 @@
     </style>
 
     <style name="Theme.TrainingDairyMobile" parent="Base.Theme.TrainingDairyMobile" />
-    
-    <!-- Splash screen theme - без Action Bar и с полным экраном -->
-    <style name="Theme.TrainingDairyMobile.NoActionBar" parent="Theme.TrainingDairyMobile">
+
+    <!-- Splash screen theme - без Action Bar и с фиксированным фиолетовым фоном -->
+    <style name="Theme.TrainingDairyMobile.Splash" parent="Theme.TrainingDairyMobile">
         <item name="windowActionBar">false</item>
         <item name="windowNoTitle">true</item>
+        <item name="android:windowBackground">@color/splash_background</item>
     </style>
 </resources>

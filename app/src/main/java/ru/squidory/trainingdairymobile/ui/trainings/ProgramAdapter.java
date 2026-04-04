@@ -8,11 +8,10 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
-import java.util.Locale;
+import java.util.Map;
 
 import ru.squidory.trainingdairymobile.R;
 import ru.squidory.trainingdairymobile.data.model.ProgramResponse;
@@ -23,6 +22,7 @@ import ru.squidory.trainingdairymobile.data.model.ProgramResponse;
 public class ProgramAdapter extends RecyclerView.Adapter<ProgramAdapter.ProgramViewHolder> {
 
     private final List<ProgramResponse> programs = new ArrayList<>();
+    private final Map<Long, Integer> workoutCounts = new HashMap<>();
     private OnProgramClickListener listener;
 
     public interface OnProgramClickListener {
@@ -38,6 +38,16 @@ public class ProgramAdapter extends RecyclerView.Adapter<ProgramAdapter.ProgramV
         this.programs.clear();
         this.programs.addAll(programs);
         notifyDataSetChanged();
+    }
+
+    public void updateWorkoutCounts(Map<Long, Integer> counts) {
+        this.workoutCounts.clear();
+        this.workoutCounts.putAll(counts);
+        notifyDataSetChanged();
+    }
+
+    public List<ProgramResponse> getPrograms() {
+        return programs;
     }
 
     @NonNull
@@ -84,16 +94,21 @@ public class ProgramAdapter extends RecyclerView.Adapter<ProgramAdapter.ProgramV
 
             // Дата создания
             if (program.getCreatedAt() != null) {
-                SimpleDateFormat sdf = new SimpleDateFormat("dd.MM.yyyy", Locale.getDefault());
+                java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("dd.MM.yyyy", java.util.Locale.getDefault());
                 createdAtText.setText(sdf.format(program.getCreatedAt()));
                 createdAtText.setVisibility(View.VISIBLE);
             } else {
                 createdAtText.setVisibility(View.GONE);
             }
 
-            // Количество тренировок (заглушка)
-            if (workoutsCountText != null) {
-                workoutsCountText.setText("Тренировок: 0");
+            // Количество тренировок
+            Integer count = workoutCounts.get(program.getId());
+            if (count != null) {
+                workoutsCountText.setText(String.format(java.util.Locale.getDefault(), 
+                    itemView.getContext().getString(R.string.workouts_count), count));
+                workoutsCountText.setVisibility(View.VISIBLE);
+            } else {
+                workoutsCountText.setVisibility(View.GONE);
             }
 
             // Обработчики кликов

@@ -69,6 +69,18 @@
             android:exported="false"
             android:parentActivityName=".ui.main.MainActivity" />
 
+        <!-- Exercise Management Activity (упражнения в тренировке) -->
+        <activity
+            android:name=".ui.trainings.ExerciseManagementActivity"
+            android:exported="false"
+            android:parentActivityName=".ui.trainings.WorkoutManagementActivity" />
+
+        <!-- Exercise Picker Activity (выбор упражнений с мультивыбором) -->
+        <activity
+            android:name=".ui.trainings.ExercisePickerActivity"
+            android:exported="false"
+            android:parentActivityName=".ui.trainings.ExerciseManagementActivity" />
+
     </application>
 
 </manifest>

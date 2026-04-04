@@ -8,6 +8,9 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
+import android.content.Context;
+import android.content.Intent;
+
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -141,6 +144,12 @@ public class WorkoutDetailAdapter extends RecyclerView.Adapter<WorkoutDetailAdap
                 if (listener != null) {
                     listener.onManageExercises(workout);
                 }
+                // Запускаем ExerciseManagementActivity
+                Context context = v.getContext();
+                Intent intent = new Intent(context, ExerciseManagementActivity.class);
+                intent.putExtra(ExerciseManagementActivity.EXTRA_WORKOUT_ID, workout.getId());
+                intent.putExtra(ExerciseManagementActivity.EXTRA_WORKOUT_NAME, workout.getName());
+                context.startActivity(intent);
             });
 
             deleteButton.setOnClickListener(v -> {

@@ -125,4 +125,38 @@
     <string name="type_time_weight">Время + Вес</string>
     <string name="type_time_distance">Время + Дистанция</string>
     <string name="type_time_weight_distance">Время + Вес + Дистанция</string>
+    <string name="exercises">Упражнения</string>
+    <string name="exercise">Упражнение</string>
+
+    <!-- Exercise Management in Workout -->
+    <string name="no_exercises_in_workout">Нет упражнений. Нажмите + чтобы добавить.</string>
+    <string name="manage_sets">Управление подходами</string>
+    <string name="delete_exercise">Удалить упражнение</string>
+    <string name="delete_exercise_confirm_workout">Удалить это упражнение из тренировки?</string>
+    <string name="exercise_deleted">Упражнение удалено</string>
+    <string name="add_regular_set">+ Обычный</string>
+    <string name="add_dropset">+ Дропсет</string>
+    <string name="close">Закрыть</string>
+    <string name="add_set">Добавить подход</string>
+    <string name="edit_set">Редактировать подход</string>
+    <string name="delete_set">Удалить подход</string>
+    <string name="set_type">Тип подхода</string>
+    <string name="weight_kg">Вес (кг)</string>
+    <string name="repetitions">Повторения</string>
+    <string name="time_seconds">Время (сек)</string>
+    <string name="distance_meters">Дистанция (м)</string>
+    <string name="dropset_entries">Записи дропсета</string>
+    <string name="add_dropset_entry">+ Запись дропсета</string>
+    <string name="remove">Удалить</string>
+    <string name="superset_group_number">Номер суперсета (опционально)</string>
+    <string name="set_saved">Подход сохранён</string>
+    <string name="set_deleted">Подход удалён</string>
+    <string name="exercise_added">Упражнение добавлено</string>
+    <string name="exercise_updated_in_workout">Упражнение обновлено</string>
+    <string name="sets_saved">Подходы сохранены</string>
+    <string name="set_regular">Обычный</string>
+    <string name="set_dropset">Дропсет</string>
+    <string name="dropset_label">ДРОПСЕТ</string>
+    <string name="regular_label">ОБЫЧНЫЙ</string>
+    <string name="set_number">Подход #%d</string>
 </resources>

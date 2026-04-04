@@ -68,6 +68,11 @@ public class ProgramRepository {
         void onError(String error);
     }
 
+    public interface PlannedSetsCallback {
+        void onSuccess(List<PlannedSetResponse> sets);
+        void onError(String error);
+    }
+
     public interface SimpleCallback {
         void onSuccess();
         void onError(String error);
@@ -315,6 +320,24 @@ public class ProgramRepository {
     }
 
     // ==================== Планируемые подходы ====================
+
+    public void getPlannedSets(long workoutExerciseId, PlannedSetsCallback callback) {
+        programApi.getPlannedSets(workoutExerciseId).enqueue(new Callback<List<PlannedSetResponse>>() {
+            @Override
+            public void onResponse(Call<List<PlannedSetResponse>> call, Response<List<PlannedSetResponse>> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    callback.onSuccess(response.body());
+                } else {
+                    callback.onError(getErrorMessage(response));
+                }
+            }
+
+            @Override
+            public void onFailure(Call<List<PlannedSetResponse>> call, Throwable t) {
+                callback.onError(t.getMessage());
+            }
+        });
+    }
 
     public void createPlannedSet(long workoutExerciseId, PlannedSetRequest request, Callback<PlannedSetResponse> callback) {
         programApi.createPlannedSet(workoutExerciseId, request).enqueue(callback);

@@ -1,5 +1,8 @@
 package ru.squidory.trainingdairymobile.data.remote;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+
 import okhttp3.OkHttpClient;
 import okhttp3.logging.HttpLoggingInterceptor;
 import retrofit2.Retrofit;
@@ -36,10 +39,12 @@ public class NetworkClient {
                     .addInterceptor(authInterceptor)
                     .build();
 
+            Gson gson = new GsonBuilder().serializeNulls().create();
+
             retrofit = new Retrofit.Builder()
                     .baseUrl(Constants.BASE_URL)
                     .client(client)
-                    .addConverterFactory(GsonConverterFactory.create())
+                    .addConverterFactory(GsonConverterFactory.create(gson))
                     .build();
         }
         return retrofit;

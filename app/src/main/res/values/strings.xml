@@ -81,6 +81,7 @@
     <string name="edit_workout">Редактировать тренировку</string>
     <string name="tap_to_edit_program">Нажмите чтобы изменить название и описание</string>
     <string name="no_description">Описание отсутствует</string>
+    <string name="delete_program">Удалить программу</string>
     <string name="delete_program_confirm">Удалить эту программу?</string>
     <string name="program_name">Название программы</string>
     <string name="program_description">Описание программы</string>

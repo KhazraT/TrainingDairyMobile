@@ -109,6 +109,11 @@ public class TrainingsFragment extends BaseFragment {
                 // Показать меню действий
                 Toast.makeText(getContext(), "Долгий клик: " + program.getName(), Toast.LENGTH_SHORT).show();
             }
+
+            @Override
+            public void onDeleteProgramClick(ProgramResponse program) {
+                showDeleteProgramConfirmation(program);
+            }
         });
     }
 
@@ -266,5 +271,31 @@ public class TrainingsFragment extends BaseFragment {
     @Override
     public String getTitle() {
         return getString(R.string.fragment_trainings);
+    }
+
+    private void showDeleteProgramConfirmation(ProgramResponse program) {
+        new AlertDialog.Builder(requireContext())
+                .setTitle(R.string.delete_program)
+                .setMessage(R.string.delete_program_confirm)
+                .setPositiveButton(R.string.delete, (dialog, which) -> {
+                    repository.deleteProgram(program.getId(), new ProgramRepository.SimpleCallback() {
+                        @Override
+                        public void onSuccess() {
+                            if (isAdded()) {
+                                Toast.makeText(getContext(), "Программа удалена", Toast.LENGTH_SHORT).show();
+                                loadPrograms();
+                            }
+                        }
+
+                        @Override
+                        public void onError(String error) {
+                            if (isAdded()) {
+                                Toast.makeText(getContext(), "Ошибка: " + error, Toast.LENGTH_LONG).show();
+                            }
+                        }
+                    });
+                })
+                .setNegativeButton(R.string.cancel, null)
+                .show();
     }
 }

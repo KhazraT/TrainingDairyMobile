@@ -3,6 +3,7 @@ package ru.squidory.trainingdairymobile.ui.trainings;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageButton;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -28,6 +29,7 @@ public class ProgramAdapter extends RecyclerView.Adapter<ProgramAdapter.ProgramV
     public interface OnProgramClickListener {
         void onProgramClick(ProgramResponse program);
         void onProgramLongClick(ProgramResponse program);
+        void onDeleteProgramClick(ProgramResponse program);
     }
 
     public void setOnProgramClickListener(OnProgramClickListener listener) {
@@ -73,6 +75,7 @@ public class ProgramAdapter extends RecyclerView.Adapter<ProgramAdapter.ProgramV
         private final TextView descriptionText;
         private final TextView workoutsCountText;
         private final TextView createdAtText;
+        private final ImageButton deleteButton;
 
         ProgramViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -80,6 +83,7 @@ public class ProgramAdapter extends RecyclerView.Adapter<ProgramAdapter.ProgramV
             descriptionText = itemView.findViewById(R.id.programDescriptionText);
             workoutsCountText = itemView.findViewById(R.id.workoutsCountText);
             createdAtText = itemView.findViewById(R.id.createdAtText);
+            deleteButton = itemView.findViewById(R.id.deleteProgramButton);
         }
 
         void bind(ProgramResponse program) {
@@ -124,6 +128,12 @@ public class ProgramAdapter extends RecyclerView.Adapter<ProgramAdapter.ProgramV
                     return true;
                 }
                 return false;
+            });
+
+            deleteButton.setOnClickListener(v -> {
+                if (listener != null) {
+                    listener.onDeleteProgramClick(program);
+                }
             });
         }
     }

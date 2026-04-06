@@ -503,16 +503,17 @@ public class ExerciseManagementActivity extends AppCompatActivity {
         SupersetExerciseAdapter selectionAdapter = new SupersetExerciseAdapter();
         supersetSelectionRecyclerView.setLayoutManager(new LinearLayoutManager(this));
         supersetSelectionRecyclerView.setAdapter(selectionAdapter);
-        selectionAdapter.setExercises(standaloneExercises);
 
         AlertDialog dialog = builder.create();
         dialog.setCancelable(false);
 
         cancelButton.setOnClickListener(v -> dialog.dismiss());
 
+        // Сначала устанавливаем слушатель, потом упражнения — чтобы кнопка сразу стала disabled
         selectionAdapter.setOnSelectionChanged(() -> {
             runOnUiThread(() -> saveButton.setEnabled(selectionAdapter.getSelectedCount() >= 2));
         });
+        selectionAdapter.setExercisesAndNotifySelection(standaloneExercises);
 
         saveButton.setOnClickListener(v -> {
             List<WorkoutExerciseResponse> selected = selectionAdapter.getSelectedExercises();
@@ -726,6 +727,9 @@ public class ExerciseManagementActivity extends AppCompatActivity {
     // ==================== Управление подходами ====================
 
     private void openSetsManagementDialog(WorkoutExerciseResponse exercise) {
+        String exerciseType = getExerciseTypeById(exercise.getExerciseId());
+        boolean isRepsWeight = "REPS_WEIGHT".equals(exerciseType);
+
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         View dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_manage_sets, null);
         builder.setView(dialogView);
@@ -736,6 +740,22 @@ public class ExerciseManagementActivity extends AppCompatActivity {
         MaterialButton saveSetsButton = dialogView.findViewById(R.id.saveSetsButton);
         MaterialButton closeSetsButton = dialogView.findViewById(R.id.closeSetsButton);
 
+        // Для не-REPS_WEIGHT упражнений — только одна кнопка, переименовываем
+        if (!isRepsWeight) {
+            addRegularSetButton.setText("Добавить подход");
+            addDropsetButton.setVisibility(View.GONE);
+        } else {
+            addRegularSetButton.setText("+ Обычный");
+            addDropsetButton.setVisibility(View.VISIBLE);
+        }
+
+        // Локальный буфер — изменения не отправляются на сервер до нажатия "Сохранить"
+        final List<PlannedSetResponse> localSets = new ArrayList<>();
+        // ID подходов, которые были на сервере но удалены локально
+        final List<Long> deletedSetIds = new ArrayList<>();
+        // Флаг что данные загружены
+        final boolean[] loaded = {false};
+
         PlannedSetAdapter setAdapter = new PlannedSetAdapter();
         setsRecyclerView.setLayoutManager(new LinearLayoutManager(this));
         setsRecyclerView.setAdapter(setAdapter);
@@ -743,6 +763,7 @@ public class ExerciseManagementActivity extends AppCompatActivity {
         AlertDialog dialog = builder.create();
         dialog.setCancelable(false);
 
+        // Загружаем подходы в локальный буфер
         programRepository.getPlannedSets(exercise.getId(), new ProgramRepository.PlannedSetsCallback() {
             @Override
             public void onSuccess(List<PlannedSetResponse> sets) {
@@ -753,64 +774,66 @@ public class ExerciseManagementActivity extends AppCompatActivity {
                     if (numB == null) numB = 0;
                     return numA.compareTo(numB);
                 });
-                setAdapter.setSets(sets);
+                localSets.clear();
+                localSets.addAll(sets);
+                setAdapter.setSets(new ArrayList<>(localSets));
+                loaded[0] = true;
             }
 
             @Override
             public void onError(String error) {
+                localSets.clear();
                 setAdapter.setSets(new ArrayList<>());
+                loaded[0] = true;
             }
         });
 
         setAdapter.setOnSetActionListener(new PlannedSetAdapter.OnSetActionListener() {
             @Override
             public void onEditSet(PlannedSetResponse set) {
-                showAddSetDialog(exercise, set, setAdapter, false);
+                boolean isDropset = "DROPSET".equalsIgnoreCase(set.getSetType());
+                // Передаём локальный буфер для изменений, а не адаптер сервера
+                SetsDialogManager.showForEdit(ExerciseManagementActivity.this, exercise, exerciseType,
+                        set, localSets, setAdapter, isDropset);
             }
 
             @Override
             public void onDeleteSet(PlannedSetResponse set) {
-                programRepository.deletePlannedSet(set.getId(), new ProgramRepository.SimpleCallback() {
-                    @Override
-                    public void onSuccess() {
-                        Toast.makeText(ExerciseManagementActivity.this,
-                                R.string.set_deleted, Toast.LENGTH_SHORT).show();
-                        programRepository.getPlannedSets(exercise.getId(), new ProgramRepository.PlannedSetsCallback() {
-                            @Override
-                            public void onSuccess(List<PlannedSetResponse> sets) {
-                                sets.sort((a, b) -> {
-                                    Integer numA = a.getSetNumber();
-                                    Integer numB = b.getSetNumber();
-                                    if (numA == null) numA = 0;
-                                    if (numB == null) numB = 0;
-                                    return numA.compareTo(numB);
-                                });
-                                setAdapter.setSets(sets);
-                            }
-
-                            @Override
-                            public void onError(String error) {
-                                setAdapter.setSets(new ArrayList<>());
-                            }
-                        });
-                    }
-
-                    @Override
-                    public void onError(String error) {
-                        Toast.makeText(ExerciseManagementActivity.this,
-                                "Ошибка: " + error, Toast.LENGTH_SHORT).show();
-                    }
-                });
+                // Удаляем только из локального буфера
+                localSets.remove(set);
+                if (set.getId() > 0) {
+                    deletedSetIds.add(set.getId());
+                }
+                setAdapter.setSets(new ArrayList<>(localSets));
+                Toast.makeText(ExerciseManagementActivity.this, "Подход удалён (локально)", Toast.LENGTH_SHORT).show();
             }
         });
 
-        addRegularSetButton.setOnClickListener(v -> showAddSetDialog(exercise, null, setAdapter, false));
-        addDropsetButton.setOnClickListener(v -> showAddSetDialog(exercise, null, setAdapter, true));
+        addRegularSetButton.setOnClickListener(v -> {
+            SetsDialogManager.showForAdd(ExerciseManagementActivity.this, exercise, exerciseType,
+                    localSets, setAdapter, false);
+        });
+        if (isRepsWeight) {
+            addDropsetButton.setOnClickListener(v -> {
+                SetsDialogManager.showForAdd(ExerciseManagementActivity.this, exercise, exerciseType,
+                        localSets, setAdapter, true);
+            });
+        }
 
         saveSetsButton.setOnClickListener(v -> {
-            dialog.dismiss();
-            Toast.makeText(ExerciseManagementActivity.this, R.string.sets_saved, Toast.LENGTH_SHORT).show();
-            loadWorkoutExercises();
+            if (!loaded[0]) {
+                dialog.dismiss();
+                return;
+            }
+            // Синхронизируем локальные изменения с сервером
+            syncSetsWithServer(exercise, localSets, deletedSetIds, new Runnable() {
+                @Override
+                public void run() {
+                    dialog.dismiss();
+                    Toast.makeText(ExerciseManagementActivity.this, R.string.sets_saved, Toast.LENGTH_SHORT).show();
+                    loadWorkoutExercises();
+                }
+            });
         });
 
         closeSetsButton.setOnClickListener(v -> dialog.dismiss());
@@ -818,10 +841,106 @@ public class ExerciseManagementActivity extends AppCompatActivity {
         dialog.show();
     }
 
-    private void showAddSetDialog(WorkoutExerciseResponse exercise, PlannedSetResponse existingSet,
-                                  PlannedSetAdapter setAdapter, boolean forceDropset) {
-        String exerciseType = getExerciseTypeById(exercise.getExerciseId());
-        SetsDialogManager.show(this, exercise, exerciseType, existingSet, setAdapter, forceDropset);
+    /**
+     * Синхронизирует локальный список подходов с сервером:
+     * 1. Удаляет подходы из deletedSetIds
+     * 2. Обновляет существующие подходы (id > 0)
+     * 3. Создаёт новые подходы (id == 0)
+     */
+    private void syncSetsWithServer(WorkoutExerciseResponse exercise,
+                                    List<PlannedSetResponse> localSets,
+                                    List<Long> deletedSetIds,
+                                    Runnable onDone) {
+        final int totalDelete = deletedSetIds.size();
+        final int totalUpdate = (int) localSets.stream().filter(s -> s.getId() > 0).count();
+        final int totalCreate = (int) localSets.stream().filter(s -> s.getId() == 0).count();
+        final int totalOps = totalDelete + totalUpdate + totalCreate;
+
+        if (totalOps == 0) {
+            onDone.run();
+            return;
+        }
+
+        final int[] completed = {0};
+        final int[] errors = {0};
+
+        // Фаза 1: Удаление
+        for (Long setId : deletedSetIds) {
+            programRepository.deletePlannedSet(setId, new ProgramRepository.SimpleCallback() {
+                @Override
+                public void onSuccess() {
+                    completed[0]++;
+                    if (completed[0] == totalOps && errors[0] == 0) onDone.run();
+                }
+
+                @Override
+                public void onError(String error) {
+                    completed[0]++;
+                    errors[0]++;
+                    if (completed[0] == totalOps) onDone.run();
+                }
+            });
+        }
+
+        // Фаза 2: Обновление существующих и создание новых
+        for (final PlannedSetResponse localSet : localSets) {
+            PlannedSetRequest request = new PlannedSetRequest();
+            request.setSetType(localSet.getSetType());
+            request.setSetNumber(localSet.getSetNumber());
+            request.setTargetWeight(localSet.getTargetWeight());
+            request.setTargetReps(localSet.getTargetReps());
+            request.setTargetTime(localSet.getTargetTime());
+            request.setTargetDistance(localSet.getTargetDistance());
+            request.setDropsetEntries(localSet.getDropsetEntries() != null ?
+                    convertDropsetEntries(localSet.getDropsetEntries()) : null);
+
+            if (localSet.getId() > 0) {
+                // Обновление
+                programRepository.updatePlannedSet(localSet.getId(), request,
+                        new retrofit2.Callback<PlannedSetResponse>() {
+                            @Override
+                            public void onResponse(retrofit2.Call<PlannedSetResponse> call, retrofit2.Response<PlannedSetResponse> response) {
+                                completed[0]++;
+                                if (completed[0] == totalOps && errors[0] == 0) onDone.run();
+                            }
+
+                            @Override
+                            public void onFailure(retrofit2.Call<PlannedSetResponse> call, Throwable t) {
+                                completed[0]++;
+                                errors[0]++;
+                                if (completed[0] == totalOps) onDone.run();
+                            }
+                        });
+            } else {
+                // Создание
+                programRepository.createPlannedSet(exercise.getId(), request,
+                        new retrofit2.Callback<PlannedSetResponse>() {
+                            @Override
+                            public void onResponse(retrofit2.Call<PlannedSetResponse> call, retrofit2.Response<PlannedSetResponse> response) {
+                                completed[0]++;
+                                if (completed[0] == totalOps && errors[0] == 0) onDone.run();
+                            }
+
+                            @Override
+                            public void onFailure(retrofit2.Call<PlannedSetResponse> call, Throwable t) {
+                                completed[0]++;
+                                errors[0]++;
+                                if (completed[0] == totalOps) onDone.run();
+                            }
+                        });
+            }
+        }
+    }
+
+    private List<PlannedSetRequest.DropsetEntry> convertDropsetEntries(List<PlannedSetResponse.DropsetEntry> entries) {
+        List<PlannedSetRequest.DropsetEntry> result = new ArrayList<>();
+        for (PlannedSetResponse.DropsetEntry e : entries) {
+            PlannedSetRequest.DropsetEntry req = new PlannedSetRequest.DropsetEntry();
+            req.setWeight(e.getWeight());
+            req.setReps(e.getReps());
+            result.add(req);
+        }
+        return result;
     }
 
     // ==================== Утилиты ====================

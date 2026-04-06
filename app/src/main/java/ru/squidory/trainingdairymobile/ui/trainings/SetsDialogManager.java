@@ -14,18 +14,14 @@ import com.google.android.material.textfield.TextInputLayout;
 import java.util.ArrayList;
 import java.util.List;
 
-import retrofit2.Call;
-import retrofit2.Callback;
-import retrofit2.Response;
 import ru.squidory.trainingdairymobile.R;
 import ru.squidory.trainingdairymobile.data.model.PlannedSetRequest;
 import ru.squidory.trainingdairymobile.data.model.PlannedSetResponse;
 import ru.squidory.trainingdairymobile.data.model.WorkoutExerciseResponse;
-import ru.squidory.trainingdairymobile.data.repository.ProgramRepository;
 
 /**
  * Менеджер диалога добавления/редактирования подхода.
- * Показывает только поля, соответствующие типу упражнения.
+ * Работает с локальным буфером — изменения отправляются на сервер только при нажатии "Сохранить".
  */
 class SetsDialogManager {
 
@@ -34,42 +30,51 @@ class SetsDialogManager {
     static final String TIME_DISTANCE = "TIME_DISTANCE";
     static final String TIME_WEIGHT_DISTANCE = "TIME_WEIGHT_DISTANCE";
 
-    static void show(ExerciseManagementActivity activity, WorkoutExerciseResponse exercise,
-                     String exerciseType, PlannedSetResponse existingSet, PlannedSetAdapter setAdapter, boolean forceDropset) {
-        new SetsDialogManager(activity, exercise, exerciseType, existingSet, setAdapter, forceDropset).show();
+    /**
+     * Показать диалог добавления нового подхода (работает с локальным буфером).
+     */
+    static void showForAdd(ExerciseManagementActivity activity, WorkoutExerciseResponse exercise,
+                           String exerciseType, List<PlannedSetResponse> localSets,
+                           PlannedSetAdapter setAdapter, boolean isDropset) {
+        new SetsDialogManager(activity, exercise, exerciseType, null, localSets, setAdapter, isDropset, false).show();
+    }
+
+    /**
+     * Показать диалог редактирования подхода (работает с локальным буфером).
+     */
+    static void showForEdit(ExerciseManagementActivity activity, WorkoutExerciseResponse exercise,
+                            String exerciseType, PlannedSetResponse existingSet,
+                            List<PlannedSetResponse> localSets, PlannedSetAdapter setAdapter, boolean isDropset) {
+        new SetsDialogManager(activity, exercise, exerciseType, existingSet, localSets, setAdapter, isDropset, true).show();
     }
 
     private final ExerciseManagementActivity activity;
     private final WorkoutExerciseResponse exercise;
-    private final PlannedSetResponse existingSet;
-    private final PlannedSetAdapter setAdapter;
-    private final boolean forceDropset;
-    private final boolean isEdit;
-    private final ProgramRepository programRepository;
     private final String exerciseType;
+    private final PlannedSetResponse existingSet;
+    private final List<PlannedSetResponse> localSets;
+    private final PlannedSetAdapter setAdapter;
+    private final boolean isEdit;
+    private final boolean isDropsetMode;
 
-    // Все поля и их Layout-ы
-    private TextInputLayout weightLayout;
-    private TextInputLayout repsLayout;
-    private TextInputLayout timeLayout;
-    private TextInputLayout distanceLayout;
-    private TextInputEditText weightInput;
-    private TextInputEditText repsInput;
-    private TextInputEditText timeInput;
-    private TextInputEditText distanceInput;
+    // UI элементы
+    private TextInputLayout weightLayout, repsLayout, timeLayout, distanceLayout;
+    private TextInputEditText weightInput, repsInput, timeInput, distanceInput;
     private LinearLayout dropsetEntriesContainer;
     private MaterialButton addDropsetEntryButton;
 
     private SetsDialogManager(ExerciseManagementActivity activity, WorkoutExerciseResponse exercise,
-                              String exerciseType, PlannedSetResponse existingSet, PlannedSetAdapter setAdapter, boolean forceDropset) {
+                              String exerciseType, PlannedSetResponse existingSet,
+                              List<PlannedSetResponse> localSets, PlannedSetAdapter setAdapter,
+                              boolean isDropset, boolean isEdit) {
         this.activity = activity;
         this.exercise = exercise;
-        this.existingSet = existingSet;
-        this.setAdapter = setAdapter;
-        this.forceDropset = forceDropset;
-        this.isEdit = existingSet != null;
-        this.programRepository = ProgramRepository.getInstance();
         this.exerciseType = exerciseType;
+        this.existingSet = existingSet;
+        this.localSets = localSets;
+        this.setAdapter = setAdapter;
+        this.isEdit = isEdit;
+        this.isDropsetMode = isDropset || (isEdit && "DROPSET".equalsIgnoreCase(existingSet.getSetType()));
     }
 
     void show() {
@@ -78,7 +83,7 @@ class SetsDialogManager {
         builder.setView(dialogView);
 
         TextView dialogTitle = dialogView.findViewById(R.id.dialogTitle);
-        android.widget.AutoCompleteTextView setTypeSpinner = dialogView.findViewById(R.id.setTypeSpinner);
+        View setTypeLayout = dialogView.findViewById(R.id.setTypeLayout);
         weightLayout = dialogView.findViewById(R.id.weightLayout);
         repsLayout = dialogView.findViewById(R.id.repsLayout);
         timeLayout = dialogView.findViewById(R.id.timeLayout);
@@ -92,52 +97,30 @@ class SetsDialogManager {
         MaterialButton cancelButton = dialogView.findViewById(R.id.dialogCancelButton);
         MaterialButton saveButton = dialogView.findViewById(R.id.dialogSaveButton);
 
-        dialogTitle.setText(isEdit ? R.string.edit_set : R.string.add_set);
+        // Скрываем выбор типа подхода — он определяется кнопкой
+        setTypeLayout.setVisibility(View.GONE);
 
-        boolean isDropset = forceDropset || (isEdit && "DROPSET".equalsIgnoreCase(existingSet.getSetType()));
-
-        // Дропсет доступен только для REPS_WEIGHT
-        boolean dropsetEnabled = REPS_WEIGHT.equals(exerciseType);
-        List<String> typeOptions = new ArrayList<>();
-        typeOptions.add(activity.getString(R.string.set_regular));
-        if (dropsetEnabled) {
-            typeOptions.add(activity.getString(R.string.set_dropset));
-        }
-
-        android.widget.ArrayAdapter<String> typeAdapter = new android.widget.ArrayAdapter<>(activity,
-                android.R.layout.simple_dropdown_item_1line, typeOptions.toArray(new String[0]));
-        setTypeSpinner.setAdapter(typeAdapter);
-
-        if (!dropsetEnabled) {
-            setTypeSpinner.setText(activity.getString(R.string.set_regular), false);
-            setTypeSpinner.setEnabled(false);
+        // Заголовок
+        if (isEdit) {
+            dialogTitle.setText(isDropsetMode ? "Редактировать дропсет" : activity.getString(R.string.edit_set));
         } else {
-            setTypeSpinner.setText(isDropset ? activity.getString(R.string.set_dropset) : activity.getString(R.string.set_regular), false);
+            dialogTitle.setText(isDropsetMode ? "Добавить дропсет" : activity.getString(R.string.add_set));
         }
 
         // Заполняем существующие значения
-        if (isEdit) {
+        if (isEdit && existingSet != null) {
             if (existingSet.getTargetWeight() != null) weightInput.setText(String.valueOf(existingSet.getTargetWeight()));
             if (existingSet.getTargetReps() != null) repsInput.setText(String.valueOf(existingSet.getTargetReps()));
             if (existingSet.getTargetTime() != null) timeInput.setText(String.valueOf(existingSet.getTargetTime()));
             if (existingSet.getTargetDistance() != null) distanceInput.setText(String.valueOf(existingSet.getTargetDistance()));
         }
 
-        final boolean[] isDropsetState = new boolean[]{isDropset && dropsetEnabled};
-        if (dropsetEnabled) {
-            setTypeSpinner.setOnItemClickListener((parent, view, position, id) -> {
-                isDropsetState[0] = (position == 1);
-                updateDropsetVisibility(isDropsetState[0]);
-            });
-        }
-
-        // Скрываем поля по типу упражнения
+        // Настраиваем видимость полей
         applyExerciseTypeFields();
-        updateDropsetVisibility(isDropsetState[0]);
 
         // Дропсет записи
         List<DropsetRow> dropsetRows = new ArrayList<>();
-        if (isEdit && isDropset && existingSet.getDropsetEntries() != null) {
+        if (isEdit && isDropsetMode && existingSet != null && existingSet.getDropsetEntries() != null) {
             for (PlannedSetResponse.DropsetEntry entry : existingSet.getDropsetEntries()) {
                 addDropsetRow(dropsetEntriesContainer, dropsetRows, entry.getWeight(), entry.getReps());
             }
@@ -149,10 +132,7 @@ class SetsDialogManager {
         cancelButton.setOnClickListener(v -> dialog.dismiss());
 
         saveButton.setOnClickListener(v -> {
-            PlannedSetRequest request = new PlannedSetRequest();
-            request.setSetType(isDropsetState[0] ? "DROPSET" : "REGULAR");
-
-            if (isDropsetState[0]) {
+            if (isDropsetMode) {
                 List<PlannedSetRequest.DropsetEntry> entries = new ArrayList<>();
                 for (DropsetRow row : dropsetRows) {
                     Double w = row.getWeight();
@@ -168,113 +148,103 @@ class SetsDialogManager {
                     Toast.makeText(activity, "Добавьте хотя бы одну запись дропсета", Toast.LENGTH_SHORT).show();
                     return;
                 }
-                request.setDropsetEntries(entries);
+
+                if (isEdit && existingSet != null) {
+                    existingSet.setDropsetEntries(convertToResponseEntries(entries));
+                    existingSet.setSetType("DROPSET");
+                } else {
+                    PlannedSetResponse newSet = new PlannedSetResponse();
+                    newSet.setId(0); // Новый подход
+                    newSet.setSetNumber(localSets.size() + 1);
+                    newSet.setSetType("DROPSET");
+                    newSet.setDropsetEntries(convertToResponseEntries(entries));
+                    localSets.add(newSet);
+                }
             } else {
                 String w = getText(weightInput);
                 String r = getText(repsInput);
                 String t = getText(timeInput);
                 String d = getText(distanceInput);
-                if (!w.isEmpty()) request.setTargetWeight(Double.parseDouble(w));
-                if (!r.isEmpty()) request.setTargetReps(Integer.parseInt(r));
-                if (!t.isEmpty()) request.setTargetTime(Integer.parseInt(t));
-                if (!d.isEmpty()) request.setTargetDistance(Double.parseDouble(d));
+
+                if (isEdit && existingSet != null) {
+                    if (!w.isEmpty()) existingSet.setTargetWeight(Double.parseDouble(w));
+                    else existingSet.setTargetWeight(null);
+                    if (!r.isEmpty()) existingSet.setTargetReps(Integer.parseInt(r));
+                    else existingSet.setTargetReps(null);
+                    if (!t.isEmpty()) existingSet.setTargetTime(Integer.parseInt(t));
+                    else existingSet.setTargetTime(null);
+                    if (!d.isEmpty()) existingSet.setTargetDistance(Double.parseDouble(d));
+                    else existingSet.setTargetDistance(null);
+                    existingSet.setSetType("REGULAR");
+                } else {
+                    PlannedSetResponse newSet = new PlannedSetResponse();
+                    newSet.setId(0);
+                    newSet.setSetNumber(localSets.size() + 1);
+                    newSet.setSetType("REGULAR");
+                    if (!w.isEmpty()) newSet.setTargetWeight(Double.parseDouble(w));
+                    if (!r.isEmpty()) newSet.setTargetReps(Integer.parseInt(r));
+                    if (!t.isEmpty()) newSet.setTargetTime(Integer.parseInt(t));
+                    if (!d.isEmpty()) newSet.setTargetDistance(Double.parseDouble(d));
+                    localSets.add(newSet);
+                }
             }
 
-            List<PlannedSetResponse> currentSets = setAdapter.getSets();
-            int nextNumber = currentSets.isEmpty() ? 1 : currentSets.size() + 1;
-            request.setSetNumber(isEdit ? existingSet.getSetNumber() : nextNumber);
-
-            Callback<PlannedSetResponse> callback = new Callback<PlannedSetResponse>() {
-                @Override
-                public void onResponse(Call<PlannedSetResponse> call, Response<PlannedSetResponse> response) {
-                    if (response.isSuccessful() && response.body() != null) {
-                        dialog.dismiss();
-                        Toast.makeText(activity, R.string.set_saved, Toast.LENGTH_SHORT).show();
-                        reloadSets();
-                    } else {
-                        Toast.makeText(activity, "Ошибка: " + response.code(), Toast.LENGTH_SHORT).show();
-                    }
-                }
-                @Override
-                public void onFailure(Call<PlannedSetResponse> call, Throwable t) {
-                    Toast.makeText(activity, "Ошибка: " + t.getMessage(), Toast.LENGTH_SHORT).show();
-                }
-            };
-
-            if (isEdit) {
-                programRepository.updatePlannedSet(existingSet.getId(), request, callback);
-            } else {
-                programRepository.createPlannedSet(exercise.getId(), request, callback);
-            }
+            // Обновляем локальный адаптер
+            setAdapter.setSets(new ArrayList<>(localSets));
+            dialog.dismiss();
         });
 
         dialog.show();
     }
 
     /**
-     * Скрыть поля, не относящиеся к типу упражнения.
+     * Показать/скрыть поля в зависимости от типа упражнения.
      */
     private void applyExerciseTypeFields() {
-        // Сначала показываем все
-        weightLayout.setVisibility(View.VISIBLE);
-        repsLayout.setVisibility(View.VISIBLE);
-        timeLayout.setVisibility(View.VISIBLE);
-        distanceLayout.setVisibility(View.VISIBLE);
-
-        if (exerciseType == null) return;
-
-        switch (exerciseType) {
-            case REPS_WEIGHT:
-                // Вес, Повторения
-                timeLayout.setVisibility(View.GONE);
-                distanceLayout.setVisibility(View.GONE);
-                break;
-            case TIME_WEIGHT:
-                // Вес, Время
-                repsLayout.setVisibility(View.GONE);
-                distanceLayout.setVisibility(View.GONE);
-                break;
-            case TIME_DISTANCE:
-                // Время, Дистанция
-                weightLayout.setVisibility(View.GONE);
-                repsLayout.setVisibility(View.GONE);
-                break;
-            case TIME_WEIGHT_DISTANCE:
-                // Вес, Время, Дистанция
-                repsLayout.setVisibility(View.GONE);
-                break;
-        }
-    }
-
-    private void updateDropsetVisibility(boolean isDropset) {
-        if (isDropset) {
-            weightInput.setEnabled(false);
-            repsInput.setEnabled(false);
+        if (isDropsetMode) {
+            weightLayout.setVisibility(View.GONE);
+            repsLayout.setVisibility(View.GONE);
+            timeLayout.setVisibility(View.GONE);
+            distanceLayout.setVisibility(View.GONE);
             dropsetEntriesContainer.setVisibility(View.VISIBLE);
             addDropsetEntryButton.setVisibility(View.VISIBLE);
         } else {
-            weightInput.setEnabled(true);
-            repsInput.setEnabled(true);
             dropsetEntriesContainer.setVisibility(View.GONE);
             addDropsetEntryButton.setVisibility(View.GONE);
-        }
-    }
 
-    private void reloadSets() {
-        programRepository.getPlannedSets(exercise.getId(), new ProgramRepository.PlannedSetsCallback() {
-            @Override
-            public void onSuccess(List<PlannedSetResponse> sets) {
-                sets.sort((a, b) -> {
-                    Integer numA = a.getSetNumber();
-                    Integer numB = b.getSetNumber();
-                    if (numA == null) numA = 0;
-                    if (numB == null) numB = 0;
-                    return numA.compareTo(numB);
-                });
-                setAdapter.setSets(sets);
+            switch (exerciseType != null ? exerciseType : REPS_WEIGHT) {
+                case REPS_WEIGHT:
+                    weightLayout.setVisibility(View.VISIBLE);
+                    repsLayout.setVisibility(View.VISIBLE);
+                    timeLayout.setVisibility(View.GONE);
+                    distanceLayout.setVisibility(View.GONE);
+                    break;
+                case TIME_WEIGHT:
+                    weightLayout.setVisibility(View.VISIBLE);
+                    repsLayout.setVisibility(View.GONE);
+                    timeLayout.setVisibility(View.VISIBLE);
+                    distanceLayout.setVisibility(View.GONE);
+                    break;
+                case TIME_DISTANCE:
+                    weightLayout.setVisibility(View.GONE);
+                    repsLayout.setVisibility(View.GONE);
+                    timeLayout.setVisibility(View.VISIBLE);
+                    distanceLayout.setVisibility(View.VISIBLE);
+                    break;
+                case TIME_WEIGHT_DISTANCE:
+                    weightLayout.setVisibility(View.VISIBLE);
+                    repsLayout.setVisibility(View.GONE);
+                    timeLayout.setVisibility(View.VISIBLE);
+                    distanceLayout.setVisibility(View.VISIBLE);
+                    break;
+                default:
+                    weightLayout.setVisibility(View.VISIBLE);
+                    repsLayout.setVisibility(View.VISIBLE);
+                    timeLayout.setVisibility(View.VISIBLE);
+                    distanceLayout.setVisibility(View.VISIBLE);
+                    break;
             }
-            @Override public void onError(String error) { setAdapter.setSets(new ArrayList<>()); }
-        });
+        }
     }
 
     private void addDropsetRow(LinearLayout container, List<DropsetRow> rows, Double weight, Integer reps) {
@@ -301,6 +271,17 @@ class SetsDialogManager {
 
     private String getText(TextInputEditText input) {
         return input.getText() != null ? input.getText().toString().trim() : "";
+    }
+
+    private List<PlannedSetResponse.DropsetEntry> convertToResponseEntries(List<PlannedSetRequest.DropsetEntry> reqEntries) {
+        List<PlannedSetResponse.DropsetEntry> result = new ArrayList<>();
+        for (PlannedSetRequest.DropsetEntry req : reqEntries) {
+            PlannedSetResponse.DropsetEntry resp = new PlannedSetResponse.DropsetEntry();
+            resp.setWeight(req.getWeight());
+            resp.setReps(req.getReps());
+            result.add(resp);
+        }
+        return result;
     }
 
     private static class DropsetRow {

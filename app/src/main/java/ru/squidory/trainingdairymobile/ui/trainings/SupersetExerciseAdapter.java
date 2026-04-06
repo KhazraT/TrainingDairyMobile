@@ -37,6 +37,12 @@ public class SupersetExerciseAdapter extends RecyclerView.Adapter<SupersetExerci
         notifyDataSetChanged();
     }
 
+    /** Установить упражнения и уведомить об изменении выбора. */
+    public void setExercisesAndNotifySelection(List<WorkoutExerciseResponse> exercises) {
+        setExercises(exercises);
+        if (onSelectionChanged != null) onSelectionChanged.run();
+    }
+
     public List<WorkoutExerciseResponse> getSelectedExercises() {
         List<WorkoutExerciseResponse> result = new ArrayList<>();
         for (WorkoutExerciseResponse ex : exercises) {

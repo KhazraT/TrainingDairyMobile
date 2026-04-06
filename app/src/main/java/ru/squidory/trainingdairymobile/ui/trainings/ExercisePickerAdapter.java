@@ -137,20 +137,29 @@ public class ExercisePickerAdapter extends RecyclerView.Adapter<ExercisePickerAd
                 equipmentText.setVisibility(View.GONE);
             }
 
-            // Чекбокс
+            // Чекбокс — КЛЮЧЕВОЙ FIX: сначала убираем старый слушатель, потом устанавливаем состояние
             long exId = exercise.getId();
-            checkBox.setChecked(selectedIds.contains(exId));
+            boolean shouldBeChecked = selectedIds.contains(exId);
+            checkBox.setTag(exId); // Сохраняем ID в теге
+
+            // Убираем старый слушатель перед setChecked, чтобы не было ложных срабатываний
+            checkBox.setOnCheckedChangeListener(null);
+            checkBox.setChecked(shouldBeChecked);
             checkBox.setOnCheckedChangeListener((buttonView, isChecked) -> {
+                Long itemId = (Long) buttonView.getTag();
+                if (itemId == null) return; // Безопасность на случай recycling
                 if (isChecked) {
-                    selectedIds.add(exId);
+                    selectedIds.add(itemId);
                 } else {
-                    selectedIds.remove(exId);
+                    selectedIds.remove(itemId);
                 }
                 notifySelectionChanged();
             });
 
             // Клик по всему item
-            itemView.setOnClickListener(v -> checkBox.setChecked(!checkBox.isChecked()));
+            itemView.setOnClickListener(v -> {
+                checkBox.setChecked(!checkBox.isChecked());
+            });
         }
     }
 }

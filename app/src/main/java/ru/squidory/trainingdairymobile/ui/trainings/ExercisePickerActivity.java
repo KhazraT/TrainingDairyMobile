@@ -40,13 +40,13 @@ import ru.squidory.trainingdairymobile.data.repository.ExerciseRepository;
  */
 public class ExercisePickerActivity extends AppCompatActivity {
 
-    public static final String EXTRA_EXCLUDE_IDS = "exclude_ids";
     public static final String EXTRA_SELECTED_IDS = "selected_ids";
 
     private MaterialToolbar toolbar;
     private EditText searchEditText;
     private ImageButton clearSearchButton;
     private MaterialButton allExercisesButton;
+    private MaterialButton myExercisesButton;
     private ChipGroup musclesChipGroup;
     private ChipGroup equipmentChipGroup;
     private RecyclerView exercisesRecyclerView;
@@ -66,18 +66,12 @@ public class ExercisePickerActivity extends AppCompatActivity {
     private String selectedMuscle = null;
     private String selectedEquipment = null;
     private String searchQuery = "";
-    private List<Long> excludeIds = new ArrayList<>();
+    private boolean showMine = false;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_exercise_picker);
-
-        Serializable serializable = getIntent().getSerializableExtra(EXTRA_EXCLUDE_IDS);
-        if (serializable instanceof ArrayList) {
-            //noinspection unchecked
-            excludeIds = new ArrayList<>((ArrayList<Long>) serializable);
-        }
 
         repository = ExerciseRepository.getInstance();
 
@@ -87,6 +81,7 @@ public class ExercisePickerActivity extends AppCompatActivity {
         setupSearch();
         setupListeners();
         loadMuscleGroupsAndEquipment();
+        updateButtonStyles();
         loadExercises();
     }
 
@@ -95,6 +90,7 @@ public class ExercisePickerActivity extends AppCompatActivity {
         searchEditText = findViewById(R.id.searchEditText);
         clearSearchButton = findViewById(R.id.clearSearchButton);
         allExercisesButton = findViewById(R.id.allExercisesButton);
+        myExercisesButton = findViewById(R.id.myExercisesButton);
         musclesChipGroup = findViewById(R.id.musclesChipGroup);
         equipmentChipGroup = findViewById(R.id.equipmentChipGroup);
         exercisesRecyclerView = findViewById(R.id.exercisesRecyclerView);
@@ -147,6 +143,18 @@ public class ExercisePickerActivity extends AppCompatActivity {
 
     private void setupListeners() {
         allExercisesButton.setOnClickListener(v -> {
+            showMine = false;
+            updateButtonStyles();
+            selectedMuscle = null;
+            selectedEquipment = null;
+            musclesChipGroup.clearCheck();
+            equipmentChipGroup.clearCheck();
+            applyFilters();
+        });
+
+        myExercisesButton.setOnClickListener(v -> {
+            showMine = true;
+            updateButtonStyles();
             selectedMuscle = null;
             selectedEquipment = null;
             musclesChipGroup.clearCheck();
@@ -181,7 +189,8 @@ public class ExercisePickerActivity extends AppCompatActivity {
                         chip.setId(View.generateViewId());
                         muscleGroupIds.put(mg.getName(), mg.getId());
                         chip.setOnCheckedChangeListener((b, isChecked) -> {
-                            if (isChecked) { selectedMuscle = mg.getName(); applyFilters(); }
+                            if (isChecked) { selectedMuscle = mg.getName(); loadExercises(); }
+                            else { selectedMuscle = null; loadExercises(); }
                         });
                         musclesChipGroup.addView(chip);
                     }
@@ -203,7 +212,8 @@ public class ExercisePickerActivity extends AppCompatActivity {
                         chip.setId(View.generateViewId());
                         equipmentIds.put(eq.getName(), eq.getId());
                         chip.setOnCheckedChangeListener((b, isChecked) -> {
-                            if (isChecked) { selectedEquipment = eq.getName(); applyFilters(); }
+                            if (isChecked) { selectedEquipment = eq.getName(); loadExercises(); }
+                            else { selectedEquipment = null; loadExercises(); }
                         });
                         equipmentChipGroup.addView(chip);
                     }
@@ -223,7 +233,10 @@ public class ExercisePickerActivity extends AppCompatActivity {
             chip.setCheckable(true);
             chip.setId(View.generateViewId());
             muscleGroupIds.put(muscles[idx], ids[idx]);
-            chip.setOnCheckedChangeListener((b, checked) -> { if (checked) { selectedMuscle = muscles[idx]; applyFilters(); }});
+            chip.setOnCheckedChangeListener((b, checked) -> {
+                if (checked) { selectedMuscle = muscles[idx]; loadExercises(); }
+                else { selectedMuscle = null; loadExercises(); }
+            });
             musclesChipGroup.addView(chip);
         }
     }
@@ -238,21 +251,29 @@ public class ExercisePickerActivity extends AppCompatActivity {
             chip.setCheckable(true);
             chip.setId(View.generateViewId());
             equipmentIds.put(eq[idx], ids[idx]);
-            chip.setOnCheckedChangeListener((b, checked) -> { if (checked) { selectedEquipment = eq[idx]; applyFilters(); }});
+            chip.setOnCheckedChangeListener((b, checked) -> {
+                if (checked) { selectedEquipment = eq[idx]; loadExercises(); }
+                else { selectedEquipment = null; loadExercises(); }
+            });
             equipmentChipGroup.addView(chip);
         }
     }
 
     private void loadExercises() {
+        applyFilters();
+    }
+
+    private void applyFilters() {
         showLoading(true);
-        repository.getExercises(null, null, null, new ExerciseRepository.ExercisesCallback() {
+        repository.getExercises(selectedMuscle, selectedEquipment, null, showMine ? true : null,
+                new ExerciseRepository.ExercisesCallback() {
             @Override
             public void onSuccess(List<ExerciseResponse> exercises) {
                 allExercises.clear();
                 allExercises.addAll(exercises);
-                showLoading(false);
-                applyFilters();
+                applyFiltersLocal();
             }
+
             @Override
             public void onError(String error) {
                 showLoading(false);
@@ -262,7 +283,7 @@ public class ExercisePickerActivity extends AppCompatActivity {
         });
     }
 
-    private void applyFilters() {
+    private void applyFiltersLocal() {
         List<ExerciseResponse> filtered = allExercises.stream().filter(ex -> {
             if (selectedMuscle != null && !selectedMuscle.isEmpty()) {
                 boolean match = ex.getMuscleGroups() != null && ex.getMuscleGroups().stream()
@@ -283,8 +304,23 @@ public class ExercisePickerActivity extends AppCompatActivity {
             return true;
         }).collect(Collectors.toList());
 
-        adapter.setExercises(filtered, excludeIds);
+        adapter.setExercises(filtered, null);
+        showLoading(false);
         checkEmptyState();
+    }
+
+    private void updateButtonStyles() {
+        if (showMine) {
+            myExercisesButton.setBackgroundColor(getResources().getColor(android.R.color.holo_blue_dark, getTheme()));
+            myExercisesButton.setTextColor(getResources().getColor(android.R.color.white, getTheme()));
+            allExercisesButton.setBackgroundColor(android.graphics.Color.TRANSPARENT);
+            allExercisesButton.setTextColor(getResources().getColor(android.R.color.darker_gray, getTheme()));
+        } else {
+            allExercisesButton.setBackgroundColor(getResources().getColor(android.R.color.holo_blue_dark, getTheme()));
+            allExercisesButton.setTextColor(getResources().getColor(android.R.color.white, getTheme()));
+            myExercisesButton.setBackgroundColor(android.graphics.Color.TRANSPARENT);
+            myExercisesButton.setTextColor(getResources().getColor(android.R.color.darker_gray, getTheme()));
+        }
     }
 
     private void showLoading(boolean show) {

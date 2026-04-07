@@ -103,8 +103,12 @@ public class ExerciseRepository {
      * Получить все упражнения с фильтрацией.
      */
     public void getExercises(String muscle, String equipment, String type, ExercisesCallback callback) {
+        getExercises(muscle, equipment, type, null, callback);
+    }
+
+    public void getExercises(String muscle, String equipment, String type, Boolean mine, ExercisesCallback callback) {
         // Загружаем упражнения из реального API
-        exerciseApi.getExercises(muscle, equipment, type).enqueue(new Callback<List<ExerciseResponse>>() {
+        exerciseApi.getExercises(muscle, equipment, type, mine).enqueue(new Callback<List<ExerciseResponse>>() {
             @Override
             public void onResponse(Call<List<ExerciseResponse>> call, Response<List<ExerciseResponse>> response) {
                 if (response.isSuccessful() && response.body() != null) {

@@ -20,7 +20,8 @@ public interface ExerciseApi {
     Call<List<ExerciseResponse>> getExercises(
         @Query("muscle") String muscle,
         @Query("equipment") String equipment,
-        @Query("type") String type
+        @Query("type") String type,
+        @Query("mine") Boolean mine
     );
 
     @GET("exercises/{id}")

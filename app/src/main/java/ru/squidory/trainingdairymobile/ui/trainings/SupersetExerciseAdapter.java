@@ -15,7 +15,10 @@ import java.util.List;
 import java.util.Set;
 
 import ru.squidory.trainingdairymobile.R;
+import ru.squidory.trainingdairymobile.data.model.ExerciseResponse;
 import ru.squidory.trainingdairymobile.data.model.WorkoutExerciseResponse;
+
+import java.util.Map;
 
 /**
  * Простой адаптер для мультивыбора упражнений из тренировки (суперсет).
@@ -24,7 +27,13 @@ public class SupersetExerciseAdapter extends RecyclerView.Adapter<SupersetExerci
 
     private final List<WorkoutExerciseResponse> exercises = new ArrayList<>();
     private final Set<Long> selectedIds = new HashSet<>();
+    private Map<Long, ExerciseResponse> exerciseMap;
     private Runnable onSelectionChanged;
+
+    public void setExerciseMap(Map<Long, ExerciseResponse> map) {
+        this.exerciseMap = map;
+        notifyDataSetChanged();
+    }
 
     public void setOnSelectionChanged(Runnable onSelectionChanged) {
         this.onSelectionChanged = onSelectionChanged;
@@ -84,9 +93,16 @@ public class SupersetExerciseAdapter extends RecyclerView.Adapter<SupersetExerci
         }
 
         void bind(WorkoutExerciseResponse exercise) {
-            String name = exercise.getExercise() != null
-                    ? exercise.getExercise().getName()
-                    : "Упражнение #" + exercise.getExerciseId();
+            // Ищем название: сначала из вложенного объекта, потом из мапы
+            String name = "Упражнение #" + exercise.getExerciseId();
+            if (exercise.getExercise() != null && exercise.getExercise().getName() != null) {
+                name = exercise.getExercise().getName();
+            } else if (exerciseMap != null) {
+                ExerciseResponse full = exerciseMap.get(exercise.getExerciseId());
+                if (full != null && full.getName() != null) {
+                    name = full.getName();
+                }
+            }
             exerciseNameText.setText(name);
             musclesText.setVisibility(View.GONE);
             equipmentText.setVisibility(View.GONE);

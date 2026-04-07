@@ -432,7 +432,6 @@ public class ExerciseManagementActivity extends AppCompatActivity {
 
     private void showSelectExercisesDialog() {
         Intent intent = new Intent(this, ExercisePickerActivity.class);
-        intent.putExtra(ExercisePickerActivity.EXTRA_EXCLUDE_IDS, getExistingExerciseIds());
         exercisePickerLauncher.launch(intent);
     }
 
@@ -501,6 +500,7 @@ public class ExerciseManagementActivity extends AppCompatActivity {
         }
 
         SupersetExerciseAdapter selectionAdapter = new SupersetExerciseAdapter();
+        selectionAdapter.setExerciseMap(exerciseMap);
         supersetSelectionRecyclerView.setLayoutManager(new LinearLayoutManager(this));
         supersetSelectionRecyclerView.setAdapter(selectionAdapter);
 

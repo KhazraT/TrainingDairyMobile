@@ -48,6 +48,7 @@ public class ExercisesFragment extends BaseFragment {
     private EditText searchEditText;
     private ImageButton clearSearchButton;
     private MaterialButton allExercisesButton;
+    private MaterialButton myExercisesButton;
     private ChipGroup musclesChipGroup;
     private ChipGroup equipmentChipGroup;
     private RecyclerView exercisesRecyclerView;
@@ -64,6 +65,7 @@ public class ExercisesFragment extends BaseFragment {
     private String selectedMuscle = null;
     private String selectedEquipment = null;
     private String searchQuery = "";
+    private boolean showMine = false;
 
     @Nullable
     @Override
@@ -83,6 +85,7 @@ public class ExercisesFragment extends BaseFragment {
         setupSearch();
         setupListeners();
         loadMuscleGroupsAndEquipment();
+        updateButtonStyles();
         loadExercises();
     }
 
@@ -91,6 +94,7 @@ public class ExercisesFragment extends BaseFragment {
         searchEditText = view.findViewById(R.id.searchEditText);
         clearSearchButton = view.findViewById(R.id.clearSearchButton);
         allExercisesButton = view.findViewById(R.id.allExercisesButton);
+        myExercisesButton = view.findViewById(R.id.myExercisesButton);
         musclesChipGroup = view.findViewById(R.id.musclesChipGroup);
         equipmentChipGroup = view.findViewById(R.id.equipmentChipGroup);
         exercisesRecyclerView = view.findViewById(R.id.exercisesRecyclerView);
@@ -127,7 +131,10 @@ public class ExercisesFragment extends BaseFragment {
                             chip.setOnCheckedChangeListener((buttonView, isChecked) -> {
                                 if (isChecked) {
                                     selectedMuscle = name;
-                                    applyFilters();
+                                    loadExercises();
+                                } else {
+                                    selectedMuscle = null;
+                                    loadExercises();
                                 }
                             });
 
@@ -167,7 +174,10 @@ public class ExercisesFragment extends BaseFragment {
                             chip.setOnCheckedChangeListener((buttonView, isChecked) -> {
                                 if (isChecked) {
                                     selectedEquipment = name;
-                                    applyFilters();
+                                    loadExercises();
+                                } else {
+                                    selectedEquipment = null;
+                                    loadExercises();
                                 }
                             });
 
@@ -203,7 +213,10 @@ public class ExercisesFragment extends BaseFragment {
                 chip.setOnCheckedChangeListener((buttonView, isChecked) -> {
                     if (isChecked) {
                         selectedMuscle = muscles[index];
-                        applyFilters();
+                        loadExercises();
+                    } else {
+                        selectedMuscle = null;
+                        loadExercises();
                     }
                 });
 
@@ -230,7 +243,10 @@ public class ExercisesFragment extends BaseFragment {
                 chip.setOnCheckedChangeListener((buttonView, isChecked) -> {
                     if (isChecked) {
                         selectedEquipment = equipment[index];
-                        applyFilters();
+                        loadExercises();
+                    } else {
+                        selectedEquipment = null;
+                        loadExercises();
                     }
                 });
 
@@ -286,17 +302,43 @@ public class ExercisesFragment extends BaseFragment {
 
     private void setupListeners() {
         allExercisesButton.setOnClickListener(v -> {
+            showMine = false;
+            updateButtonStyles();
             selectedMuscle = null;
             selectedEquipment = null;
             musclesChipGroup.clearCheck();
             equipmentChipGroup.clearCheck();
-            applyFilters();
+            loadExercises();
+        });
+
+        myExercisesButton.setOnClickListener(v -> {
+            showMine = true;
+            updateButtonStyles();
+            selectedMuscle = null;
+            selectedEquipment = null;
+            musclesChipGroup.clearCheck();
+            equipmentChipGroup.clearCheck();
+            loadExercises();
         });
 
         addExerciseButton.setOnClickListener(v -> {
             Intent intent = new Intent(getContext(), CreateExerciseActivity.class);
             startActivityForResult(intent, REQUEST_CREATE_EXERCISE);
         });
+    }
+
+    private void updateButtonStyles() {
+        if (showMine) {
+            myExercisesButton.setBackgroundColor(getResources().getColor(android.R.color.holo_blue_dark, getContext().getTheme()));
+            myExercisesButton.setTextColor(getResources().getColor(android.R.color.white, getContext().getTheme()));
+            allExercisesButton.setBackgroundColor(android.graphics.Color.TRANSPARENT);
+            allExercisesButton.setTextColor(getResources().getColor(android.R.color.darker_gray, getContext().getTheme()));
+        } else {
+            allExercisesButton.setBackgroundColor(getResources().getColor(android.R.color.holo_blue_dark, getContext().getTheme()));
+            allExercisesButton.setTextColor(getResources().getColor(android.R.color.white, getContext().getTheme()));
+            myExercisesButton.setBackgroundColor(android.graphics.Color.TRANSPARENT);
+            myExercisesButton.setTextColor(getResources().getColor(android.R.color.darker_gray, getContext().getTheme()));
+        }
     }
 
     @Override
@@ -312,7 +354,7 @@ public class ExercisesFragment extends BaseFragment {
 
     private void loadExercises() {
         showLoading(true);
-        repository.getExercises(null, null, null, new ExerciseRepository.ExercisesCallback() {
+        repository.getExercises(null, null, null, showMine ? true : null, new ExerciseRepository.ExercisesCallback() {
             @Override
             public void onSuccess(List<ExerciseResponse> exercises) {
                 showLoading(false);

@@ -62,7 +62,8 @@ class SupersetExercisesAdapter extends RecyclerView.Adapter<SupersetExercisesAda
             movedListener.onExerciseMovedWithinSuperset(supersetGroup, fromPos, toPos);
         }
 
-        notifyDataSetChanged();
+        // Используем notifyItemMoved для плавной анимации
+        notifyItemMoved(fromPos, insertPos);
     }
 
     public List<WorkoutExerciseResponse> getExercises() { return exercises; }

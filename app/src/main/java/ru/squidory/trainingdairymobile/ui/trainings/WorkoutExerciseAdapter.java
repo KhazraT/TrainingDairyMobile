@@ -180,17 +180,16 @@ public class WorkoutExerciseAdapter extends RecyclerView.Adapter<RecyclerView.Vi
         for (DisplayItem item : items) {
             if (item.type == TYPE_SINGLE && item.exercise != null) {
                 item.exercise.setExerciseOrder(order++);
-                android.util.Log.d("WExerciseAdapter", "  SINGLE id=" + item.exercise.getId() + " → order=" + (order - 1));
             } else if (item.type == TYPE_SUPERSET_GROUP && item.ssExercises != null) {
                 for (WorkoutExerciseResponse ex : item.ssExercises) {
                     ex.setExerciseOrder(order);
-                    android.util.Log.d("WExerciseAdapter", "  SUPERSET id=" + ex.getId() + " (group=" + ex.getSupersetGroupNumber() + ") → order=" + order);
                     order++;
                 }
             }
         }
-        android.util.Log.d("WExerciseAdapter", "moveDisplayItem: from=" + fromPos + " to=" + toPos + ", total items=" + items.size() + ", maxOrder=" + (order-1));
-        notifyDataSetChanged();
+
+        // Используем notifyItemMoved вместо notifyDataSetChanged чтобы не прерывать анимацию drag-and-drop
+        notifyItemMoved(fromPos, insertPos);
     }
 
     @Override
@@ -311,6 +310,17 @@ public class WorkoutExerciseAdapter extends RecyclerView.Adapter<RecyclerView.Vi
 
                 @Override
                 public void onSwiped(@NonNull RecyclerView.ViewHolder vh, int direction) {}
+
+                @Override
+                public void clearView(@NonNull RecyclerView recyclerView, @NonNull RecyclerView.ViewHolder viewHolder) {
+                    super.clearView(recyclerView, viewHolder);
+                    recyclerView.stopScroll();
+                }
+
+                @Override
+                public float getMoveThreshold(@NonNull RecyclerView.ViewHolder viewHolder) {
+                    return 0.2f;
+                }
             };
 
             ItemTouchHelper innerItemTouchHelper = new ItemTouchHelper(innerDragCallback);

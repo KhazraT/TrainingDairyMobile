@@ -193,6 +193,13 @@ public class ExerciseManagementActivity extends AppCompatActivity {
                     queueOrderUpdate(currentExercises);
                     hasMoved = false;
                 }
+                // Отключаем авто-скролл после завершения drag
+                recyclerView.stopScroll();
+            }
+
+            @Override
+            public float getMoveThreshold(@NonNull RecyclerView.ViewHolder viewHolder) {
+                return 0.2f; // Увеличиваем порог для более стабильного drag
             }
         };
 

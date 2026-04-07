@@ -34,9 +34,7 @@ public class WorkoutDetailAdapter extends RecyclerView.Adapter<WorkoutDetailAdap
     public interface OnWorkoutActionListener {
         void onDeleteWorkout(WorkoutResponse workout, int position);
         void onManageExercises(WorkoutResponse workout);
-        void onEditWorkout(WorkoutResponse workout);
         void onWorkoutMoved(WorkoutResponse workout, int fromPosition, int toPosition);
-        void onWorkoutClick(WorkoutResponse workout);
     }
 
     public void setOnWorkoutActionListener(OnWorkoutActionListener listener) {
@@ -133,11 +131,13 @@ public class WorkoutDetailAdapter extends RecyclerView.Adapter<WorkoutDetailAdap
             dragHandle.setVisibility(visibility);
             actionButtonsLayout.setVisibility(visibility);
 
-            // Клик по всему элементу - редактирование тренировки
+            // Клик по всему элементу — просмотр содержимого тренировки
             itemView.setOnClickListener(v -> {
-                if (listener != null) {
-                    listener.onEditWorkout(workout);
-                }
+                Context context = v.getContext();
+                Intent intent = new Intent(context, WorkoutContentActivity.class);
+                intent.putExtra(WorkoutContentActivity.EXTRA_WORKOUT_ID, workout.getId());
+                intent.putExtra(WorkoutContentActivity.EXTRA_WORKOUT_NAME, workout.getName());
+                context.startActivity(intent);
             });
 
             manageButton.setOnClickListener(v -> {

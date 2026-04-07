@@ -69,6 +69,12 @@
             android:exported="false"
             android:parentActivityName=".ui.main.MainActivity" />
 
+        <!-- Workout Content Activity -->
+        <activity
+            android:name=".ui.trainings.WorkoutContentActivity"
+            android:exported="false"
+            android:parentActivityName=".ui.trainings.ProgramDetailActivity" />
+
         <!-- Exercise Management Activity (упражнения в тренировке) -->
         <activity
             android:name=".ui.trainings.ExerciseManagementActivity"

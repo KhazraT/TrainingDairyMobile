@@ -147,8 +147,6 @@ public class ExerciseManagementActivity extends AppCompatActivity {
                 showDeleteSupersetConfirmation(supersetGroup);
             }
         });
-
-        // Слушатель DnD внутри суперсета
         exerciseAdapter.setOnSupersetExerciseMoved(new WorkoutExerciseAdapter.OnSupersetExerciseMoved() {
             @Override
             public void onExerciseMovedWithinSuperset(int supersetGroup, int fromOrder, int toOrder) {

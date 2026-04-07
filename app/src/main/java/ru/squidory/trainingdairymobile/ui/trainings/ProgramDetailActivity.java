@@ -183,20 +183,9 @@ public class ProgramDetailActivity extends AppCompatActivity {
             }
 
             @Override
-            public void onEditWorkout(WorkoutResponse workout) {
-                if (!editMode) return;
-                showEditWorkoutDialog(workout);
-            }
-
-            @Override
             public void onWorkoutMoved(WorkoutResponse workout, int fromPosition, int toPosition) {
                 // После перемещения сохраняем новый порядок для всех тренировок
                 saveAllWorkoutsOrder();
-            }
-
-            @Override
-            public void onWorkoutClick(WorkoutResponse workout) {
-                // Не используется
             }
         });
     }

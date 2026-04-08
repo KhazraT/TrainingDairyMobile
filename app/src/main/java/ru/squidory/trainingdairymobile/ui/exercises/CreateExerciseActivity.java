@@ -140,7 +140,8 @@ public class CreateExerciseActivity extends AppCompatActivity {
                                 targetMuscleIds.add(id);
                                 targetChip.setChipBackgroundColor(ColorStateList.valueOf(getColorCompat(R.color.primary_chip)));
                             } else {
-                                targetMuscleIds.remove(id);
+                                targetMuscleIds.remove(Long.valueOf(id));
+                                targetChip.setChipBackgroundColor(ColorStateList.valueOf(getColorCompat(android.R.color.transparent)));
                             }
                         });
 
@@ -164,8 +165,10 @@ public class CreateExerciseActivity extends AppCompatActivity {
                                     return;
                                 }
                                 secondaryMuscleIds.add(id);
+                                secondaryChip.setChipBackgroundColor(ColorStateList.valueOf(getColorCompat(R.color.secondary_chip)));
                             } else {
-                                secondaryMuscleIds.remove(id);
+                                secondaryMuscleIds.remove(Long.valueOf(id));
+                                secondaryChip.setChipBackgroundColor(ColorStateList.valueOf(getColorCompat(android.R.color.transparent)));
                             }
                         });
 
@@ -215,7 +218,8 @@ public class CreateExerciseActivity extends AppCompatActivity {
                     targetMuscleIds.add(ids[index]);
                     targetChip.setChipBackgroundColor(ColorStateList.valueOf(getColorCompat(R.color.primary_chip)));
                 } else {
-                    targetMuscleIds.remove(ids[index]);
+                    targetMuscleIds.remove(Long.valueOf(ids[index]));
+                    targetChip.setChipBackgroundColor(ColorStateList.valueOf(getColorCompat(android.R.color.transparent)));
                 }
             });
 
@@ -237,8 +241,10 @@ public class CreateExerciseActivity extends AppCompatActivity {
                         return;
                     }
                     secondaryMuscleIds.add(ids[index]);
+                    secondaryChip.setChipBackgroundColor(ColorStateList.valueOf(getColorCompat(R.color.secondary_chip)));
                 } else {
-                    secondaryMuscleIds.remove(ids[index]);
+                    secondaryMuscleIds.remove(Long.valueOf(ids[index]));
+                    secondaryChip.setChipBackgroundColor(ColorStateList.valueOf(getColorCompat(android.R.color.transparent)));
                 }
             });
 
@@ -266,11 +272,11 @@ public class CreateExerciseActivity extends AppCompatActivity {
                         equipmentIds.put(name, id);
 
                         chip.setOnCheckedChangeListener((buttonView, isChecked) -> {
-                            selectedEquipmentIds.clear();
                             if (isChecked) {
                                 selectedEquipmentIds.add(id);
                                 chip.setChipBackgroundColor(ColorStateList.valueOf(getColorCompat(R.color.equipment_chip)));
                             } else {
+                                selectedEquipmentIds.remove(Long.valueOf(id));
                                 chip.setChipBackgroundColor(ColorStateList.valueOf(getColorCompat(android.R.color.transparent)));
                             }
                         });
@@ -306,11 +312,11 @@ public class CreateExerciseActivity extends AppCompatActivity {
             equipmentIds.put(equipment[index], ids[index]);
 
             chip.setOnCheckedChangeListener((buttonView, isChecked) -> {
-                selectedEquipmentIds.clear();
                 if (isChecked) {
                     selectedEquipmentIds.add(ids[index]);
                     chip.setChipBackgroundColor(ColorStateList.valueOf(getColorCompat(R.color.equipment_chip)));
                 } else {
+                    selectedEquipmentIds.remove(Long.valueOf(ids[index]));
                     chip.setChipBackgroundColor(ColorStateList.valueOf(getColorCompat(android.R.color.transparent)));
                 }
             });

@@ -7,6 +7,9 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.text.Editable;
+import android.text.TextWatcher;
+import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ProgressBar;
 import android.widget.TextView;
@@ -23,6 +26,7 @@ import com.google.android.material.button.MaterialButton;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.android.material.textfield.TextInputLayout;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -44,9 +48,14 @@ public class TrainingsFragment extends BaseFragment {
     private ProgressBar progressBar;
     private TextView emptyText;
     private ImageButton addProgramButton;
+    private EditText searchEditText;
+    private ImageButton clearSearchButton;
 
     private ProgramAdapter adapter;
     private ProgramRepository repository;
+
+    private final List<ProgramResponse> allPrograms = new ArrayList<>();
+    private String searchQuery = "";
 
     private ActivityResultLauncher<Intent> programDetailLauncher;
 
@@ -86,6 +95,8 @@ public class TrainingsFragment extends BaseFragment {
         progressBar = view.findViewById(R.id.progressBar);
         emptyText = view.findViewById(R.id.emptyText);
         addProgramButton = view.findViewById(R.id.addProgramButton);
+        searchEditText = view.findViewById(R.id.searchEditText);
+        clearSearchButton = view.findViewById(R.id.clearSearchButton);
     }
 
     private void setupRecyclerView() {
@@ -119,6 +130,36 @@ public class TrainingsFragment extends BaseFragment {
 
     private void setupListeners() {
         addProgramButton.setOnClickListener(v -> showCreateProgramDialog());
+
+        searchEditText.addTextChangedListener(new TextWatcher() {
+            @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+            @Override public void onTextChanged(CharSequence s, int start, int before, int count) {
+                searchQuery = s.toString().trim();
+                clearSearchButton.setVisibility(searchQuery.isEmpty() ? View.GONE : View.VISIBLE);
+                applyFilters();
+            }
+            @Override public void afterTextChanged(Editable s) {}
+        });
+
+        clearSearchButton.setOnClickListener(v -> {
+            searchEditText.setText("");
+            searchQuery = "";
+            clearSearchButton.setVisibility(View.GONE);
+            applyFilters();
+        });
+    }
+
+    private void applyFilters() {
+        List<ProgramResponse> filtered = new ArrayList<>();
+        for (ProgramResponse p : allPrograms) {
+            boolean matchesName = p.getName() != null && p.getName().toLowerCase().contains(searchQuery.toLowerCase());
+            boolean matchesDesc = p.getDescription() != null && p.getDescription().toLowerCase().contains(searchQuery.toLowerCase());
+            if (searchQuery.isEmpty() || matchesName || matchesDesc) {
+                filtered.add(p);
+            }
+        }
+        adapter.setPrograms(filtered);
+        checkEmptyState();
     }
 
     private void showCreateProgramDialog() {
@@ -181,7 +222,9 @@ public class TrainingsFragment extends BaseFragment {
             @Override
             public void onSuccess(List<ProgramResponse> programs) {
                 if (!isAdded()) return;
-                adapter.setPrograms(programs);
+                allPrograms.clear();
+                allPrograms.addAll(programs);
+                applyFilters();
 
                 // Загружаем количество тренировок для каждой программы
                 loadWorkoutCounts(programs);

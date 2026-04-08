@@ -28,6 +28,7 @@ import java.util.Map;
 
 import ru.squidory.trainingdairymobile.R;
 import ru.squidory.trainingdairymobile.data.model.ProgramRequest;
+import ru.squidory.trainingdairymobile.data.model.WorkoutExerciseResponse;
 import ru.squidory.trainingdairymobile.data.model.WorkoutRequest;
 import ru.squidory.trainingdairymobile.data.model.WorkoutResponse;
 import ru.squidory.trainingdairymobile.data.repository.ProgramRepository;
@@ -183,6 +184,12 @@ public class ProgramDetailActivity extends AppCompatActivity {
             }
 
             @Override
+            public void onEditWorkout(WorkoutResponse workout) {
+                if (!editMode) return;
+                showEditWorkoutDialog(workout);
+            }
+
+            @Override
             public void onWorkoutMoved(WorkoutResponse workout, int fromPosition, int toPosition) {
                 // После перемещения сохраняем новый порядок для всех тренировок
                 saveAllWorkoutsOrder();
@@ -309,7 +316,6 @@ public class ProgramDetailActivity extends AppCompatActivity {
         repository.getWorkoutsByProgram(programId, new ProgramRepository.WorkoutsCallback() {
             @Override
             public void onSuccess(List<WorkoutResponse> workoutList) {
-                showLoading(false);
                 // Сортируем по порядку
                 workoutList.sort((w1, w2) -> {
                     Integer order1 = w1.getWorkoutOrder();
@@ -319,7 +325,9 @@ public class ProgramDetailActivity extends AppCompatActivity {
                     return order1.compareTo(order2);
                 });
                 adapter.setWorkouts(workoutList);
-                checkEmptyState();
+
+                // Загружаем количество упражнений для каждой тренировки
+                loadExerciseCounts(workoutList);
             }
 
             @Override
@@ -329,6 +337,43 @@ public class ProgramDetailActivity extends AppCompatActivity {
                     "Ошибка загрузки: " + error, Toast.LENGTH_LONG).show();
             }
         });
+    }
+
+    private void loadExerciseCounts(List<WorkoutResponse> workouts) {
+        final Map<Long, Integer> counts = new HashMap<>();
+        final int[] pending = {workouts.size()};
+
+        if (workouts.isEmpty()) {
+            showLoading(false);
+            checkEmptyState();
+            return;
+        }
+
+        for (WorkoutResponse w : workouts) {
+            repository.getWorkoutExercises(w.getId(), new ProgramRepository.WorkoutExercisesCallback() {
+                @Override
+                public void onSuccess(List<WorkoutExerciseResponse> exercises) {
+                    counts.put(w.getId(), exercises.size());
+                    pending[0]--;
+                    if (pending[0] == 0) {
+                        showLoading(false);
+                        adapter.setExerciseCounts(counts);
+                        checkEmptyState();
+                    }
+                }
+
+                @Override
+                public void onError(String error) {
+                    counts.put(w.getId(), 0);
+                    pending[0]--;
+                    if (pending[0] == 0) {
+                        showLoading(false);
+                        adapter.setExerciseCounts(counts);
+                        checkEmptyState();
+                    }
+                }
+            });
+        }
     }
 
     private void showCreateWorkoutDialog() {

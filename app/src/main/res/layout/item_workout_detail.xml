@@ -64,6 +64,16 @@
             android:textColor="?android:attr/textColorSecondary"
             android:visibility="gone" />
 
+        <!-- Количество упражнений -->
+        <TextView
+            android:id="@+id/exerciseCountText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:textSize="12sp"
+            android:textColor="?attr/colorPrimary"
+            android:visibility="gone" />
+
         <!-- Кнопки действий (видны только в режиме редактирования) -->
         <LinearLayout
             android:id="@+id/actionButtonsLayout"

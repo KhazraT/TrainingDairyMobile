@@ -17,7 +17,9 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.google.android.material.button.MaterialButton;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import ru.squidory.trainingdairymobile.R;
 import ru.squidory.trainingdairymobile.data.model.WorkoutResponse;
@@ -28,12 +30,14 @@ import ru.squidory.trainingdairymobile.data.model.WorkoutResponse;
 public class WorkoutDetailAdapter extends RecyclerView.Adapter<WorkoutDetailAdapter.WorkoutViewHolder> {
 
     private final List<WorkoutResponse> workouts = new ArrayList<>();
+    private final Map<Long, Integer> exerciseCounts = new HashMap<>();
     private OnWorkoutActionListener listener;
     private boolean editMode = false;
 
     public interface OnWorkoutActionListener {
         void onDeleteWorkout(WorkoutResponse workout, int position);
         void onManageExercises(WorkoutResponse workout);
+        void onEditWorkout(WorkoutResponse workout);
         void onWorkoutMoved(WorkoutResponse workout, int fromPosition, int toPosition);
     }
 
@@ -54,6 +58,14 @@ public class WorkoutDetailAdapter extends RecyclerView.Adapter<WorkoutDetailAdap
         this.workouts.clear();
         if (workouts != null) {
             this.workouts.addAll(workouts);
+        }
+        notifyDataSetChanged();
+    }
+
+    public void setExerciseCounts(Map<Long, Integer> counts) {
+        this.exerciseCounts.clear();
+        if (counts != null) {
+            this.exerciseCounts.putAll(counts);
         }
         notifyDataSetChanged();
     }
@@ -99,6 +111,7 @@ public class WorkoutDetailAdapter extends RecyclerView.Adapter<WorkoutDetailAdap
         private final TextView orderText;
         private final TextView nameText;
         private final TextView commentText;
+        private final TextView exerciseCountText;
         private final ImageView dragHandle;
         private final LinearLayout actionButtonsLayout;
         private final MaterialButton manageButton;
@@ -109,6 +122,7 @@ public class WorkoutDetailAdapter extends RecyclerView.Adapter<WorkoutDetailAdap
             orderText = itemView.findViewById(R.id.workoutOrderText);
             nameText = itemView.findViewById(R.id.workoutNameText);
             commentText = itemView.findViewById(R.id.workoutCommentText);
+            exerciseCountText = itemView.findViewById(R.id.exerciseCountText);
             dragHandle = itemView.findViewById(R.id.dragHandle);
             actionButtonsLayout = itemView.findViewById(R.id.actionButtonsLayout);
             manageButton = itemView.findViewById(R.id.manageExercisesButton);
@@ -126,18 +140,36 @@ public class WorkoutDetailAdapter extends RecyclerView.Adapter<WorkoutDetailAdap
                 commentText.setVisibility(View.GONE);
             }
 
+            // Количество упражнений
+            Integer count = exerciseCounts.get(workout.getId());
+            if (count != null) {
+                exerciseCountText.setText("Упражнений: " + count);
+                exerciseCountText.setVisibility(View.VISIBLE);
+            } else {
+                exerciseCountText.setVisibility(View.GONE);
+            }
+
             // Показываем элементы управления только в режиме редактирования
             int visibility = editMode ? View.VISIBLE : View.GONE;
             dragHandle.setVisibility(visibility);
             actionButtonsLayout.setVisibility(visibility);
 
-            // Клик по всему элементу — просмотр содержимого тренировки
+            // Клик по всему элементу
             itemView.setOnClickListener(v -> {
-                Context context = v.getContext();
-                Intent intent = new Intent(context, WorkoutContentActivity.class);
-                intent.putExtra(WorkoutContentActivity.EXTRA_WORKOUT_ID, workout.getId());
-                intent.putExtra(WorkoutContentActivity.EXTRA_WORKOUT_NAME, workout.getName());
-                context.startActivity(intent);
+                if (editMode) {
+                    // В режиме редактирования — открываем диалог редактирования
+                    if (listener != null) {
+                        listener.onEditWorkout(workout);
+                    }
+                } else {
+                    // Вне режима редактирования — открываем содержимое тренировки
+                    Context context = v.getContext();
+                    Intent intent = new Intent(context, WorkoutContentActivity.class);
+                    intent.putExtra(WorkoutContentActivity.EXTRA_WORKOUT_ID, workout.getId());
+                    intent.putExtra(WorkoutContentActivity.EXTRA_WORKOUT_NAME, workout.getName());
+                    intent.putExtra(WorkoutContentActivity.EXTRA_WORKOUT_COMMENT, workout.getComment());
+                    context.startActivity(intent);
+                }
             });
 
             manageButton.setOnClickListener(v -> {

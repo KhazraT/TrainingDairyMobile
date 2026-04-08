@@ -1,6 +1,7 @@
 package ru.squidory.trainingdairymobile.ui.trainings;
 
 import android.os.Bundle;
+import android.view.View;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
@@ -29,8 +30,10 @@ public class WorkoutContentActivity extends AppCompatActivity {
 
     public static final String EXTRA_WORKOUT_ID = "workout_id";
     public static final String EXTRA_WORKOUT_NAME = "workout_name";
+    public static final String EXTRA_WORKOUT_COMMENT = "workout_comment";
 
     private MaterialToolbar toolbar;
+    private TextView workoutCommentText;
     private RecyclerView exercisesRecyclerView;
     private ProgressBar progressBar;
     private TextView emptyText;
@@ -66,9 +69,17 @@ public class WorkoutContentActivity extends AppCompatActivity {
 
     private void initViews() {
         toolbar = findViewById(R.id.toolbar);
+        workoutCommentText = findViewById(R.id.workoutCommentText);
         exercisesRecyclerView = findViewById(R.id.exercisesRecyclerView);
         progressBar = findViewById(R.id.progressBar);
         emptyText = findViewById(R.id.emptyText);
+
+        // Отображаем комментарий если есть
+        String comment = getIntent().getStringExtra(EXTRA_WORKOUT_COMMENT);
+        if (comment != null && !comment.isEmpty()) {
+            workoutCommentText.setText(comment);
+            workoutCommentText.setVisibility(View.VISIBLE);
+        }
     }
 
     private void setupToolbar() {

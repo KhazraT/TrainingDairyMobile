@@ -18,6 +18,9 @@ public class ExerciseResponse {
     @SerializedName("video")
     private String video;
 
+    /** Алиас для video — для совместимости с новым форматом бэкенда */
+    public String getVideoPath() { return video; }
+
     @SerializedName("photo")
     private String photo;
 

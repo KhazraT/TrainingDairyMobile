@@ -58,29 +58,12 @@
                 android:visibility="gone" />
 
             <!-- Видео -->
-            <FrameLayout
-                android:id="@+id/videoContainer"
+            <VideoView
+                android:id="@+id/videoView"
                 android:layout_width="match_parent"
                 android:layout_height="200dp"
                 android:layout_marginTop="16dp"
-                android:background="@android:color/darker_gray"
-                android:visibility="gone">
-
-                <ImageView
-                    android:layout_width="48dp"
-                    android:layout_height="48dp"
-                    android:layout_gravity="center"
-                    android:src="@android:drawable/ic_media_play"
-                    android:contentDescription="@string/play_video" />
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="bottom|center_horizontal"
-                    android:layout_marginBottom="8dp"
-                    android:text="@string/play_video"
-                    android:textColor="@android:color/white" />
-            </FrameLayout>
+                android:visibility="gone" />
 
             <!-- Описание (заголовок и текст) -->
             <LinearLayout

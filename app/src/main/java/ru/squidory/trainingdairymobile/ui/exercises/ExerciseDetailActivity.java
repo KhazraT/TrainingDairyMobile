@@ -1,13 +1,13 @@
 package ru.squidory.trainingdairymobile.ui.exercises;
 
 import android.content.Intent;
+import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.Bundle;
 import android.view.View;
-import android.widget.FrameLayout;
-import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
+import android.widget.VideoView;
 
 import androidx.appcompat.app.AppCompatActivity;
 
@@ -16,13 +16,22 @@ import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.chip.Chip;
 import com.google.android.material.chip.ChipGroup;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 
+import okhttp3.Call;
+import okhttp3.Callback;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
 import ru.squidory.trainingdairymobile.R;
 import ru.squidory.trainingdairymobile.data.model.ExerciseResponse;
 import ru.squidory.trainingdairymobile.data.model.MuscleGroupResponse;
 import ru.squidory.trainingdairymobile.data.repository.ExerciseRepository;
+import ru.squidory.trainingdairymobile.util.Constants;
 
 /**
  * Activity для просмотра деталей упражнения.
@@ -40,7 +49,7 @@ public class ExerciseDetailActivity extends AppCompatActivity {
     private TextView descriptionText;
     private View techniqueLayout;
     private TextView techniqueText;
-    private FrameLayout videoContainer;
+    private VideoView videoView;
     private View musclesLayout;
     private ChipGroup musclesChipGroup;
     private View targetMusclesLayout;
@@ -83,7 +92,7 @@ public class ExerciseDetailActivity extends AppCompatActivity {
         descriptionText = findViewById(R.id.descriptionText);
         techniqueLayout = findViewById(R.id.techniqueLayout);
         techniqueText = findViewById(R.id.techniqueText);
-        videoContainer = findViewById(R.id.videoContainer);
+        videoView = findViewById(R.id.videoView);
         targetMusclesLayout = findViewById(R.id.targetMusclesLayout);
         targetMusclesChipGroup = findViewById(R.id.targetMusclesChipGroup);
         secondaryMusclesLayout = findViewById(R.id.secondaryMusclesLayout);
@@ -141,14 +150,11 @@ public class ExerciseDetailActivity extends AppCompatActivity {
         }
 
         // Видео
-        if (exercise.getVideo() != null && !exercise.getVideo().isEmpty()) {
-            videoContainer.setVisibility(View.VISIBLE);
-            videoContainer.setOnClickListener(v -> {
-                Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(exercise.getVideo()));
-                startActivity(intent);
-            });
+        String videoPath = exercise.getVideoPath();
+        if (videoPath != null && !videoPath.isEmpty()) {
+            loadAndPlayVideo(videoPath);
         } else {
-            videoContainer.setVisibility(View.GONE);
+            videoView.setVisibility(View.GONE);
         }
 
         // Целевые мышцы
@@ -207,6 +213,111 @@ public class ExerciseDetailActivity extends AppCompatActivity {
             equipmentLayout.setVisibility(View.VISIBLE);
         } else {
             equipmentLayout.setVisibility(View.GONE);
+        }
+    }
+
+    /**
+     * Загрузить и воспроизвести видео с бэкенда.
+     * Скачивает видео через OkHttp (с JWT токеном), сохраняет во временный файл и воспроизводит.
+     * Видео воспроизводится без звука и циклично.
+     */
+    private void loadAndPlayVideo(String videoPath) {
+        videoView.setVisibility(View.VISIBLE);
+
+        // Формируем URL видео на бэкенде
+        String videoUrl = Constants.BASE_URL + "exercises/" + exerciseId + "/video";
+
+        // Скачиваем видео через OkHttp (с AuthInterceptor → JWT токен)
+        OkHttpClient httpClient = new OkHttpClient.Builder()
+                .addInterceptor(new ru.squidory.trainingdairymobile.data.remote.AuthInterceptor())
+                .build();
+
+        Request request = new Request.Builder().url(videoUrl).build();
+
+        httpClient.newCall(request).enqueue(new Callback() {
+            @Override
+            public void onFailure(Call call, java.io.IOException e) {
+                runOnUiThread(() -> {
+                    Toast.makeText(ExerciseDetailActivity.this,
+                        "Ошибка загрузки видео: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                    videoView.setVisibility(View.GONE);
+                });
+            }
+
+            @Override
+            public void onResponse(Call call, Response response) throws java.io.IOException {
+                if (!response.isSuccessful()) {
+                    runOnUiThread(() -> {
+                        Toast.makeText(ExerciseDetailActivity.this,
+                            "Сервер вернул ошибку: " + response.code(), Toast.LENGTH_SHORT).show();
+                        videoView.setVisibility(View.GONE);
+                    });
+                    return;
+                }
+
+                // Сохраняем во временный файл
+                File tempFile = new File(getCacheDir(), "exercise_" + exerciseId + ".mp4");
+                try (InputStream is = response.body().byteStream();
+                     FileOutputStream fos = new FileOutputStream(tempFile)) {
+                    byte[] buffer = new byte[8192];
+                    int read;
+                    while ((read = is.read(buffer)) != -1) {
+                        fos.write(buffer, 0, read);
+                    }
+                }
+
+                // Воспроизводим из файла
+                runOnUiThread(() -> {
+                    try {
+                        videoView.setVideoURI(Uri.fromFile(tempFile));
+                        videoView.setOnPreparedListener(mp -> {
+                            mp.setVolume(0f, 0f); // Без звука
+                            mp.setLooping(true);   // Циклично
+                            mp.start();
+                        });
+                        videoView.setOnErrorListener((mp, what, extra) -> {
+                            Toast.makeText(ExerciseDetailActivity.this,
+                                "Ошибка воспроизведения видео", Toast.LENGTH_SHORT).show();
+                            videoView.setVisibility(View.GONE);
+                            return true;
+                        });
+                        videoView.requestFocus();
+                    } catch (Exception e) {
+                        Toast.makeText(ExerciseDetailActivity.this,
+                            "Ошибка: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                        videoView.setVisibility(View.GONE);
+                    }
+                });
+            }
+        });
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        if (videoView != null && videoView.isPlaying()) {
+            videoView.pause();
+        }
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (videoView != null && videoView.isPlaying()) {
+            videoView.resume();
+        }
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if (videoView != null) {
+            videoView.stopPlayback();
+        }
+        // Удаляем временный файл
+        File tempFile = new File(getCacheDir(), "exercise_" + exerciseId + ".mp4");
+        if (tempFile.exists()) {
+            tempFile.delete();
         }
     }
 }

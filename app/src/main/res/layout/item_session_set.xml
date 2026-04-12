@@ -1,0 +1,330 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:paddingVertical="2dp"
+    android:paddingHorizontal="8dp">
+
+    <!-- Основной подход -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <!-- Номер подхода -->
+        <TextView
+            android:id="@+id/setNumberTextView"
+            android:layout_width="28dp"
+            android:layout_height="28dp"
+            android:layout_marginEnd="6dp"
+            android:background="@drawable/set_number_background"
+            android:gravity="center"
+            android:textAppearance="?attr/textAppearanceLabelSmall"
+            android:textColor="#FFFFFF"
+            android:textStyle="bold"
+            tools:text="1" />
+
+        <!-- Колонки с полями (равномерно распределены) -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="horizontal"
+            android:gravity="center">
+
+            <!-- Колонка: Вес -->
+            <LinearLayout
+                android:id="@+id/weightColumn"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:gravity="center"
+                android:layout_marginHorizontal="2dp"
+                android:visibility="gone">
+
+                <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/weightInputLayout"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    style="@style/Widget.Material3.TextInputLayout.OutlinedBox.Dense"
+                    app:boxStrokeWidth="0dp"
+                    app:boxBackgroundColor="?attr/colorSurface">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/weightInput"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center"
+                        android:inputType="numberDecimal"
+                        android:textAppearance="?attr/textAppearanceBodyMedium"
+                        android:textSize="14sp"
+                        tools:text="80" />
+
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="кг"
+                    android:textAppearance="?attr/textAppearanceLabelSmall"
+                    android:textColor="?android:attr/textColorSecondary" />
+
+            </LinearLayout>
+
+            <!-- Колонка: Повторения -->
+            <LinearLayout
+                android:id="@+id/repsColumn"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:gravity="center"
+                android:layout_marginHorizontal="2dp"
+                android:visibility="gone">
+
+                <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/repsInputLayout"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    style="@style/Widget.Material3.TextInputLayout.OutlinedBox.Dense"
+                    app:boxStrokeWidth="0dp"
+                    app:boxBackgroundColor="?attr/colorSurface">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/repsInput"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center"
+                        android:inputType="number"
+                        android:textAppearance="?attr/textAppearanceBodyMedium"
+                        android:textSize="14sp"
+                        tools:text="10" />
+
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="повт"
+                    android:textAppearance="?attr/textAppearanceLabelSmall"
+                    android:textColor="?android:attr/textColorSecondary" />
+
+            </LinearLayout>
+
+            <!-- Колонка: Время -->
+            <LinearLayout
+                android:id="@+id/timeColumn"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:gravity="center"
+                android:layout_marginHorizontal="2dp"
+                android:visibility="gone">
+
+                <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/timeInputLayout"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    style="@style/Widget.Material3.TextInputLayout.OutlinedBox.Dense"
+                    app:boxStrokeWidth="0dp"
+                    app:boxBackgroundColor="?attr/colorSurface">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/timeInput"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center"
+                        android:inputType="number"
+                        android:textAppearance="?attr/textAppearanceBodyMedium"
+                        android:textSize="14sp"
+                        tools:text="30" />
+
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="мм:сс"
+                    android:textAppearance="?attr/textAppearanceLabelSmall"
+                    android:textColor="?android:attr/textColorSecondary" />
+
+            </LinearLayout>
+
+            <!-- Колонка: Дистанция -->
+            <LinearLayout
+                android:id="@+id/distanceColumn"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:gravity="center"
+                android:layout_marginHorizontal="2dp"
+                android:visibility="gone">
+
+                <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/distanceInputLayout"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    style="@style/Widget.Material3.TextInputLayout.OutlinedBox.Dense"
+                    app:boxStrokeWidth="0dp"
+                    app:boxBackgroundColor="?attr/colorSurface">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/distanceInput"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center"
+                        android:inputType="numberDecimal"
+                        android:textAppearance="?attr/textAppearanceBodyMedium"
+                        android:textSize="14sp"
+                        tools:text="500" />
+
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="км"
+                    android:textAppearance="?attr/textAppearanceLabelSmall"
+                    android:textColor="?android:attr/textColorSecondary" />
+
+            </LinearLayout>
+
+        </LinearLayout>
+
+        <!-- Кнопка удаления -->
+        <ImageButton
+            android:id="@+id/deleteSetButton"
+            android:layout_width="28dp"
+            android:layout_height="28dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="Удалить подход"
+            android:src="@drawable/ic_delete"
+            app:tint="#F44336" />
+
+    </LinearLayout>
+
+    <!-- Дропсет секция -->
+    <LinearLayout
+        android:id="@+id/dropsetSection"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:paddingVertical="2dp"
+        android:paddingStart="34dp"
+        android:background="#0DFF9800"
+        android:visibility="gone"
+        android:gravity="center_vertical">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="↓"
+            android:textColor="#FF9800"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:layout_marginEnd="8dp" />
+
+        <!-- Дропсет колонки -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="horizontal"
+            android:gravity="center">
+
+            <!-- Дропсет: Вес -->
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:gravity="center">
+
+                <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/dropsetWeightInputLayout"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    style="@style/Widget.Material3.TextInputLayout.OutlinedBox.Dense"
+                    app:boxStrokeWidth="0dp"
+                    app:boxBackgroundColor="?attr/colorSurface">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/dropsetWeightInput"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center"
+                        android:inputType="numberDecimal"
+                        android:textAppearance="?attr/textAppearanceBodyMedium"
+                        android:textColor="#FF9800"
+                        android:textSize="14sp"
+                        tools:text="60" />
+
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="кг"
+                    android:textAppearance="?attr/textAppearanceLabelSmall"
+                    android:textColor="#FF9800" />
+
+            </LinearLayout>
+
+            <!-- Дропсет: Повторения -->
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:gravity="center">
+
+                <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/dropsetRepsInputLayout"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    style="@style/Widget.Material3.TextInputLayout.OutlinedBox.Dense"
+                    app:boxStrokeWidth="0dp"
+                    app:boxBackgroundColor="?attr/colorSurface">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/dropsetRepsInput"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center"
+                        android:inputType="number"
+                        android:textAppearance="?attr/textAppearanceBodyMedium"
+                        android:textColor="#FF9800"
+                        android:textSize="14sp"
+                        tools:text="5" />
+
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="повт"
+                    android:textAppearance="?attr/textAppearanceLabelSmall"
+                    android:textColor="#FF9800" />
+
+            </LinearLayout>
+
+        </LinearLayout>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="дропсет"
+            android:textColor="#FF9800"
+            android:textSize="12sp"
+            android:layout_marginStart="6dp" />
+
+    </LinearLayout>
+
+</LinearLayout>

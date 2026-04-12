@@ -1,6 +1,8 @@
 package ru.squidory.trainingdairymobile.ui.trainings;
 
+import android.content.Intent;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.ProgressBar;
 import android.widget.TextView;
@@ -11,6 +13,8 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.appbar.MaterialToolbar;
+import com.google.android.material.button.MaterialButton;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 
 import java.util.HashMap;
 import java.util.List;
@@ -22,6 +26,7 @@ import ru.squidory.trainingdairymobile.data.model.PlannedSetResponse;
 import ru.squidory.trainingdairymobile.data.model.WorkoutExerciseResponse;
 import ru.squidory.trainingdairymobile.data.repository.ExerciseRepository;
 import ru.squidory.trainingdairymobile.data.repository.ProgramRepository;
+import ru.squidory.trainingdairymobile.ui.sessions.SessionActivity;
 
 /**
  * Activity для просмотра содержимого тренировки — упражнения с подходами.
@@ -37,6 +42,7 @@ public class WorkoutContentActivity extends AppCompatActivity {
     private RecyclerView exercisesRecyclerView;
     private ProgressBar progressBar;
     private TextView emptyText;
+    private MaterialButton startSessionButton;
 
     private WorkoutContentAdapter adapter;
     private ProgramRepository programRepository;
@@ -73,6 +79,7 @@ public class WorkoutContentActivity extends AppCompatActivity {
         exercisesRecyclerView = findViewById(R.id.exercisesRecyclerView);
         progressBar = findViewById(R.id.progressBar);
         emptyText = findViewById(R.id.emptyText);
+        startSessionButton = findViewById(R.id.startSessionButton);
 
         // Отображаем комментарий если есть
         String comment = getIntent().getStringExtra(EXTRA_WORKOUT_COMMENT);
@@ -80,6 +87,9 @@ public class WorkoutContentActivity extends AppCompatActivity {
             workoutCommentText.setText(comment);
             workoutCommentText.setVisibility(View.VISIBLE);
         }
+
+        // Кнопка "Начать тренировку"
+        startSessionButton.setOnClickListener(v -> showStartSessionDialog());
     }
 
     private void setupToolbar() {
@@ -190,6 +200,32 @@ public class WorkoutContentActivity extends AppCompatActivity {
         } else {
             exercisesRecyclerView.setVisibility(android.view.View.VISIBLE);
             emptyText.setVisibility(android.view.View.GONE);
+        }
+    }
+
+    private void showStartSessionDialog() {
+        new MaterialAlertDialogBuilder(this)
+                .setTitle("Начать тренировку")
+                .setMessage("Вы готовы начать тренировку \"" + workoutName + "\"?")
+                .setPositiveButton("Начать", (dialog, which) -> startSession())
+                .setNegativeButton("Отмена", null)
+                .show();
+    }
+
+    private void startSession() {
+        try {
+            Log.d("WorkoutContent", "Starting session for workoutId=" + workoutId + ", workoutName=" + workoutName);
+            Intent intent = new Intent(this, SessionActivity.class);
+            intent.putExtra(SessionActivity.EXTRA_WORKOUT_ID, workoutId);
+            intent.putExtra(SessionActivity.EXTRA_WORKOUT_NAME, workoutName);
+            startActivity(intent);
+        } catch (Exception e) {
+            Log.e("WorkoutContent", "Failed to start SessionActivity", e);
+            new MaterialAlertDialogBuilder(this)
+                    .setTitle("Ошибка")
+                    .setMessage("Не удалось открыть сессию: " + e.getMessage())
+                    .setPositiveButton("OK", null)
+                    .show();
         }
     }
 }

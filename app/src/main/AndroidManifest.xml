@@ -87,6 +87,12 @@
             android:exported="false"
             android:parentActivityName=".ui.trainings.ExerciseManagementActivity" />
 
+        <!-- Session Activity (выполнение тренировки) -->
+        <activity
+            android:name=".ui.sessions.SessionActivity"
+            android:exported="false"
+            android:parentActivityName=".ui.trainings.ProgramDetailActivity" />
+
     </application>
 
 </manifest>

@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/exerciseCard"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginHorizontal="4dp"
+    android:layout_marginVertical="4dp"
+    android:clickable="true"
+    android:focusable="true"
+    app:cardCornerRadius="12dp"
+    app:cardElevation="2dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <!-- Заголовок упражнения (всегда виден) -->
+        <LinearLayout
+            android:id="@+id/exerciseHeader"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="?attr/selectableItemBackground"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:padding="12dp">
+
+            <!-- Стрелка раскрытия -->
+            <ImageView
+                android:id="@+id/expandIcon"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:layout_marginEnd="8dp"
+                android:contentDescription="Раскрыть"
+                android:src="@drawable/ic_expand_more"
+                app:tint="?attr/colorOnSurface" />
+
+            <!-- Название и мышцы -->
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/exerciseNameTextView"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textAppearance="?attr/textAppearanceTitleMedium"
+                    android:textStyle="bold"
+                    tools:text="Жим лёжа" />
+
+                <!-- Целевые мышцы -->
+                <LinearLayout
+                    android:id="@+id/targetMusclesLayout"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:orientation="horizontal">
+
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/targetMuscleChip"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textColor="#FFFFFF"
+                        app:chipBackgroundColor="#6200EE"
+                        tools:text="Грудь" />
+
+                </LinearLayout>
+
+            </LinearLayout>
+
+            <!-- Кнопка "i" (информация об упражнении) -->
+            <ImageButton
+                android:id="@+id/exerciseInfoButton"
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:layout_marginStart="8dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="Информация об упражнении"
+                android:src="@drawable/ic_info"
+                app:tint="?attr/colorPrimary" />
+
+        </LinearLayout>
+
+        <!-- Раскрывающийся контент (видео + подходы) -->
+        <LinearLayout
+            android:id="@+id/exerciseContentLayout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:visibility="gone"
+            tools:visibility="visible">
+
+            <!-- Видео упражнения (скрыто по умолчанию, показывается при наличии) -->
+            <VideoView
+                android:id="@+id/exerciseVideoView"
+                android:layout_width="match_parent"
+                android:layout_height="200dp"
+                android:layout_marginHorizontal="8dp"
+                android:layout_marginTop="8dp"
+                android:visibility="gone" />
+
+            <!-- Разделитель -->
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:layout_marginHorizontal="8dp"
+                android:layout_marginVertical="8dp"
+                android:background="?attr/colorOutlineVariant" />
+
+            <!-- Подходы -->
+            <TextView
+                android:id="@+id/setsLabel"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="12dp"
+                android:layout_marginTop="4dp"
+                android:text="Подходы:"
+                android:textAppearance="?attr/textAppearanceLabelMedium"
+                android:textStyle="bold" />
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/setsRecyclerView"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="8dp"
+                android:nestedScrollingEnabled="false"
+                tools:itemCount="3"
+                tools:listitem="@layout/item_session_set" />
+
+            <!-- Кнопка добавления подхода -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/addSetButton"
+                style="@style/Widget.Material3.Button.TextButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="8dp"
+                android:text="+ Добавить подход"
+                android:textAppearance="?attr/textAppearanceLabelLarge" />
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+</com.google.android.material.card.MaterialCardView>

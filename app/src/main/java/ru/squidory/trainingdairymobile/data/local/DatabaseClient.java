@@ -3,6 +3,7 @@ package ru.squidory.trainingdairymobile.data.local;
 import android.content.Context;
 import androidx.room.Room;
 import ru.squidory.trainingdairymobile.App;
+import ru.squidory.trainingdairymobile.data.local.dao.ActiveSessionDao;
 import ru.squidory.trainingdairymobile.data.local.dao.ExerciseDao;
 import ru.squidory.trainingdairymobile.data.local.dao.ProgramDao;
 import ru.squidory.trainingdairymobile.data.local.dao.SessionDao;
@@ -14,6 +15,7 @@ public class DatabaseClient {
     private static ExerciseDao exerciseDao;
     private static ProgramDao programDao;
     private static SessionDao sessionDao;
+    private static ActiveSessionDao activeSessionDao;
     private static UserDao userDao;
 
     private static AppDatabase getDatabase() {
@@ -48,6 +50,13 @@ public class DatabaseClient {
             sessionDao = getDatabase().sessionDao();
         }
         return sessionDao;
+    }
+
+    public static ActiveSessionDao getActiveSessionDao() {
+        if (activeSessionDao == null) {
+            activeSessionDao = getDatabase().activeSessionDao();
+        }
+        return activeSessionDao;
     }
 
     public static UserDao getUserDao() {

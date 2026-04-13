@@ -4,6 +4,7 @@ import android.content.Intent;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.view.LayoutInflater;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageButton;
@@ -13,6 +14,7 @@ import android.widget.TextView;
 import android.widget.VideoView;
 
 import androidx.annotation.NonNull;
+import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -69,6 +71,12 @@ public class SessionExerciseAdapter extends RecyclerView.Adapter<SessionExercise
         this.deleteListener = listener;
     }
 
+    private ItemTouchHelper itemTouchHelper;
+
+    public void setItemTouchHelper(ItemTouchHelper helper) {
+        this.itemTouchHelper = helper;
+    }
+
     public interface OnTimeSelectedCallback {
         void onTimeSelected(int totalSeconds);
     }
@@ -121,6 +129,49 @@ public class SessionExerciseAdapter extends RecyclerView.Adapter<SessionExercise
         notifyDataSetChanged();
     }
 
+    /**
+     * Переместить упражнение с одной позиции на другую (drag-and-drop).
+     */
+    public boolean moveExercise(int fromPosition, int toPosition) {
+        if (fromPosition < 0 || fromPosition >= exercises.size() ||
+            toPosition < 0 || toPosition >= exercises.size() ||
+            fromPosition == toPosition) {
+            return false;
+        }
+        exercises.add(toPosition, exercises.remove(fromPosition));
+        // Обновляем expanded positions
+        Set<Integer> newExpanded = new HashSet<>();
+        for (Integer pos : expandedPositions) {
+            if (pos == fromPosition) {
+                newExpanded.add(toPosition);
+            } else if (fromPosition < toPosition) {
+                if (pos > fromPosition && pos <= toPosition) {
+                    newExpanded.add(pos - 1);
+                } else {
+                    newExpanded.add(pos);
+                }
+            } else {
+                if (pos >= toPosition && pos < fromPosition) {
+                    newExpanded.add(pos + 1);
+                } else {
+                    newExpanded.add(pos);
+                }
+            }
+        }
+        expandedPositions.clear();
+        expandedPositions.addAll(newExpanded);
+
+        notifyItemMoved(fromPosition, toPosition);
+        return true;
+    }
+
+    /**
+     * Получить текущий список упражнений (для обновления order после drag).
+     */
+    public List<SessionExerciseResponse> getCurrentExercises() {
+        return new ArrayList<>(exercises);
+    }
+
     @NonNull
     @Override
     public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
@@ -152,6 +203,7 @@ public class SessionExerciseAdapter extends RecyclerView.Adapter<SessionExercise
     class ViewHolder extends RecyclerView.ViewHolder {
         private final MaterialCardView exerciseCard;
         private final LinearLayout exerciseHeader;
+        private final ImageView dragHandle;
         private final ImageView expandIcon;
         private final TextView exerciseNameTextView;
         private final LinearLayout targetMusclesLayout;
@@ -170,6 +222,7 @@ public class SessionExerciseAdapter extends RecyclerView.Adapter<SessionExercise
             super(itemView);
             exerciseCard = itemView.findViewById(R.id.exerciseCard);
             exerciseHeader = itemView.findViewById(R.id.exerciseHeader);
+            dragHandle = itemView.findViewById(R.id.dragHandle);
             expandIcon = itemView.findViewById(R.id.expandIcon);
             exerciseNameTextView = itemView.findViewById(R.id.exerciseNameTextView);
             targetMusclesLayout = itemView.findViewById(R.id.targetMusclesLayout);
@@ -291,6 +344,15 @@ public class SessionExerciseAdapter extends RecyclerView.Adapter<SessionExercise
                 if (deleteListener != null) {
                     deleteListener.onDeleteExercise(exercise);
                 }
+            });
+
+            // Drag handle — начать перетаскивание
+            dragHandle.setOnTouchListener((v, event) -> {
+                if (event.getActionMasked() == MotionEvent.ACTION_DOWN && itemTouchHelper != null) {
+                    itemTouchHelper.startDrag(this);
+                    return true;
+                }
+                return false;
             });
         }
 

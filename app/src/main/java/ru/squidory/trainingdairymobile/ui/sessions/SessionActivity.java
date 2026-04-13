@@ -14,8 +14,10 @@ import android.widget.VideoView;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -451,6 +453,46 @@ public class SessionActivity extends AppCompatActivity {
                 confirmDeleteExercise(exercise);
             }
         });
+
+        // Drag-and-drop для изменения порядка упражнений
+        ItemTouchHelper.Callback dragCallback = new ItemTouchHelper.SimpleCallback(
+                ItemTouchHelper.UP | ItemTouchHelper.DOWN, 0) {
+            @Override
+            public boolean onMove(@NonNull RecyclerView recyclerView,
+                                  @NonNull RecyclerView.ViewHolder viewHolder,
+                                  @NonNull RecyclerView.ViewHolder target) {
+                int fromPosition = viewHolder.getAdapterPosition();
+                int toPosition = target.getAdapterPosition();
+                if (adapter.moveExercise(fromPosition, toPosition)) {
+                    // Обновляем order в sessionExercises
+                    sessionExercises = adapter.getCurrentExercises();
+                    for (int i = 0; i < sessionExercises.size(); i++) {
+                        sessionExercises.get(i).setExerciseOrder(i + 1);
+                    }
+                    return true;
+                }
+                return false;
+            }
+
+            @Override
+            public void onSwiped(@NonNull RecyclerView.ViewHolder viewHolder, int direction) {
+                // Не поддерживаем свайп — только drag
+            }
+
+            @Override
+            public boolean isLongPressDragEnabled() {
+                return false; // Drag только через drag handle
+            }
+
+            @Override
+            public float getMoveThreshold(@NonNull RecyclerView.ViewHolder viewHolder) {
+                return 0.2f;
+            }
+        };
+
+        ItemTouchHelper itemTouchHelper = new ItemTouchHelper(dragCallback);
+        itemTouchHelper.attachToRecyclerView(exercisesRecyclerView);
+        adapter.setItemTouchHelper(itemTouchHelper);
     }
 
     private void preloadAllVideos() {

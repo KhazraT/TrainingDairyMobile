@@ -23,13 +23,14 @@
             <!-- Drag Handle (виден только в режиме редактирования) -->
             <ImageView
                 android:id="@+id/dragHandle"
-                android:layout_width="40dp"
-                android:layout_height="40dp"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
                 android:src="@android:drawable/ic_menu_sort_by_size"
-                android:contentDescription="Перетащить"
+                android:contentDescription="Перетащите для изменения порядка"
                 android:visibility="gone"
                 android:layout_marginEnd="8dp"
-                app:tint="@android:color/darker_gray" />
+                android:alpha="0.6"
+                app:tint="?attr/colorOnSurfaceVariant" />
 
             <!-- Номер тренировки -->
             <TextView

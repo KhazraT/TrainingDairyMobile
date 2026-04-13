@@ -1,9 +1,11 @@
 package ru.squidory.trainingdairymobile.ui.trainings;
 
 import android.view.LayoutInflater;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageButton;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -45,6 +47,11 @@ public class WorkoutExerciseAdapter extends RecyclerView.Adapter<RecyclerView.Vi
         void onExerciseMovedWithinSuperset(int supersetGroup, int fromOrder, int toOrder);
     }
     private OnSupersetExerciseMoved supersetMoveListener;
+    private ItemTouchHelper itemTouchHelper;
+
+    public void setItemTouchHelper(ItemTouchHelper helper) {
+        this.itemTouchHelper = helper;
+    }
 
     public void setOnSupersetExerciseMoved(OnSupersetExerciseMoved l) { this.supersetMoveListener = l; }
 
@@ -212,9 +219,9 @@ public class WorkoutExerciseAdapter extends RecyclerView.Adapter<RecyclerView.Vi
     public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position) {
         DisplayItem item = items.get(position);
         if (holder instanceof SupersetGroupViewHolder) {
-            ((SupersetGroupViewHolder) holder).bind(item.supersetGroup, item.ssExercises, listener, exerciseMap, supersetMoveListener);
+            ((SupersetGroupViewHolder) holder).bind(item.supersetGroup, item.ssExercises, listener, exerciseMap, supersetMoveListener, itemTouchHelper);
         } else if (holder instanceof SingleViewHolder) {
-            ((SingleViewHolder) holder).bind(item.exercise, listener, exerciseMap);
+            ((SingleViewHolder) holder).bind(item.exercise, listener, exerciseMap, itemTouchHelper);
         }
     }
 
@@ -226,6 +233,7 @@ public class WorkoutExerciseAdapter extends RecyclerView.Adapter<RecyclerView.Vi
     // ==================== ViewHolders ====================
 
     static class SingleViewHolder extends RecyclerView.ViewHolder {
+        private final ImageView dragHandle;
         private final TextView exerciseNameText;
         private final TextView musclesText;
         private final TextView equipmentText;
@@ -235,6 +243,7 @@ public class WorkoutExerciseAdapter extends RecyclerView.Adapter<RecyclerView.Vi
 
         SingleViewHolder(@NonNull View itemView) {
             super(itemView);
+            dragHandle = itemView.findViewById(R.id.dragHandle);
             exerciseNameText = itemView.findViewById(R.id.exerciseNameText);
             musclesText = itemView.findViewById(R.id.musclesText);
             equipmentText = itemView.findViewById(R.id.equipmentText);
@@ -243,11 +252,20 @@ public class WorkoutExerciseAdapter extends RecyclerView.Adapter<RecyclerView.Vi
             deleteExerciseButton = itemView.findViewById(R.id.deleteExerciseButton);
         }
 
-        void bind(WorkoutExerciseResponse exercise, OnExerciseActionListener listener, Map<Long, ExerciseResponse> map) {
+        void bind(WorkoutExerciseResponse exercise, OnExerciseActionListener listener, Map<Long, ExerciseResponse> map, ItemTouchHelper dragHelper) {
             bindData(exercise, map);
             itemView.setOnClickListener(v -> { if (listener != null) listener.onEditExercise(exercise); });
             manageSetsButton.setOnClickListener(v -> { if (listener != null) listener.onManageSets(exercise); });
             deleteExerciseButton.setOnClickListener(v -> { if (listener != null) listener.onDeleteExercise(exercise); });
+
+            // Drag handle — начать перетаскивание
+            dragHandle.setOnTouchListener((v, event) -> {
+                if (event.getActionMasked() == MotionEvent.ACTION_DOWN && dragHelper != null) {
+                    dragHelper.startDrag(this);
+                    return true;
+                }
+                return false;
+            });
         }
 
         private void bindData(WorkoutExerciseResponse exercise, Map<Long, ExerciseResponse> map) {
@@ -261,12 +279,14 @@ public class WorkoutExerciseAdapter extends RecyclerView.Adapter<RecyclerView.Vi
     }
 
     static class SupersetGroupViewHolder extends RecyclerView.ViewHolder {
+        private final ImageView supersetDragHandle;
         private final TextView supersetTitle;
         private final ImageButton deleteSupersetButton;
         private final RecyclerView supersetExercisesRecyclerView;
 
         SupersetGroupViewHolder(@NonNull View itemView) {
             super(itemView);
+            supersetDragHandle = itemView.findViewById(R.id.supersetDragHandle);
             supersetTitle = itemView.findViewById(R.id.supersetTitle);
             deleteSupersetButton = itemView.findViewById(R.id.deleteSupersetButton);
             supersetExercisesRecyclerView = itemView.findViewById(R.id.supersetExercisesRecyclerView);
@@ -274,57 +294,54 @@ public class WorkoutExerciseAdapter extends RecyclerView.Adapter<RecyclerView.Vi
 
         void bind(Integer supersetGroup, List<WorkoutExerciseResponse> exercises,
                   OnExerciseActionListener listener, Map<Long, ExerciseResponse> map,
-                  OnSupersetExerciseMoved movedListener) {
+                  OnSupersetExerciseMoved movedListener, ItemTouchHelper outerDragHelper) {
             supersetTitle.setText("Суперсет");
             deleteSupersetButton.setOnClickListener(v -> {
                 if (listener != null && supersetGroup != null) listener.onDeleteSuperset(supersetGroup);
             });
 
-            // Вложенный адаптер
+            // Drag handle для суперсета
+            supersetDragHandle.setOnTouchListener((v, event) -> {
+                if (event.getActionMasked() == MotionEvent.ACTION_DOWN && outerDragHelper != null) {
+                    outerDragHelper.startDrag(this);
+                    return true;
+                }
+                return false;
+            });
+
+            // Вложенный адаптер — ItemTouchHelper создаётся внутри onBindViewHolder
             final SupersetExercisesAdapter innerAdapter = new SupersetExercisesAdapter(exercises, listener, map, movedListener, supersetGroup != null ? supersetGroup : 0);
             supersetExercisesRecyclerView.setLayoutManager(new LinearLayoutManager(itemView.getContext()));
             supersetExercisesRecyclerView.setAdapter(innerAdapter);
             supersetExercisesRecyclerView.setNestedScrollingEnabled(false);
             supersetExercisesRecyclerView.setHasFixedSize(true);
 
-            // Drag-and-drop внутри суперсета
-            ItemTouchHelper.Callback innerDragCallback = new ItemTouchHelper.Callback() {
-                @Override
-                public boolean isLongPressDragEnabled() { return true; }
-
-                @Override
-                public boolean isItemViewSwipeEnabled() { return false; }
-
-                @Override
-                public int getMovementFlags(@NonNull RecyclerView rv, @NonNull RecyclerView.ViewHolder vh) {
-                    return makeMovementFlags(ItemTouchHelper.UP | ItemTouchHelper.DOWN, 0);
-                }
-
-                @Override
-                public boolean onMove(@NonNull RecyclerView rv, @NonNull RecyclerView.ViewHolder vh, @NonNull RecyclerView.ViewHolder target) {
-                    int fromPos = vh.getAdapterPosition();
-                    int toPos = target.getAdapterPosition();
-                    innerAdapter.moveItem(fromPos, toPos);
-                    return true;
-                }
-
-                @Override
-                public void onSwiped(@NonNull RecyclerView.ViewHolder vh, int direction) {}
-
-                @Override
-                public void clearView(@NonNull RecyclerView recyclerView, @NonNull RecyclerView.ViewHolder viewHolder) {
-                    super.clearView(recyclerView, viewHolder);
-                    recyclerView.stopScroll();
-                }
-
-                @Override
-                public float getMoveThreshold(@NonNull RecyclerView.ViewHolder viewHolder) {
-                    return 0.2f;
-                }
-            };
-
-            ItemTouchHelper innerItemTouchHelper = new ItemTouchHelper(innerDragCallback);
-            innerItemTouchHelper.attachToRecyclerView(supersetExercisesRecyclerView);
+            // ItemTouchHelper для вложенного RecyclerView — attach один раз
+            if (supersetExercisesRecyclerView.getTag(R.id.superset_drag_handle) == null) {
+                ItemTouchHelper.Callback innerDragCallback = new ItemTouchHelper.Callback() {
+                    @Override public boolean isLongPressDragEnabled() { return false; }
+                    @Override public boolean isItemViewSwipeEnabled() { return false; }
+                    @Override public int getMovementFlags(@NonNull RecyclerView rv, @NonNull RecyclerView.ViewHolder vh) {
+                        return makeMovementFlags(ItemTouchHelper.UP | ItemTouchHelper.DOWN, 0);
+                    }
+                    @Override public boolean onMove(@NonNull RecyclerView rv, @NonNull RecyclerView.ViewHolder vh, @NonNull RecyclerView.ViewHolder target) {
+                        int fromPos = vh.getAdapterPosition();
+                        int toPos = target.getAdapterPosition();
+                        innerAdapter.moveItem(fromPos, toPos);
+                        return true;
+                    }
+                    @Override public void onSwiped(@NonNull RecyclerView.ViewHolder vh, int direction) {}
+                    @Override public void clearView(@NonNull RecyclerView recyclerView, @NonNull RecyclerView.ViewHolder viewHolder) {
+                        super.clearView(recyclerView, viewHolder);
+                        recyclerView.stopScroll();
+                    }
+                    @Override public float getMoveThreshold(@NonNull RecyclerView.ViewHolder viewHolder) { return 0.2f; }
+                };
+                ItemTouchHelper innerDragHelper = new ItemTouchHelper(innerDragCallback);
+                innerDragHelper.attachToRecyclerView(supersetExercisesRecyclerView);
+                supersetExercisesRecyclerView.setTag(R.id.superset_drag_handle, innerDragHelper);
+                innerAdapter.setDragHelper(innerDragHelper);
+            }
         }
     }
 

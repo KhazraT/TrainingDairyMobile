@@ -160,7 +160,9 @@ public class ExerciseManagementActivity extends AppCompatActivity {
             private boolean hasMoved = false;
 
             @Override
-            public boolean isLongPressDragEnabled() { return true; }
+            public boolean isLongPressDragEnabled() {
+                return false; // Drag только через handle
+            }
 
             @Override
             public boolean isItemViewSwipeEnabled() { return false; }
@@ -203,6 +205,7 @@ public class ExerciseManagementActivity extends AppCompatActivity {
 
         ItemTouchHelper itemTouchHelper = new ItemTouchHelper(dragCallback);
         itemTouchHelper.attachToRecyclerView(exercisesRecyclerView);
+        exerciseAdapter.setItemTouchHelper(itemTouchHelper);
     }
 
     private void setupListeners() {

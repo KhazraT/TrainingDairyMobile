@@ -1,12 +1,15 @@
 package ru.squidory.trainingdairymobile.ui.trainings;
 
 import android.view.LayoutInflater;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageButton;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.RecyclerView;
 
 import java.util.ArrayList;
@@ -27,6 +30,7 @@ class SupersetExercisesAdapter extends RecyclerView.Adapter<SupersetExercisesAda
     private final Map<Long, ExerciseResponse> exerciseMap;
     private final WorkoutExerciseAdapter.OnSupersetExerciseMoved movedListener;
     private final int supersetGroup;
+    private ItemTouchHelper dragHelper;
 
     SupersetExercisesAdapter(List<WorkoutExerciseResponse> exercises,
                              WorkoutExerciseAdapter.OnExerciseActionListener listener,
@@ -38,6 +42,10 @@ class SupersetExercisesAdapter extends RecyclerView.Adapter<SupersetExercisesAda
         this.exerciseMap = exerciseMap;
         this.movedListener = movedListener;
         this.supersetGroup = supersetGroup;
+    }
+
+    public void setDragHelper(ItemTouchHelper helper) {
+        this.dragHelper = helper;
     }
 
     /**
@@ -78,13 +86,14 @@ class SupersetExercisesAdapter extends RecyclerView.Adapter<SupersetExercisesAda
 
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
-        holder.bind(exercises.get(position));
+        holder.bind(exercises.get(position), dragHelper);
     }
 
     @Override
     public int getItemCount() { return exercises.size(); }
 
     class ViewHolder extends RecyclerView.ViewHolder {
+        private final ImageView dragHandle;
         private final TextView exerciseNameText;
         private final TextView musclesText;
         private final TextView equipmentText;
@@ -94,6 +103,7 @@ class SupersetExercisesAdapter extends RecyclerView.Adapter<SupersetExercisesAda
 
         ViewHolder(@NonNull View itemView) {
             super(itemView);
+            dragHandle = itemView.findViewById(R.id.dragHandle);
             exerciseNameText = itemView.findViewById(R.id.exerciseNameText);
             musclesText = itemView.findViewById(R.id.musclesText);
             equipmentText = itemView.findViewById(R.id.equipmentText);
@@ -102,7 +112,7 @@ class SupersetExercisesAdapter extends RecyclerView.Adapter<SupersetExercisesAda
             deleteExerciseButton = itemView.findViewById(R.id.deleteExerciseButton);
         }
 
-        void bind(WorkoutExerciseResponse exercise) {
+        void bind(WorkoutExerciseResponse exercise, ItemTouchHelper innerDragHelper) {
             ExerciseResponse full = (exercise.getExercise() != null) ? exercise.getExercise() :
                     (exerciseMap != null ? exerciseMap.get(exercise.getExerciseId()) : null);
             exerciseNameText.setText(full != null ? full.getName() : "Упражнение");
@@ -134,6 +144,15 @@ class SupersetExercisesAdapter extends RecyclerView.Adapter<SupersetExercisesAda
             itemView.setOnClickListener(v -> { if (listener != null) listener.onEditExercise(exercise); });
             manageSetsButton.setOnClickListener(v -> { if (listener != null) listener.onManageSets(exercise); });
             deleteExerciseButton.setOnClickListener(v -> { if (listener != null) listener.onDeleteExercise(exercise); });
+
+            // Drag handle
+            dragHandle.setOnTouchListener((v, event) -> {
+                if (event.getActionMasked() == MotionEvent.ACTION_DOWN && innerDragHelper != null) {
+                    innerDragHelper.startDrag(this);
+                    return true;
+                }
+                return false;
+            });
         }
     }
 }

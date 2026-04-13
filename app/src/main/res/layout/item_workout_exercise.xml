@@ -14,6 +14,17 @@
         android:padding="12dp"
         android:gravity="center_vertical">
 
+        <!-- Drag Handle -->
+        <ImageView
+            android:id="@+id/dragHandle"
+            android:layout_width="28dp"
+            android:layout_height="28dp"
+            android:layout_marginEnd="6dp"
+            android:src="@android:drawable/ic_menu_sort_by_size"
+            android:contentDescription="Перетащите для изменения порядка"
+            android:alpha="0.5"
+            app:tint="?attr/colorOnSurfaceVariant" />
+
         <LinearLayout
             android:layout_width="0dp"
             android:layout_height="wrap_content"

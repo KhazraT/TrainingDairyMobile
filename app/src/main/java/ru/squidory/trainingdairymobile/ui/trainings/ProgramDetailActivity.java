@@ -201,8 +201,8 @@ public class ProgramDetailActivity extends AppCompatActivity {
         ItemTouchHelper.Callback callback = new ItemTouchHelper.Callback() {
             @Override
             public boolean isLongPressDragEnabled() {
-                // Включаем drag только в режиме редактирования
-                return editMode;
+                // Отключаем long press — drag только через handle
+                return false;
             }
 
             @Override
@@ -240,6 +240,7 @@ public class ProgramDetailActivity extends AppCompatActivity {
 
         ItemTouchHelper itemTouchHelper = new ItemTouchHelper(callback);
         itemTouchHelper.attachToRecyclerView(workoutsRecyclerView);
+        adapter.setItemTouchHelper(itemTouchHelper);
     }
 
     private void saveWorkoutOrder(long workoutId, int newOrder) {

@@ -1,6 +1,9 @@
 package ru.squidory.trainingdairymobile.ui.trainings;
 
+import android.content.Context;
+import android.content.Intent;
 import android.view.LayoutInflater;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageButton;
@@ -8,10 +11,8 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
-import android.content.Context;
-import android.content.Intent;
-
 import androidx.annotation.NonNull;
+import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.button.MaterialButton;
@@ -33,6 +34,11 @@ public class WorkoutDetailAdapter extends RecyclerView.Adapter<WorkoutDetailAdap
     private final Map<Long, Integer> exerciseCounts = new HashMap<>();
     private OnWorkoutActionListener listener;
     private boolean editMode = false;
+    private ItemTouchHelper itemTouchHelper;
+
+    public void setItemTouchHelper(ItemTouchHelper helper) {
+        this.itemTouchHelper = helper;
+    }
 
     public interface OnWorkoutActionListener {
         void onDeleteWorkout(WorkoutResponse workout, int position);
@@ -188,6 +194,15 @@ public class WorkoutDetailAdapter extends RecyclerView.Adapter<WorkoutDetailAdap
                 if (listener != null) {
                     listener.onDeleteWorkout(workout, getAdapterPosition());
                 }
+            });
+
+            // Drag handle — начать перетаскивание
+            dragHandle.setOnTouchListener((v, event) -> {
+                if (event.getActionMasked() == MotionEvent.ACTION_DOWN && itemTouchHelper != null && editMode) {
+                    itemTouchHelper.startDrag(this);
+                    return true;
+                }
+                return false;
             });
         }
     }

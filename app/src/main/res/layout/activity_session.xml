@@ -62,10 +62,24 @@
         tools:listitem="@layout/item_session_exercise" />
 
     <com.google.android.material.button.MaterialButton
+        android:id="@+id/addExerciseButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="16dp"
+        android:layout_marginBottom="8dp"
+        android:paddingVertical="12dp"
+        android:text="+ Добавить упражнение"
+        android:textAppearance="?attr/textAppearanceTitleMedium"
+        app:cornerRadius="12dp"
+        style="@style/Widget.Material3.Button.OutlinedButton" />
+
+    <com.google.android.material.button.MaterialButton
         android:id="@+id/completeSessionButton"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_margin="16dp"
+        android:layout_marginHorizontal="16dp"
+        android:layout_marginTop="0dp"
+        android:layout_marginBottom="16dp"
         android:paddingVertical="12dp"
         android:text="Завершить тренировку"
         android:textAppearance="?attr/textAppearanceTitleMedium"

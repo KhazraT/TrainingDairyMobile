@@ -83,6 +83,17 @@
                 android:src="@drawable/ic_info"
                 app:tint="?attr/colorPrimary" />
 
+            <!-- Кнопка удаления упражнения -->
+            <ImageButton
+                android:id="@+id/deleteExerciseButton"
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:layout_marginStart="4dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="Удалить упражнение"
+                android:src="@android:drawable/ic_menu_delete"
+                app:tint="@android:color/holo_red_dark" />
+
         </LinearLayout>
 
         <!-- Раскрывающийся контент (видео + подходы) -->

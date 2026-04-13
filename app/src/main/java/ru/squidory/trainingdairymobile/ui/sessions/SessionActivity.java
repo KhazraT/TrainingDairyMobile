@@ -1,6 +1,7 @@
 package ru.squidory.trainingdairymobile.ui.sessions;
 
 import android.app.AlertDialog;
+import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
@@ -11,6 +12,8 @@ import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.VideoView;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -49,6 +52,7 @@ import ru.squidory.trainingdairymobile.data.remote.api.SessionApi;
 import ru.squidory.trainingdairymobile.data.repository.ExerciseRepository;
 import ru.squidory.trainingdairymobile.data.repository.ProgramRepository;
 import ru.squidory.trainingdairymobile.data.repository.SessionRepository;
+import ru.squidory.trainingdairymobile.ui.trainings.ExercisePickerActivity;
 import ru.squidory.trainingdairymobile.util.Constants;
 
 /**
@@ -70,6 +74,7 @@ public class SessionActivity extends AppCompatActivity {
     private TextView workoutCommentTextView;
     private RecyclerView exercisesRecyclerView;
     private MaterialButton completeSessionButton;
+    private MaterialButton addExerciseButton;
 
     private SessionExerciseAdapter adapter;
     private SessionRepository sessionRepository;
@@ -89,6 +94,8 @@ public class SessionActivity extends AppCompatActivity {
     private final Map<Long, File> videoFileCache = new HashMap<>();
     private boolean videosLoaded = false;
     private VideoView currentVideoView;
+
+    private ActivityResultLauncher<Intent> exercisePickerLauncher;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -110,10 +117,25 @@ public class SessionActivity extends AppCompatActivity {
         exerciseRepository = ExerciseRepository.getInstance();
         programRepository = ProgramRepository.getInstance();
 
+        // Регистрируем ActivityResultLauncher (ОБЯЗАТЕЛЬНО в onCreate)
+        exercisePickerLauncher = registerForActivityResult(
+                new ActivityResultContracts.StartActivityForResult(),
+                result -> {
+                    if (result.getResultCode() == RESULT_OK && result.getData() != null) {
+                        ArrayList<Long> selectedIds = (ArrayList<Long>) result.getData()
+                                .getSerializableExtra(ExercisePickerActivity.EXTRA_SELECTED_IDS);
+                        if (selectedIds != null && !selectedIds.isEmpty()) {
+                            addSelectedExercises(selectedIds);
+                        }
+                    }
+                }
+        );
+
         initViews();
         setupToolbar();
         setupRecyclerView();
         setupCompleteButton();
+        setupAddExerciseButton();
         preloadExerciseMap();
         startSession();
     }
@@ -124,6 +146,7 @@ public class SessionActivity extends AppCompatActivity {
         workoutCommentTextView = findViewById(R.id.workoutCommentTextView);
         exercisesRecyclerView = findViewById(R.id.exercisesRecyclerView);
         completeSessionButton = findViewById(R.id.completeSessionButton);
+        addExerciseButton = findViewById(R.id.addExerciseButton);
 
         if (workoutName != null && !workoutName.isEmpty()) {
             workoutNameTextView.setText(workoutName);
@@ -132,6 +155,10 @@ public class SessionActivity extends AppCompatActivity {
             workoutCommentTextView.setText(workoutComment);
             workoutCommentTextView.setVisibility(View.VISIBLE);
         }
+    }
+
+    private void setupAddExerciseButton() {
+        addExerciseButton.setOnClickListener(v -> showExercisePicker());
     }
 
     private void setupToolbar() {
@@ -145,6 +172,71 @@ public class SessionActivity extends AppCompatActivity {
 
     private void setupCompleteButton() {
         completeSessionButton.setOnClickListener(v -> showCompleteConfirmation());
+    }
+
+    // ==================== Добавление упражнений ====================
+
+    private void showExercisePicker() {
+        Intent intent = new Intent(this, ExercisePickerActivity.class);
+        exercisePickerLauncher.launch(intent);
+    }
+
+    private void addSelectedExercises(List<Long> exerciseIds) {
+        int startOrder = sessionExercises.size() + 1;
+        final int totalCount = exerciseIds.size();
+        final int[] completed = {0};
+        final boolean[] hasError = {false};
+
+        for (int i = 0; i < exerciseIds.size(); i++) {
+            long exerciseId = exerciseIds.get(i);
+            final int index = i;
+
+            // Создаём SessionExerciseResponse из exerciseMap
+            ExerciseResponse ex = exerciseMap.get(exerciseId);
+            if (ex == null) continue;
+
+            SessionExerciseResponse se = new SessionExerciseResponse();
+            se.setExercise(ex);
+            se.setExerciseId(exerciseId);
+            se.setExerciseOrder(startOrder + i);
+            se.setSupersetGroupNumber(null);
+
+            String exerciseType = ex.getExerciseType();
+            if (exerciseType == null || exerciseType.isEmpty()) {
+                exerciseType = "REPS_WEIGHT";
+            }
+            se.setExerciseType(exerciseType);
+
+            // Создаём 1 подход по умолчанию (с нулевыми значениями)
+            List<SessionSetResponse> defaultSets = new ArrayList<>();
+            SessionSetResponse defaultSet = new SessionSetResponse();
+            defaultSet.setSetNumber(1);
+            defaultSet.setSetOrder(0);
+            defaultSet.setIsWarmup(false);
+            defaultSet.setIsDropset(false);
+            // Поля будут заполнены пользователем
+            defaultSets.add(defaultSet);
+            se.setCompletedSets(defaultSets);
+
+            sessionExercises.add(se);
+
+            completed[0]++;
+            if (completed[0] == totalCount && !hasError[0]) {
+                runOnUiThread(() -> {
+                    // Пересортируем упражнения
+                    sessionExercises.sort((a, b) -> Integer.compare(
+                            a.getExerciseOrder() != null ? a.getExerciseOrder() : 0,
+                            b.getExerciseOrder() != null ? b.getExerciseOrder() : 0
+                    ));
+                    adapter.setExercises(sessionExercises);
+                    updateUI();
+                    Toast.makeText(this, "Упражнение добавлено", Toast.LENGTH_SHORT).show();
+                });
+            }
+        }
+
+        // Предзагружаем видео для новых упражнений
+        preloadAllVideos();
     }
 
     private void preloadExerciseMap() {
@@ -350,6 +442,13 @@ public class SessionActivity extends AppCompatActivity {
             @Override
             public void onTimePickerClick(SessionExerciseResponse exercise, SessionSetResponse set, SessionExerciseAdapter.OnTimeSelectedCallback callback) {
                 showInlineTimePicker(set, callback);
+            }
+        });
+
+        adapter.setOnExerciseDeleteListener(new SessionExerciseAdapter.OnExerciseDeleteListener() {
+            @Override
+            public void onDeleteExercise(SessionExerciseResponse exercise) {
+                confirmDeleteExercise(exercise);
             }
         });
     }
@@ -653,7 +752,7 @@ public class SessionActivity extends AppCompatActivity {
                     boolean removed = completedSets.remove(set);
                     if (!removed) {
                         // Fallback: удаляем по setNumber
-                        completedSets.removeIf(s -> s.getSetNumber() != null && 
+                        completedSets.removeIf(s -> s.getSetNumber() != null &&
                             s.getSetNumber().equals(set.getSetNumber()));
                     }
                     // Перенумеруем
@@ -661,12 +760,44 @@ public class SessionActivity extends AppCompatActivity {
                         completedSets.get(i).setSetNumber(i + 1);
                         completedSets.get(i).setSetOrder(i);
                     }
+
+                    // АВТОУДАЛЕНИЕ: если подходов не осталось — удаляем упражнение
+                    if (completedSets.isEmpty()) {
+                        removeExerciseFromSession(exercise);
+                        return;
+                    }
+
                     // НЕ отправляем на сервер — только локально
                 }
                 adapter.notifyDataSetChanged();
             })
             .setNegativeButton("Отмена", null)
             .show();
+    }
+
+    private void confirmDeleteExercise(SessionExerciseResponse exercise) {
+        String exerciseName = exercise.getExerciseName();
+        new AlertDialog.Builder(this)
+            .setTitle("Удалить упражнение")
+            .setMessage("Удалить \"" + exerciseName + "\" из тренировки?")
+            .setPositiveButton("Удалить", (dialog, which) -> {
+                removeExerciseFromSession(exercise);
+            })
+            .setNegativeButton("Отмена", null)
+            .show();
+    }
+
+    private void removeExerciseFromSession(SessionExerciseResponse exercise) {
+        boolean removed = sessionExercises.remove(exercise);
+        if (removed) {
+            // Пересортируем и обновим order
+            for (int i = 0; i < sessionExercises.size(); i++) {
+                sessionExercises.get(i).setExerciseOrder(i + 1);
+            }
+            adapter.setExercises(sessionExercises);
+            updateUI();
+            Toast.makeText(this, "Упражнение удалено", Toast.LENGTH_SHORT).show();
+        }
     }
 
     private void addDropsetRow(LinearLayout container, List<DropsetRow> rows) {
@@ -778,6 +909,8 @@ public class SessionActivity extends AppCompatActivity {
             CompleteSessionRequest.ExerciseCompletion completion = new CompleteSessionRequest.ExerciseCompletion();
             completion.setExerciseId(exercise.getExerciseId());
             completion.setExerciseOrder(exercise.getExerciseOrder());
+            // Отправляем exerciseType — бэкенд использует его для записи правильных полей
+            completion.setExerciseType(exercise.getExerciseType());
 
             List<CompleteSessionRequest.CompletedSetData> setData = new ArrayList<>();
             if (exercise.getCompletedSets() != null) {
@@ -806,8 +939,20 @@ public class SessionActivity extends AppCompatActivity {
         }
         request.setExercises(exerciseCompletions);
 
-        Log.d(TAG, "completeSession: workoutId=" + workoutId +
-                ", exercises=" + exerciseCompletions.size());
+        // Логируем что отправляем для отладки
+        for (CompleteSessionRequest.ExerciseCompletion ec : exerciseCompletions) {
+            Log.d(TAG, "completeSession: exerciseId=" + ec.getExerciseId() +
+                    ", exerciseType=" + ec.getExerciseType() +
+                    ", sets=" + (ec.getCompletedSets() != null ? ec.getCompletedSets().size() : 0));
+            if (ec.getCompletedSets() != null) {
+                for (CompleteSessionRequest.CompletedSetData sd : ec.getCompletedSets()) {
+                    Log.d(TAG, "  set: weight=" + sd.getWeight() +
+                            ", reps=" + sd.getReps() +
+                            ", duration=" + sd.getDurationSeconds() +
+                            ", distance=" + sd.getDistanceMeters());
+                }
+            }
+        }
 
         sessionRepository.completeSession(workoutId, sessionStartedAt, request, new SessionRepository.SessionCallback() {
             @Override

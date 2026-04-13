@@ -59,6 +59,16 @@ public class SessionExerciseAdapter extends RecyclerView.Adapter<SessionExercise
         void onTimePickerClick(SessionExerciseResponse exercise, SessionSetResponse set, OnTimeSelectedCallback callback);
     }
 
+    public interface OnExerciseDeleteListener {
+        void onDeleteExercise(SessionExerciseResponse exercise);
+    }
+
+    private OnExerciseDeleteListener deleteListener;
+
+    public void setOnExerciseDeleteListener(OnExerciseDeleteListener listener) {
+        this.deleteListener = listener;
+    }
+
     public interface OnTimeSelectedCallback {
         void onTimeSelected(int totalSeconds);
     }
@@ -147,6 +157,7 @@ public class SessionExerciseAdapter extends RecyclerView.Adapter<SessionExercise
         private final LinearLayout targetMusclesLayout;
         private final Chip targetMuscleChip;
         private final ImageButton exerciseInfoButton;
+        private final ImageButton deleteExerciseButton;
         private final LinearLayout exerciseContentLayout;
         private final VideoView exerciseVideoView;
         private final TextView setsLabel;
@@ -164,6 +175,7 @@ public class SessionExerciseAdapter extends RecyclerView.Adapter<SessionExercise
             targetMusclesLayout = itemView.findViewById(R.id.targetMusclesLayout);
             targetMuscleChip = itemView.findViewById(R.id.targetMuscleChip);
             exerciseInfoButton = itemView.findViewById(R.id.exerciseInfoButton);
+            deleteExerciseButton = itemView.findViewById(R.id.deleteExerciseButton);
             exerciseContentLayout = itemView.findViewById(R.id.exerciseContentLayout);
             exerciseVideoView = itemView.findViewById(R.id.exerciseVideoView);
             setsLabel = itemView.findViewById(R.id.setsLabel);
@@ -271,6 +283,13 @@ public class SessionExerciseAdapter extends RecyclerView.Adapter<SessionExercise
                     intent.putExtra(ExerciseDetailActivity.EXTRA_EXERCISE_ID, exerciseId);
                     intent.putExtra(ExerciseDetailActivity.EXTRA_EXERCISE_NAME, name);
                     itemView.getContext().startActivity(intent);
+                }
+            });
+
+            // Кнопка удаления — удалить упражнение
+            deleteExerciseButton.setOnClickListener(v -> {
+                if (deleteListener != null) {
+                    deleteListener.onDeleteExercise(exercise);
                 }
             });
         }

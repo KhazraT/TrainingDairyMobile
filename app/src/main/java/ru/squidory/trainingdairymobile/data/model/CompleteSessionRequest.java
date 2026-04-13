@@ -45,6 +45,9 @@ public class CompleteSessionRequest {
         @SerializedName("exerciseOrder")
         private Integer exerciseOrder;
 
+        @SerializedName("exerciseType")
+        private String exerciseType;
+
         @SerializedName("completedSets")
         private List<CompletedSetData> completedSets;
 
@@ -55,6 +58,9 @@ public class CompleteSessionRequest {
 
         public Integer getExerciseOrder() { return exerciseOrder; }
         public void setExerciseOrder(Integer exerciseOrder) { this.exerciseOrder = exerciseOrder; }
+
+        public String getExerciseType() { return exerciseType; }
+        public void setExerciseType(String exerciseType) { this.exerciseType = exerciseType; }
 
         public List<CompletedSetData> getCompletedSets() { return completedSets; }
         public void setCompletedSets(List<CompletedSetData> completedSets) { this.completedSets = completedSets; }

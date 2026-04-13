@@ -4,6 +4,8 @@ import android.app.AlertDialog;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -72,7 +74,9 @@ public class SessionActivity extends AppCompatActivity {
     private static final String TAG = "SessionActivity";
 
     private MaterialToolbar toolbar;
-    private TextView workoutNameTextView;
+    private TextView toolbarTitleTextView;
+    private TextView timerTextView;
+    private LinearLayout workoutInfoLayout;
     private TextView workoutCommentTextView;
     private RecyclerView exercisesRecyclerView;
     private MaterialButton completeSessionButton;
@@ -98,6 +102,10 @@ public class SessionActivity extends AppCompatActivity {
     private VideoView currentVideoView;
 
     private ActivityResultLauncher<Intent> exercisePickerLauncher;
+
+    // Таймер сессии
+    private final Handler timerHandler = new Handler(Looper.getMainLooper());
+    private Runnable timerRunnable;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -144,18 +152,28 @@ public class SessionActivity extends AppCompatActivity {
 
     private void initViews() {
         toolbar = findViewById(R.id.toolbar);
-        workoutNameTextView = findViewById(R.id.workoutNameTextView);
+        toolbarTitleTextView = findViewById(R.id.toolbarTitleTextView);
+        timerTextView = findViewById(R.id.timerTextView);
+        workoutInfoLayout = findViewById(R.id.workoutInfoLayout);
         workoutCommentTextView = findViewById(R.id.workoutCommentTextView);
         exercisesRecyclerView = findViewById(R.id.exercisesRecyclerView);
         completeSessionButton = findViewById(R.id.completeSessionButton);
         addExerciseButton = findViewById(R.id.addExerciseButton);
 
+        // Название в toolbar
         if (workoutName != null && !workoutName.isEmpty()) {
-            workoutNameTextView.setText(workoutName);
+            toolbarTitleTextView.setText(workoutName);
+        } else {
+            toolbarTitleTextView.setText("Тренировка");
         }
+
+        // Комментарий — показываем только если есть
         if (workoutComment != null && !workoutComment.isEmpty()) {
             workoutCommentTextView.setText(workoutComment);
             workoutCommentTextView.setVisibility(View.VISIBLE);
+            workoutInfoLayout.setVisibility(View.VISIBLE);
+        } else {
+            workoutInfoLayout.setVisibility(View.GONE);
         }
     }
 
@@ -164,12 +182,34 @@ public class SessionActivity extends AppCompatActivity {
     }
 
     private void setupToolbar() {
-        setSupportActionBar(toolbar);
-        if (getSupportActionBar() != null) {
-            getSupportActionBar().setDisplayHomeAsUpEnabled(true);
-            getSupportActionBar().setTitle("");
+        // Не используем setSupportActionBar — название и back управляем вручную
+        // Кнопка назад не нужна — выход через системный Back или "Завершить тренировку"
+    }
+
+    private void startSessionTimer() {
+        timerRunnable = new Runnable() {
+            @Override
+            public void run() {
+                long elapsed = System.currentTimeMillis() - sessionStartedAt;
+                timerTextView.setText(formatElapsedTime(elapsed));
+                timerHandler.postDelayed(this, 1000);
+            }
+        };
+        timerHandler.post(timerRunnable);
+    }
+
+    private String formatElapsedTime(long millis) {
+        long totalSeconds = millis / 1000;
+        long hours = totalSeconds / 3600;
+        long minutes = (totalSeconds % 3600) / 60;
+        long seconds = totalSeconds % 60;
+        return String.format("%02d:%02d:%02d", hours, minutes, seconds);
+    }
+
+    private void stopSessionTimer() {
+        if (timerRunnable != null) {
+            timerHandler.removeCallbacks(timerRunnable);
         }
-        toolbar.setNavigationOnClickListener(v -> finish());
     }
 
     private void setupCompleteButton() {
@@ -377,6 +417,8 @@ public class SessionActivity extends AppCompatActivity {
                 adapter.setExercises(sessionExercises);
                 updateUI();
                 preloadAllVideos();
+                // Запускаем таймер после загрузки всех данных
+                startSessionTimer();
             });
         }
     }
@@ -1025,6 +1067,16 @@ public class SessionActivity extends AppCompatActivity {
     }
 
     @Override
+    public void onBackPressed() {
+        new AlertDialog.Builder(this)
+            .setTitle("Выйти")
+            .setMessage("Вы уверены, что хотите выйти? Данные будут потеряны.")
+            .setPositiveButton("Выйти", (dialog, which) -> SessionActivity.super.onBackPressed())
+            .setNegativeButton("Отмена", null)
+            .show();
+    }
+
+    @Override
     protected void onResume() {
         super.onResume();
         if (currentVideoView != null && currentVideoView.isPlaying()) {
@@ -1035,6 +1087,7 @@ public class SessionActivity extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
+        stopSessionTimer();
         if (currentVideoView != null) {
             currentVideoView.stopPlayback();
             currentVideoView = null;

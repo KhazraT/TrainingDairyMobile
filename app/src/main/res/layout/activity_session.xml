@@ -17,61 +17,107 @@
             android:id="@+id/toolbar"
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize"
-            android:background="?attr/colorPrimary"
-            app:navigationIcon="?attr/homeAsUpIndicator"
-            app:titleTextColor="@android:color/white" />
+            android:background="?attr/colorPrimary">
+
+            <!-- Название тренировки (по центру-слева) -->
+            <TextView
+                android:id="@+id/toolbarTitleTextView"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="start|center_vertical"
+                android:layout_marginStart="16dp"
+                android:layout_marginEnd="8dp"
+                android:textColor="@android:color/white"
+                android:textAppearance="?attr/textAppearanceTitleMedium"
+                android:textStyle="bold"
+                android:maxLines="1"
+                android:ellipsize="end"
+                tools:text="День груди" />
+
+            <!-- Секундомер (справа) -->
+            <TextView
+                android:id="@+id/timerTextView"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="end|center_vertical"
+                android:layout_marginEnd="16dp"
+                android:textColor="@android:color/white"
+                android:textAppearance="?attr/textAppearanceBodyLarge"
+                android:fontFamily="monospace"
+                android:textStyle="bold"
+                android:text="00:00:00"
+                tools:ignore="RelativeOverlap" />
+
+        </com.google.android.material.appbar.MaterialToolbar>
 
     </com.google.android.material.appbar.AppBarLayout>
 
-    <LinearLayout
-        android:id="@+id/workoutInfoLayout"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:padding="16dp"
-        android:background="?attr/colorSurfaceVariant">
-
-        <TextView
-            android:id="@+id/workoutNameTextView"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:textAppearance="?attr/textAppearanceHeadlineSmall"
-            android:textStyle="bold"
-            tools:text="День груди и плеч" />
-
-        <TextView
-            android:id="@+id/workoutCommentTextView"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
-            android:textAppearance="?attr/textAppearanceBodyMedium"
-            android:textColor="?attr/colorOnSurfaceVariant"
-            android:visibility="gone"
-            tools:text="Фокус на жимы и разводки"
-            tools:visibility="visible" />
-
-    </LinearLayout>
-
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/exercisesRecyclerView"
+    <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_weight="1"
-        android:clipToPadding="false"
-        android:padding="8dp"
-        tools:listitem="@layout/item_session_exercise" />
+        android:layout_weight="1">
 
-    <com.google.android.material.button.MaterialButton
-        android:id="@+id/addExerciseButton"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginHorizontal="16dp"
-        android:layout_marginBottom="8dp"
-        android:paddingVertical="12dp"
-        android:text="+ Добавить упражнение"
-        android:textAppearance="?attr/textAppearanceTitleMedium"
-        app:cornerRadius="12dp"
-        style="@style/Widget.Material3.Button.OutlinedButton" />
+        <androidx.core.widget.NestedScrollView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+
+                <!-- Комментарий к тренировке (прокручивается вместе с упражнениями) -->
+                <LinearLayout
+                    android:id="@+id/workoutInfoLayout"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:paddingStart="16dp"
+                    android:paddingEnd="16dp"
+                    android:paddingTop="12dp"
+                    android:paddingBottom="12dp"
+                    android:background="?attr/colorSurfaceVariant"
+                    android:visibility="gone">
+
+                    <TextView
+                        android:id="@+id/workoutCommentTextView"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:textAppearance="?attr/textAppearanceBodyMedium"
+                        android:textColor="?attr/colorOnSurfaceVariant"
+                        android:visibility="gone"
+                        tools:text="Фокус на жимы и разводки"
+                        tools:visibility="visible" />
+
+                </LinearLayout>
+
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/exercisesRecyclerView"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:clipToPadding="false"
+                    android:padding="8dp"
+                    android:nestedScrollingEnabled="false"
+                    tools:listitem="@layout/item_session_exercise" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/addExerciseButton"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginHorizontal="16dp"
+                    android:layout_marginTop="8dp"
+                    android:layout_marginBottom="8dp"
+                    android:paddingVertical="12dp"
+                    android:text="+ Добавить упражнение"
+                    android:textAppearance="?attr/textAppearanceTitleMedium"
+                    app:cornerRadius="12dp"
+                    style="@style/Widget.Material3.Button.OutlinedButton" />
+
+            </LinearLayout>
+
+        </androidx.core.widget.NestedScrollView>
+
+    </FrameLayout>
 
     <com.google.android.material.button.MaterialButton
         android:id="@+id/completeSessionButton"

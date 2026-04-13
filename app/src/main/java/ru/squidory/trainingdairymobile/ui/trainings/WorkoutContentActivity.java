@@ -49,6 +49,7 @@ public class WorkoutContentActivity extends AppCompatActivity {
     private ExerciseRepository exerciseRepository;
     private long workoutId;
     private String workoutName;
+    private String workoutComment;
     private final Map<Long, ExerciseResponse> exerciseMap = new HashMap<>();
 
     @Override
@@ -82,9 +83,9 @@ public class WorkoutContentActivity extends AppCompatActivity {
         startSessionButton = findViewById(R.id.startSessionButton);
 
         // Отображаем комментарий если есть
-        String comment = getIntent().getStringExtra(EXTRA_WORKOUT_COMMENT);
-        if (comment != null && !comment.isEmpty()) {
-            workoutCommentText.setText(comment);
+        workoutComment = getIntent().getStringExtra(EXTRA_WORKOUT_COMMENT);
+        if (workoutComment != null && !workoutComment.isEmpty()) {
+            workoutCommentText.setText(workoutComment);
             workoutCommentText.setVisibility(View.VISIBLE);
         }
 
@@ -218,6 +219,7 @@ public class WorkoutContentActivity extends AppCompatActivity {
             Intent intent = new Intent(this, SessionActivity.class);
             intent.putExtra(SessionActivity.EXTRA_WORKOUT_ID, workoutId);
             intent.putExtra(SessionActivity.EXTRA_WORKOUT_NAME, workoutName);
+            intent.putExtra(SessionActivity.EXTRA_WORKOUT_COMMENT, workoutComment);
             startActivity(intent);
         } catch (Exception e) {
             Log.e("WorkoutContent", "Failed to start SessionActivity", e);

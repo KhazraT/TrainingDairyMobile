@@ -899,6 +899,7 @@ public class ExerciseManagementActivity extends AppCompatActivity {
             request.setTargetReps(localSet.getTargetReps());
             request.setTargetTime(localSet.getTargetTime());
             request.setTargetDistance(localSet.getTargetDistance());
+            request.setRestTime(localSet.getRestTime());
             request.setDropsetEntries(localSet.getDropsetEntries() != null ?
                     convertDropsetEntries(localSet.getDropsetEntries()) : null);
 

@@ -180,11 +180,19 @@ public class WorkoutContentAdapter extends RecyclerView.Adapter<WorkoutContentAd
                     sb.append(String.format(Locale.getDefault(), " × %d повт.", set.getTargetReps()));
                 }
                 if (set.getTargetTime() != null) {
-                    sb.append(String.format(Locale.getDefault(), " × %d сек", set.getTargetTime()));
+                    int sec = set.getTargetTime();
+                    sb.append(String.format(Locale.getDefault(), " × %02d:%02d", sec / 60, sec % 60));
                 }
                 if (set.getTargetDistance() != null) {
-                    sb.append(String.format(Locale.getDefault(), " / %.0f м", set.getTargetDistance()));
+                    double km = set.getTargetDistance() / 1000.0;
+                    sb.append(String.format(Locale.getDefault(), " / %.2f км", km));
                 }
+            }
+
+            // Время отдыха
+            if (set.getRestTime() != null) {
+                int restSec = set.getRestTime();
+                sb.append(String.format(Locale.getDefault(), " | Отдых: %02d:%02d", restSec / 60, restSec % 60));
             }
 
             return sb.toString();

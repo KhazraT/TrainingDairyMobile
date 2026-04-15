@@ -100,6 +100,9 @@ public class CompleteSessionRequest {
         @SerializedName("dropsetReps")
         private Integer dropsetReps;
 
+        @SerializedName("restTime")
+        private Integer restTime;
+
         public CompletedSetData() {}
 
         public Double getWeight() { return weight; }
@@ -134,5 +137,8 @@ public class CompleteSessionRequest {
 
         public Integer getDropsetReps() { return dropsetReps; }
         public void setDropsetReps(Integer dropsetReps) { this.dropsetReps = dropsetReps; }
+
+        public Integer getRestTime() { return restTime; }
+        public void setRestTime(Integer restTime) { this.restTime = restTime; }
     }
 }

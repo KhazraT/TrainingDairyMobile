@@ -73,6 +73,7 @@ public class PlannedSetAdapter extends RecyclerView.Adapter<PlannedSetAdapter.Se
         private final TextView repsText;
         private final TextView timeText;
         private final TextView distanceText;
+        private final TextView restTimeText;
         private final LinearLayout dropsetEntriesLayout;
         private final ImageButton editSetButton;
         private final ImageButton deleteSetButton;
@@ -85,6 +86,7 @@ public class PlannedSetAdapter extends RecyclerView.Adapter<PlannedSetAdapter.Se
             repsText = itemView.findViewById(R.id.repsText);
             timeText = itemView.findViewById(R.id.timeText);
             distanceText = itemView.findViewById(R.id.distanceText);
+            restTimeText = itemView.findViewById(R.id.restTimeText);
             dropsetEntriesLayout = itemView.findViewById(R.id.dropsetEntriesLayout);
             editSetButton = itemView.findViewById(R.id.editSetButton);
             deleteSetButton = itemView.findViewById(R.id.deleteSetButton);
@@ -114,6 +116,7 @@ public class PlannedSetAdapter extends RecyclerView.Adapter<PlannedSetAdapter.Se
             repsText.setVisibility(isDropset ? View.GONE : View.VISIBLE);
             timeText.setVisibility(isDropset ? View.GONE : View.VISIBLE);
             distanceText.setVisibility(isDropset ? View.GONE : View.VISIBLE);
+            restTimeText.setVisibility(isDropset ? View.GONE : View.VISIBLE);
 
             if (!isDropset) {
                 if (set.getTargetWeight() != null) {
@@ -129,16 +132,26 @@ public class PlannedSetAdapter extends RecyclerView.Adapter<PlannedSetAdapter.Se
                     repsText.setVisibility(View.GONE);
                 }
                 if (set.getTargetTime() != null) {
-                    timeText.setText(String.format(Locale.getDefault(), "%d сек", set.getTargetTime()));
+                    int sec = set.getTargetTime();
+                    timeText.setText(String.format(Locale.getDefault(), "%02d:%02d", sec / 60, sec % 60));
                     timeText.setVisibility(View.VISIBLE);
                 } else {
                     timeText.setVisibility(View.GONE);
                 }
                 if (set.getTargetDistance() != null) {
-                    distanceText.setText(String.format(Locale.getDefault(), "%.0f м", set.getTargetDistance()));
+                    double km = set.getTargetDistance() / 1000.0;
+                    distanceText.setText(String.format(Locale.getDefault(), "%.2f км", km));
                     distanceText.setVisibility(View.VISIBLE);
                 } else {
                     distanceText.setVisibility(View.GONE);
+                }
+                // Время отдыха
+                if (set.getRestTime() != null) {
+                    int restSec = set.getRestTime();
+                    restTimeText.setText(String.format(Locale.getDefault(), "Отдых: %02d:%02d", restSec / 60, restSec % 60));
+                    restTimeText.setVisibility(View.VISIBLE);
+                } else {
+                    restTimeText.setVisibility(View.GONE);
                 }
             }
 

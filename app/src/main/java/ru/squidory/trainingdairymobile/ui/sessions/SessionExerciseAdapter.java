@@ -1,6 +1,8 @@
 package ru.squidory.trainingdairymobile.ui.sessions;
 
+import android.content.Context;
 import android.content.Intent;
+import android.os.CountDownTimer;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.view.LayoutInflater;
@@ -11,6 +13,7 @@ import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 import android.widget.VideoView;
 
 import androidx.annotation.NonNull;
@@ -21,6 +24,8 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.card.MaterialCardView;
 import com.google.android.material.chip.Chip;
+import com.google.android.material.textfield.TextInputEditText;
+import com.google.android.material.textfield.TextInputLayout;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -92,6 +97,9 @@ public class SessionExerciseAdapter extends RecyclerView.Adapter<SessionExercise
     public void setExerciseMap(Map<Long, ExerciseResponse> map) {
         this.exerciseMap = map;
     }
+
+    // Helper для работы с UI из ViewHolder
+    private final android.os.Handler mainHandler = new android.os.Handler(android.os.Looper.getMainLooper());
 
     /**
      * Принудительно прочитать все значения из видимых ViewHolder'ов
@@ -458,6 +466,13 @@ public class SessionExerciseAdapter extends RecyclerView.Adapter<SessionExercise
             private final com.google.android.material.textfield.TextInputLayout dropsetRepsInputLayout;
             private final com.google.android.material.textfield.TextInputEditText dropsetRepsInput;
 
+            // Отдых (на уровне подхода)
+            private final LinearLayout restTimeRow;
+            private final TextInputLayout restTimeInputLayout;
+            private final TextInputEditText restTimeInput;
+            private final MaterialButton startRestTimerButton;
+            private boolean timerUsed = false;
+
             // Текущий подход и TextWatchers (устанавливаются один раз)
             private SessionSetResponse currentSet;
             private TextWatcher weightWatcher;
@@ -486,6 +501,11 @@ public class SessionExerciseAdapter extends RecyclerView.Adapter<SessionExercise
                 dropsetWeightInput = itemView.findViewById(R.id.dropsetWeightInput);
                 dropsetRepsInputLayout = itemView.findViewById(R.id.dropsetRepsInputLayout);
                 dropsetRepsInput = itemView.findViewById(R.id.dropsetRepsInput);
+
+                restTimeRow = itemView.findViewById(R.id.restTimeRow);
+                restTimeInputLayout = itemView.findViewById(R.id.restTimeInputLayout);
+                restTimeInput = itemView.findViewById(R.id.restTimeInput);
+                startRestTimerButton = itemView.findViewById(R.id.startRestTimerButton);
 
                 // TextWatchers — устанавливаются ОДИН РАЗ
                 weightWatcher = new TextWatcher() {
@@ -628,6 +648,64 @@ public class SessionExerciseAdapter extends RecyclerView.Adapter<SessionExercise
                 } else {
                     dropsetSection.setBackgroundColor(0x00000000);
                 }
+
+                // Отдых — под каждым подходом (всегда виден)
+                restTimeRow.setVisibility(View.VISIBLE);
+                Integer restTime = set.getRestTime();
+                if (restTime != null && restTime > 0) {
+                    restTimeInput.setText(String.format("%02d:%02d", restTime / 60, restTime % 60));
+                } else {
+                    restTimeInput.setText("");
+                }
+
+                timerUsed = false;
+                startRestTimerButton.setEnabled(true);
+                startRestTimerButton.setText("▶");
+                startRestTimerButton.setAlpha(1.0f);
+
+                restTimeInput.setOnClickListener(v -> showRestTimePickerForSet(set));
+
+                startRestTimerButton.setOnClickListener(v -> {
+                    if (timerUsed) return;
+                    Integer rt = set.getRestTime();
+                    if (rt == null || rt <= 0) {
+                        Toast.makeText(itemView.getContext(), "Укажите время отдыха", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+                    timerUsed = true;
+                    startRestTimerButton.setEnabled(false);
+                    startRestTimerButton.setText("⏳");
+                    startRestTimerButton.setAlpha(0.5f);
+
+                    RestTimerDialog timerDialog = new RestTimerDialog(itemView.getContext(), rt);
+                    timerDialog.setOnFinishListener(() -> mainHandler.post(() -> startRestTimerButton.setText("✓")));
+                    timerDialog.show();
+                });
+            }
+
+            private void showRestTimePickerForSet(SessionSetResponse set) {
+                View dialogView = LayoutInflater.from(itemView.getContext())
+                        .inflate(R.layout.dialog_time_picker, null);
+                android.widget.NumberPicker minutesPicker = dialogView.findViewById(R.id.minutesPicker);
+                android.widget.NumberPicker secondsPicker = dialogView.findViewById(R.id.secondsPicker);
+                minutesPicker.setMinValue(0);
+                minutesPicker.setMaxValue(59);
+                secondsPicker.setMinValue(0);
+                secondsPicker.setMaxValue(59);
+                int currentRest = set.getRestTime() != null ? set.getRestTime() : 0;
+                minutesPicker.setValue(currentRest / 60);
+                secondsPicker.setValue(currentRest % 60);
+
+                new android.app.AlertDialog.Builder(itemView.getContext())
+                        .setTitle("Время отдыха")
+                        .setView(dialogView)
+                        .setPositiveButton("OK", (d, w) -> {
+                            int newRest = minutesPicker.getValue() * 60 + secondsPicker.getValue();
+                            set.setRestTime(newRest);
+                            restTimeInput.setText(String.format("%02d:%02d", newRest / 60, newRest % 60));
+                        })
+                        .setNegativeButton("Отмена", null)
+                        .show();
             }
         }
     }

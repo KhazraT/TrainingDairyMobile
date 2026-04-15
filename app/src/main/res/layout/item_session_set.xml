@@ -327,4 +327,59 @@
 
     </LinearLayout>
 
+    <!-- Время отдыха + кнопка таймера (под каждым подходом) -->
+    <LinearLayout
+        android:id="@+id/restTimeRow"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingVertical="4dp"
+        android:paddingStart="34dp"
+        android:paddingEnd="8dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Отдых:"
+            android:textAppearance="?attr/textAppearanceBodySmall"
+            android:layout_marginEnd="6dp"
+            android:minWidth="40dp" />
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/restTimeInputLayout"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:hint="мм:сс"
+            app:boxStrokeWidth="0dp"
+            app:boxBackgroundColor="?attr/colorSurface"
+            style="@style/Widget.Material3.TextInputLayout.OutlinedBox.Dense">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/restTimeInput"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="time"
+                android:focusable="false"
+                android:clickable="true"
+                android:textAppearance="?attr/textAppearanceBodySmall"
+                android:fontFamily="monospace"
+                android:textSize="12sp" />
+
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/startRestTimerButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="6dp"
+            android:text="▶"
+            android:minWidth="36dp"
+            android:minHeight="36dp"
+            android:textSize="12sp"
+            style="@style/Widget.Material3.Button" />
+
+    </LinearLayout>
+
 </LinearLayout>

@@ -29,6 +29,9 @@ public class PlannedSetResponse {
     @SerializedName("targetDistance")
     private Double targetDistance;
 
+    @SerializedName("restTime")
+    private Integer restTime;
+
     @SerializedName("dropsetEntries")
     private List<DropsetEntry> dropsetEntries;
 
@@ -58,6 +61,9 @@ public class PlannedSetResponse {
 
     public Double getTargetDistance() { return targetDistance; }
     public void setTargetDistance(Double targetDistance) { this.targetDistance = targetDistance; }
+
+    public Integer getRestTime() { return restTime; }
+    public void setRestTime(Integer restTime) { this.restTime = restTime; }
 
     public List<DropsetEntry> getDropsetEntries() { return dropsetEntries; }
     public void setDropsetEntries(List<DropsetEntry> dropsetEntries) { this.dropsetEntries = dropsetEntries; }

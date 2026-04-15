@@ -389,6 +389,7 @@ public class SessionActivity extends AppCompatActivity {
                         ss.setReps(ps.getTargetReps());
                         ss.setDurationSeconds(ps.getTargetTime());
                         ss.setDistanceMeters(ps.getTargetDistance());
+                        ss.setRestTime(ps.getRestTime());
                         ss.setIsWarmup(false);
                         ss.setIsDropset(false);
                         sessionSets.add(ss);
@@ -1015,6 +1016,7 @@ public class SessionActivity extends AppCompatActivity {
                     data.setIsDropset(set.isDropset());
                     data.setDropsetWeight(set.getDropsetWeight());
                     data.setDropsetReps(set.getDropsetReps());
+                    data.setRestTime(set.getRestTime());
                     setData.add(data);
                 }
             }

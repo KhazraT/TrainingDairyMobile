@@ -81,6 +81,7 @@ public class SessionActivity extends AppCompatActivity {
     private RecyclerView exercisesRecyclerView;
     private MaterialButton completeSessionButton;
     private MaterialButton addExerciseButton;
+    private MaterialButton createSupersetButton;
 
     private SessionExerciseAdapter adapter;
     private SessionRepository sessionRepository;
@@ -146,6 +147,7 @@ public class SessionActivity extends AppCompatActivity {
         setupRecyclerView();
         setupCompleteButton();
         setupAddExerciseButton();
+        setupSupersetButton();
         preloadExerciseMap();
         startSession();
     }
@@ -159,6 +161,7 @@ public class SessionActivity extends AppCompatActivity {
         exercisesRecyclerView = findViewById(R.id.exercisesRecyclerView);
         completeSessionButton = findViewById(R.id.completeSessionButton);
         addExerciseButton = findViewById(R.id.addExerciseButton);
+        createSupersetButton = findViewById(R.id.createSupersetButton);
 
         // Название в toolbar
         if (workoutName != null && !workoutName.isEmpty()) {
@@ -179,6 +182,10 @@ public class SessionActivity extends AppCompatActivity {
 
     private void setupAddExerciseButton() {
         addExerciseButton.setOnClickListener(v -> showExercisePicker());
+    }
+
+    private void setupSupersetButton() {
+        createSupersetButton.setOnClickListener(v -> showCreateSupersetDialog());
     }
 
     private void setupToolbar() {
@@ -279,6 +286,85 @@ public class SessionActivity extends AppCompatActivity {
 
         // Предзагружаем видео для новых упражнений
         preloadAllVideos();
+    }
+
+    // ==================== Создание суперсета ====================
+
+    private void showCreateSupersetDialog() {
+        List<SessionExerciseResponse> allExercises = adapter.getCurrentExercises();
+        // Показываем только упражнения без суперсета
+        List<SessionExerciseResponse> standalone = new ArrayList<>();
+        for (SessionExerciseResponse ex : allExercises) {
+            if (ex.getSupersetGroupNumber() == null || ex.getSupersetGroupNumber() <= 0) {
+                standalone.add(ex);
+            }
+        }
+        if (standalone.size() < 2) {
+            Toast.makeText(this, "Нужно минимум 2 упражнения без суперсета", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Выберите упражнения для суперсета");
+
+        View dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_superset_selection, null);
+        builder.setView(dialogView);
+
+        RecyclerView selectionRecyclerView = dialogView.findViewById(R.id.selectionRecyclerView);
+        MaterialButton cancelButton = dialogView.findViewById(R.id.dialogCancelButton);
+        MaterialButton saveButton = dialogView.findViewById(R.id.dialogSaveButton);
+        TextView selectedCountText = dialogView.findViewById(R.id.selectedCountText);
+
+        SessionSupersetSelectionAdapter selectionAdapter = new SessionSupersetSelectionAdapter();
+        selectionAdapter.setExercises(standalone);
+        selectionRecyclerView.setLayoutManager(new LinearLayoutManager(this));
+        selectionRecyclerView.setAdapter(selectionAdapter);
+
+        selectionAdapter.setOnSelectionChangedListener(count -> {
+            selectedCountText.setText("Выбрано: " + count);
+            runOnUiThread(() -> saveButton.setEnabled(count >= 2));
+        });
+        saveButton.setEnabled(false);
+        selectedCountText.setText("Выбрано: 0");
+
+        AlertDialog dialog = builder.create();
+        dialog.setCancelable(false);
+
+        cancelButton.setOnClickListener(v -> dialog.dismiss());
+
+        saveButton.setOnClickListener(v -> {
+            List<SessionExerciseResponse> selected = selectionAdapter.getSelectedExercises();
+            if (selected.size() < 2) return;
+
+            // Определяем новый номер суперсета
+            int maxGroup = 0;
+            for (SessionExerciseResponse ex : allExercises) {
+                Integer g = ex.getSupersetGroupNumber();
+                if (g != null && g > maxGroup) maxGroup = g;
+            }
+            final int newSupersetGroup = maxGroup + 1;
+
+            for (SessionExerciseResponse ex : selected) {
+                ex.setSupersetGroupNumber(newSupersetGroup);
+            }
+
+            // Пересортируем и обновляем adapter
+            sessionExercises = adapter.getCurrentExercises();
+            sessionExercises.sort((a, b) -> Integer.compare(
+                    a.getExerciseOrder() != null ? a.getExerciseOrder() : 0,
+                    b.getExerciseOrder() != null ? b.getExerciseOrder() : 0
+            ));
+            // Пересчитываем order
+            for (int i = 0; i < sessionExercises.size(); i++) {
+                sessionExercises.get(i).setExerciseOrder(i + 1);
+            }
+            adapter.setExercises(sessionExercises);
+
+            Toast.makeText(this, "Суперсет создан", Toast.LENGTH_SHORT).show();
+            dialog.dismiss();
+        });
+
+        dialog.show();
     }
 
     private void preloadExerciseMap() {
@@ -506,7 +592,7 @@ public class SessionActivity extends AppCompatActivity {
                                   @NonNull RecyclerView.ViewHolder target) {
                 int fromPosition = viewHolder.getAdapterPosition();
                 int toPosition = target.getAdapterPosition();
-                if (adapter.moveExercise(fromPosition, toPosition)) {
+                if (adapter.moveDisplayItem(fromPosition, toPosition)) {
                     // Обновляем order в sessionExercises
                     sessionExercises = adapter.getCurrentExercises();
                     for (int i = 0; i < sessionExercises.size(); i++) {
@@ -1104,9 +1190,18 @@ public class SessionActivity extends AppCompatActivity {
         if (sessionExercises.isEmpty()) {
             completeSessionButton.setEnabled(false);
             completeSessionButton.setText("Нет упражнений");
+            createSupersetButton.setVisibility(View.GONE);
         } else {
             completeSessionButton.setEnabled(true);
             completeSessionButton.setText("Завершить тренировку");
+            // Показываем кнопку суперсета только если есть 2+ упражнения без суперсета
+            int standaloneCount = 0;
+            for (SessionExerciseResponse ex : sessionExercises) {
+                if (ex.getSupersetGroupNumber() == null || ex.getSupersetGroupNumber() <= 0) {
+                    standaloneCount++;
+                }
+            }
+            createSupersetButton.setVisibility(standaloneCount >= 2 ? View.VISIBLE : View.GONE);
         }
     }
 }

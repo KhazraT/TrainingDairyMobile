@@ -42,18 +42,41 @@ import ru.squidory.trainingdairymobile.ui.exercises.ExerciseDetailActivity;
 
 /**
  * Адаптер для отображения упражнений в сессии.
- * Поддерживает раскрытие/сворачивание карточки упражнения.
- * При раскрытии: видео + RecyclerView подходов.
+ * Поддерживает:
+ * - Одиночные упражнения
+ * - Суперсеты (группы упражнений с рамкой)
+ * - Раскрытие/сворачивание
+ * - Drag-and-drop на уровне групп
  */
-public class SessionExerciseAdapter extends RecyclerView.Adapter<SessionExerciseAdapter.ViewHolder> {
+public class SessionExerciseAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 
-    private final List<SessionExerciseResponse> exercises = new ArrayList<>();
+    public static final int TYPE_SINGLE = 0;
+    public static final int TYPE_SUPERSET_GROUP = 1;
+
+    private final List<DisplayItem> items = new ArrayList<>();
     private Map<Long, ExerciseResponse> exerciseMap;
     private OnExerciseExpandListener expandListener;
     private OnSetActionListener setActionListener;
+    private OnExerciseDeleteListener deleteListener;
+    private ItemTouchHelper itemTouchHelper;
 
     // Позиции раскрытых упражнений
     private final Set<Integer> expandedPositions = new HashSet<>();
+
+    static class DisplayItem {
+        final int type;
+        final SessionExerciseResponse exercise;      // для SINGLE
+        final Integer supersetGroup;                 // для SUPERSET_GROUP
+        final List<SessionExerciseResponse> ssExercises;
+
+        DisplayItem(int type, SessionExerciseResponse exercise, Integer supersetGroup,
+                     List<SessionExerciseResponse> ssExercises) {
+            this.type = type;
+            this.exercise = exercise;
+            this.supersetGroup = supersetGroup;
+            this.ssExercises = ssExercises;
+        }
+    }
 
     public interface OnExerciseExpandListener {
         void onExpand(SessionExerciseResponse exercise, VideoView videoView);
@@ -70,21 +93,12 @@ public class SessionExerciseAdapter extends RecyclerView.Adapter<SessionExercise
         void onDeleteExercise(SessionExerciseResponse exercise);
     }
 
-    private OnExerciseDeleteListener deleteListener;
-
-    public void setOnExerciseDeleteListener(OnExerciseDeleteListener listener) {
-        this.deleteListener = listener;
-    }
-
-    private ItemTouchHelper itemTouchHelper;
-
-    public void setItemTouchHelper(ItemTouchHelper helper) {
-        this.itemTouchHelper = helper;
-    }
-
     public interface OnTimeSelectedCallback {
         void onTimeSelected(int totalSeconds);
     }
+
+    // Helper для работы с UI из ViewHolder
+    private final android.os.Handler mainHandler = new android.os.Handler(android.os.Looper.getMainLooper());
 
     public void setOnExerciseExpandListener(OnExerciseExpandListener listener) {
         this.expandListener = listener;
@@ -94,121 +108,136 @@ public class SessionExerciseAdapter extends RecyclerView.Adapter<SessionExercise
         this.setActionListener = listener;
     }
 
+    public void setOnExerciseDeleteListener(OnExerciseDeleteListener listener) {
+        this.deleteListener = listener;
+    }
+
     public void setExerciseMap(Map<Long, ExerciseResponse> map) {
         this.exerciseMap = map;
     }
 
-    // Helper для работы с UI из ViewHolder
-    private final android.os.Handler mainHandler = new android.os.Handler(android.os.Looper.getMainLooper());
-
-    /**
-     * Принудительно прочитать все значения из видимых ViewHolder'ов
-     * и записать в объекты. Вызывается перед валидацией/отправкой.
-     */
-    public void forceSyncVisibleSets() {
-        RecyclerView rv = null; // нет доступа здесь, но TextWatchers уже синхронизировали
-        // TextWatchers уже пишут в currentSet в реальном времени,
-        // так что объекты всегда актуальны. Этот метод — заглушка на будущее.
-    }
-
-    public void setExercises(List<SessionExerciseResponse> exercises) {
-        // НЕ очищаем expandedPositions — сохраняем состояние раскрытия
-        this.exercises.clear();
-        if (exercises != null) {
-            List<SessionExerciseResponse> sorted = new ArrayList<>(exercises);
-            sorted.sort((a, b) -> {
-                int oa = a.getExerciseOrder() != null ? a.getExerciseOrder() : 1;
-                int ob = b.getExerciseOrder() != null ? b.getExerciseOrder() : 1;
-                return Integer.compare(oa, ob);
-            });
-            this.exercises.addAll(sorted);
-        }
-        // Сортируем подходы внутри каждого упражнения по setNumber
-        for (SessionExerciseResponse ex : this.exercises) {
-            List<SessionSetResponse> sets = ex.getCompletedSets();
-            if (sets != null) {
-                sets.sort((a, b) -> {
-                    int oa = a.getSetNumber() != null ? a.getSetNumber() : 0;
-                    int ob = b.getSetNumber() != null ? b.getSetNumber() : 0;
-                    return Integer.compare(oa, ob);
-                });
-            }
-        }
-        notifyDataSetChanged();
+    public void setItemTouchHelper(ItemTouchHelper helper) {
+        this.itemTouchHelper = helper;
     }
 
     /**
-     * Переместить упражнение с одной позиции на другую (drag-and-drop).
+     * Переместить элемент на уровне групп.
      */
-    public boolean moveExercise(int fromPosition, int toPosition) {
-        if (fromPosition < 0 || fromPosition >= exercises.size() ||
-            toPosition < 0 || toPosition >= exercises.size() ||
-            fromPosition == toPosition) {
-            return false;
-        }
-        exercises.add(toPosition, exercises.remove(fromPosition));
-        // Обновляем expanded positions
-        Set<Integer> newExpanded = new HashSet<>();
-        for (Integer pos : expandedPositions) {
-            if (pos == fromPosition) {
-                newExpanded.add(toPosition);
-            } else if (fromPosition < toPosition) {
-                if (pos > fromPosition && pos <= toPosition) {
-                    newExpanded.add(pos - 1);
-                } else {
-                    newExpanded.add(pos);
-                }
-            } else {
-                if (pos >= toPosition && pos < fromPosition) {
-                    newExpanded.add(pos + 1);
-                } else {
-                    newExpanded.add(pos);
+    public boolean moveDisplayItem(int fromPos, int toPos) {
+        if (fromPos < 0 || fromPos >= items.size() || toPos < 0 || toPos >= items.size()) return false;
+        if (fromPos == toPos) return false;
+
+        DisplayItem moved = items.remove(fromPos);
+        int insertPos = toPos;
+        if (fromPos < toPos) insertPos--;
+        insertPos = Math.max(0, Math.min(insertPos, items.size()));
+        items.add(insertPos, moved);
+
+        // Пересчитываем order
+        int order = 1;
+        for (DisplayItem item : items) {
+            if (item.type == TYPE_SINGLE && item.exercise != null) {
+                item.exercise.setExerciseOrder(order++);
+            } else if (item.type == TYPE_SUPERSET_GROUP && item.ssExercises != null) {
+                for (SessionExerciseResponse ex : item.ssExercises) {
+                    ex.setExerciseOrder(order);
+                    order++;
                 }
             }
         }
-        expandedPositions.clear();
-        expandedPositions.addAll(newExpanded);
 
-        notifyItemMoved(fromPosition, toPosition);
+        notifyItemMoved(fromPos, insertPos);
         return true;
     }
 
     /**
-     * Получить текущий список упражнений (для обновления order после drag).
+     * Получить текущий список упражнений.
      */
     public List<SessionExerciseResponse> getCurrentExercises() {
-        return new ArrayList<>(exercises);
+        List<SessionExerciseResponse> result = new ArrayList<>();
+        for (DisplayItem item : items) {
+            if (item.type == TYPE_SINGLE && item.exercise != null) {
+                result.add(item.exercise);
+            } else if (item.type == TYPE_SUPERSET_GROUP && item.ssExercises != null) {
+                result.addAll(item.ssExercises);
+            }
+        }
+        return result;
+    }
+
+    /**
+     * Установить упражнения и сгруппировать по суперсетам.
+     */
+    public void setExercises(List<SessionExerciseResponse> exercises) {
+        items.clear();
+        if (exercises == null || exercises.isEmpty()) {
+            notifyDataSetChanged();
+            return;
+        }
+
+        List<SessionExerciseResponse> sorted = new ArrayList<>(exercises);
+        sorted.sort((a, b) -> {
+            int oa = a.getExerciseOrder() != null ? a.getExerciseOrder() : 0;
+            int ob = b.getExerciseOrder() != null ? b.getExerciseOrder() : 0;
+            return Integer.compare(oa, ob);
+        });
+
+        int i = 0;
+        while (i < sorted.size()) {
+            SessionExerciseResponse current = sorted.get(i);
+            Integer group = current.getSupersetGroupNumber();
+
+            if (group != null && group > 0) {
+                List<SessionExerciseResponse> ssExercises = new ArrayList<>();
+                while (i < sorted.size()) {
+                    SessionExerciseResponse ex = sorted.get(i);
+                    Integer exGroup = ex.getSupersetGroupNumber();
+                    if (exGroup == null || !exGroup.equals(group)) break;
+                    ssExercises.add(ex);
+                    i++;
+                }
+                items.add(new DisplayItem(TYPE_SUPERSET_GROUP, null, group, ssExercises));
+            } else {
+                items.add(new DisplayItem(TYPE_SINGLE, current, null, null));
+                i++;
+            }
+        }
+
+        notifyDataSetChanged();
+    }
+
+    @Override
+    public int getItemViewType(int position) {
+        return items.get(position).type;
     }
 
     @NonNull
     @Override
-    public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        View view = LayoutInflater.from(parent.getContext())
-                .inflate(R.layout.item_session_exercise, parent, false);
-        return new ViewHolder(view);
+    public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+        LayoutInflater inflater = LayoutInflater.from(parent.getContext());
+        if (viewType == TYPE_SUPERSET_GROUP) {
+            return new SupersetGroupViewHolder(inflater.inflate(R.layout.item_superset_group, parent, false));
+        } else {
+            return new SingleViewHolder(inflater.inflate(R.layout.item_session_exercise, parent, false));
+        }
     }
 
     @Override
-    public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
-        holder.bind(exercises.get(position), position);
+    public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position) {
+        DisplayItem item = items.get(position);
+        if (holder instanceof SupersetGroupViewHolder) {
+            ((SupersetGroupViewHolder) holder).bind(item.supersetGroup, item.ssExercises);
+        } else if (holder instanceof SingleViewHolder) {
+            ((SingleViewHolder) holder).bind(item.exercise, position);
+        }
     }
 
     @Override
     public int getItemCount() {
-        return exercises.size();
+        return items.size();
     }
 
-    @Override
-    public void onViewRecycled(@NonNull ViewHolder holder) {
-        super.onViewRecycled(holder);
-        // Останавливаем видео при утилизации ViewHolder
-        if (holder.exerciseVideoView != null && holder.exerciseVideoView.isPlaying()) {
-            holder.exerciseVideoView.stopPlayback();
-        }
-        holder.exerciseVideoView.setVisibility(View.GONE);
-    }
-
-    class ViewHolder extends RecyclerView.ViewHolder {
+    class SingleViewHolder extends RecyclerView.ViewHolder {
         private final MaterialCardView exerciseCard;
         private final LinearLayout exerciseHeader;
         private final ImageView dragHandle;
@@ -226,7 +255,7 @@ public class SessionExerciseAdapter extends RecyclerView.Adapter<SessionExercise
 
         private SessionSetsAdapter setsAdapter;
 
-        ViewHolder(@NonNull View itemView) {
+        SingleViewHolder(@NonNull View itemView) {
             super(itemView);
             exerciseCard = itemView.findViewById(R.id.exerciseCard);
             exerciseHeader = itemView.findViewById(R.id.exerciseHeader);
@@ -247,7 +276,6 @@ public class SessionExerciseAdapter extends RecyclerView.Adapter<SessionExercise
         void bind(SessionExerciseResponse exercise, int position) {
             boolean isExpanded = expandedPositions.contains(position);
 
-            // Название упражнения
             String name = getExerciseName(exercise);
             exerciseNameTextView.setText(name);
 
@@ -261,19 +289,16 @@ public class SessionExerciseAdapter extends RecyclerView.Adapter<SessionExercise
                         break;
                     }
                 }
-                if (primaryMuscle == null) {
-                    primaryMuscle = exercise.getTargetMuscles().get(0);
-                }
+                if (primaryMuscle == null) primaryMuscle = exercise.getTargetMuscles().get(0);
                 targetMuscleChip.setText(primaryMuscle.getName());
                 targetMusclesLayout.setVisibility(View.VISIBLE);
             }
 
-            // Иконка раскрытия/сворачивания
+            // Иконка раскрытия
             if (isExpanded) {
                 expandIcon.setImageResource(R.drawable.ic_expand_less);
                 expandIcon.setContentDescription("Свернуть");
                 exerciseContentLayout.setVisibility(View.VISIBLE);
-                // Восстанавливаем видео при перерисовке (после add/delete set)
                 if (exerciseVideoView != null && expandListener != null && exercise.getExerciseId() > 0) {
                     expandListener.onExpand(exercise, exerciseVideoView);
                 }
@@ -281,62 +306,43 @@ public class SessionExerciseAdapter extends RecyclerView.Adapter<SessionExercise
                 expandIcon.setImageResource(R.drawable.ic_expand_more);
                 expandIcon.setContentDescription("Раскрыть");
                 exerciseContentLayout.setVisibility(View.GONE);
-                // Останавливаем видео при сворачивании
                 if (exerciseVideoView != null && exerciseVideoView.isPlaying()) {
                     exerciseVideoView.stopPlayback();
                 }
             }
 
-            // Настройка RecyclerView подходов — ВСЕГДА создаём новый адаптер
+            // RecyclerView подходов
             List<SessionSetResponse> completedSets = exercise.getCompletedSets();
-            if (completedSets == null) {
-                completedSets = new ArrayList<>();
-            }
+            if (completedSets == null) completedSets = new ArrayList<>();
 
             setsAdapter = new SessionSetsAdapter(exercise);
             setsRecyclerView.setLayoutManager(new LinearLayoutManager(itemView.getContext()));
             setsRecyclerView.setAdapter(setsAdapter);
             setsRecyclerView.setNestedScrollingEnabled(false);
 
-            // Кнопка добавления подхода
             addSetButton.setOnClickListener(v -> {
-                if (setActionListener != null) {
-                    setActionListener.onAddSet(exercise);
-                }
+                if (setActionListener != null) setActionListener.onAddSet(exercise);
             });
 
-            // Клик по заголовку — раскрыть/свернуть
             exerciseHeader.setOnClickListener(v -> {
                 int pos = getAdapterPosition();
                 if (pos == RecyclerView.NO_POSITION) return;
-
                 if (expandedPositions.contains(pos)) {
-                    // Свернуть
                     expandedPositions.remove(pos);
                     exerciseContentLayout.setVisibility(View.GONE);
                     expandIcon.setImageResource(R.drawable.ic_expand_more);
-                    expandIcon.setContentDescription("Раскрыть");
                     if (exerciseVideoView != null && exerciseVideoView.isPlaying()) {
                         exerciseVideoView.stopPlayback();
                     }
-                    if (expandListener != null) {
-                        expandListener.onCollapse(exerciseVideoView);
-                    }
-                    // НЕ вызываем notifyItemChanged — views уже обновлены напрямую
+                    if (expandListener != null) expandListener.onCollapse(exerciseVideoView);
                 } else {
-                    // Раскрыть
                     expandedPositions.add(pos);
                     exerciseContentLayout.setVisibility(View.VISIBLE);
                     expandIcon.setImageResource(R.drawable.ic_expand_less);
-                    expandIcon.setContentDescription("Свернуть");
-                    if (expandListener != null) {
-                        expandListener.onExpand(exercise, exerciseVideoView);
-                    }
-                    // НЕ вызываем notifyItemChanged — views уже обновлены напрямую
+                    if (expandListener != null) expandListener.onExpand(exercise, exerciseVideoView);
                 }
             });
 
-            // Кнопка информации — открыть детали упражнения
             exerciseInfoButton.setOnClickListener(v -> {
                 long exerciseId = exercise.getExerciseId();
                 if (exerciseId > 0) {
@@ -347,14 +353,10 @@ public class SessionExerciseAdapter extends RecyclerView.Adapter<SessionExercise
                 }
             });
 
-            // Кнопка удаления — удалить упражнение
             deleteExerciseButton.setOnClickListener(v -> {
-                if (deleteListener != null) {
-                    deleteListener.onDeleteExercise(exercise);
-                }
+                if (deleteListener != null) deleteListener.onDeleteExercise(exercise);
             });
 
-            // Drag handle — начать перетаскивание
             dragHandle.setOnTouchListener((v, event) -> {
                 if (event.getActionMasked() == MotionEvent.ACTION_DOWN && itemTouchHelper != null) {
                     itemTouchHelper.startDrag(this);
@@ -365,22 +367,154 @@ public class SessionExerciseAdapter extends RecyclerView.Adapter<SessionExercise
         }
 
         private String getExerciseName(SessionExerciseResponse ex) {
-            if (ex.getExercise() != null && ex.getExercise().getName() != null) {
-                return ex.getExercise().getName();
-            }
-            if (ex.getExerciseName() != null && !ex.getExerciseName().isEmpty()) {
-                return ex.getExerciseName();
-            }
+            if (ex.getExercise() != null && ex.getExercise().getName() != null) return ex.getExercise().getName();
+            if (ex.getExerciseName() != null && !ex.getExerciseName().isEmpty()) return ex.getExerciseName();
             if (exerciseMap != null) {
                 Long exId = ex.getExerciseId();
                 if (exId != null && exId > 0) {
                     ExerciseResponse full = exerciseMap.get(exId);
-                    if (full != null && full.getName() != null) {
-                        return full.getName();
-                    }
+                    if (full != null && full.getName() != null) return full.getName();
                 }
             }
             return "Упражнение";
+        }
+    }
+
+    class SupersetGroupViewHolder extends RecyclerView.ViewHolder {
+        private final ImageView supersetDragHandle;
+        private final TextView supersetTitle;
+        private final ImageButton deleteSupersetButton;
+        private final RecyclerView supersetExercisesRecyclerView;
+
+        SupersetGroupViewHolder(@NonNull View itemView) {
+            super(itemView);
+            supersetDragHandle = itemView.findViewById(R.id.supersetDragHandle);
+            supersetTitle = itemView.findViewById(R.id.supersetTitle);
+            deleteSupersetButton = itemView.findViewById(R.id.deleteSupersetButton);
+            supersetExercisesRecyclerView = itemView.findViewById(R.id.supersetExercisesRecyclerView);
+        }
+
+        void bind(Integer supersetGroup, List<SessionExerciseResponse> exercises) {
+            supersetTitle.setText("Суперсет");
+            deleteSupersetButton.setOnClickListener(v -> {});
+
+            // Drag handle для суперсета
+            supersetDragHandle.setOnTouchListener((v, event) -> {
+                if (event.getActionMasked() == MotionEvent.ACTION_DOWN && itemTouchHelper != null) {
+                    itemTouchHelper.startDrag(this);
+                    return true;
+                }
+                return false;
+            });
+
+            final SupersetSessionAdapter innerAdapter = new SupersetSessionAdapter(exercises);
+            supersetExercisesRecyclerView.setLayoutManager(new LinearLayoutManager(itemView.getContext()));
+            supersetExercisesRecyclerView.setAdapter(innerAdapter);
+            supersetExercisesRecyclerView.setNestedScrollingEnabled(false);
+            supersetExercisesRecyclerView.setHasFixedSize(true);
+        }
+    }
+
+    /**
+     * Вложенный адаптер для упражнений внутри суперсета (сессия).
+     */
+    class SupersetSessionAdapter extends RecyclerView.Adapter<SupersetSessionAdapter.InnerViewHolder> {
+        private final List<SessionExerciseResponse> exercises;
+
+        SupersetSessionAdapter(List<SessionExerciseResponse> exercises) {
+            this.exercises = exercises != null ? new ArrayList<>(exercises) : new ArrayList<>();
+        }
+
+        @NonNull
+        @Override
+        public InnerViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+            View view = LayoutInflater.from(parent.getContext())
+                    .inflate(R.layout.item_session_exercise, parent, false);
+            // Убираем margin чтобы вложенные карточки выглядели紧凑
+            return new InnerViewHolder(view);
+        }
+
+        @Override
+        public void onBindViewHolder(@NonNull InnerViewHolder holder, int position) {
+            holder.bind(exercises.get(position));
+        }
+
+        @Override
+        public int getItemCount() {
+            return exercises.size();
+        }
+
+        class InnerViewHolder extends RecyclerView.ViewHolder {
+            private final LinearLayout exerciseHeader;
+            private final ImageView expandIcon;
+            private final TextView exerciseNameTextView;
+            private final LinearLayout exerciseContentLayout;
+            private final VideoView exerciseVideoView;
+            private final TextView setsLabel;
+            private final RecyclerView setsRecyclerView;
+            private final MaterialButton addSetButton;
+            private SessionSetsAdapter setsAdapter;
+
+            InnerViewHolder(@NonNull View itemView) {
+                super(itemView);
+                exerciseHeader = itemView.findViewById(R.id.exerciseHeader);
+                expandIcon = itemView.findViewById(R.id.expandIcon);
+                exerciseNameTextView = itemView.findViewById(R.id.exerciseNameTextView);
+                exerciseContentLayout = itemView.findViewById(R.id.exerciseContentLayout);
+                exerciseVideoView = itemView.findViewById(R.id.exerciseVideoView);
+                setsLabel = itemView.findViewById(R.id.setsLabel);
+                setsRecyclerView = itemView.findViewById(R.id.setsRecyclerView);
+                addSetButton = itemView.findViewById(R.id.addSetButton);
+                // Скрываем ненужные элементы внутри суперсета
+                View dragHandle = itemView.findViewById(R.id.dragHandle);
+                if (dragHandle != null) dragHandle.setVisibility(View.GONE);
+                View infoBtn = itemView.findViewById(R.id.exerciseInfoButton);
+                if (infoBtn != null) infoBtn.setVisibility(View.GONE);
+                View delBtn = itemView.findViewById(R.id.deleteExerciseButton);
+                if (delBtn != null) delBtn.setVisibility(View.GONE);
+                View muscleChip = itemView.findViewById(R.id.targetMusclesLayout);
+                if (muscleChip != null) muscleChip.setVisibility(View.GONE);
+            }
+
+            void bind(SessionExerciseResponse exercise) {
+                exerciseNameTextView.setText(getExerciseName(exercise));
+
+                boolean isExpanded = false;
+                expandIcon.setImageResource(R.drawable.ic_expand_more);
+                exerciseContentLayout.setVisibility(View.GONE);
+
+                List<SessionSetResponse> completedSets = exercise.getCompletedSets();
+                if (completedSets == null) completedSets = new ArrayList<>();
+
+                setsAdapter = new SessionSetsAdapter(exercise);
+                setsRecyclerView.setLayoutManager(new LinearLayoutManager(itemView.getContext()));
+                setsRecyclerView.setAdapter(setsAdapter);
+                setsRecyclerView.setNestedScrollingEnabled(false);
+
+                addSetButton.setOnClickListener(v -> {
+                    if (setActionListener != null) setActionListener.onAddSet(exercise);
+                });
+
+                exerciseHeader.setOnClickListener(v -> {
+                    if (exerciseContentLayout.getVisibility() == View.VISIBLE) {
+                        exerciseContentLayout.setVisibility(View.GONE);
+                        expandIcon.setImageResource(R.drawable.ic_expand_more);
+                        if (exerciseVideoView != null && exerciseVideoView.isPlaying()) {
+                            exerciseVideoView.stopPlayback();
+                        }
+                    } else {
+                        exerciseContentLayout.setVisibility(View.VISIBLE);
+                        expandIcon.setImageResource(R.drawable.ic_expand_less);
+                        if (expandListener != null) expandListener.onExpand(exercise, exerciseVideoView);
+                    }
+                });
+            }
+
+            private String getExerciseName(SessionExerciseResponse ex) {
+                if (ex.getExercise() != null && ex.getExercise().getName() != null) return ex.getExercise().getName();
+                if (ex.getExerciseName() != null && !ex.getExerciseName().isEmpty()) return ex.getExerciseName();
+                return "Упражнение";
+            }
         }
     }
 
@@ -390,7 +524,6 @@ public class SessionExerciseAdapter extends RecyclerView.Adapter<SessionExercise
     class SessionSetsAdapter extends RecyclerView.Adapter<SessionSetsAdapter.SetViewHolder> {
 
         private SessionExerciseResponse exercise;
-        // Кэшированный отсортированный список
         private List<SessionSetResponse> sortedSets = new ArrayList<>();
 
         SessionSetsAdapter(SessionExerciseResponse exercise) {
@@ -410,7 +543,6 @@ public class SessionExerciseAdapter extends RecyclerView.Adapter<SessionExercise
                 sortedSets = new ArrayList<>();
             } else {
                 sortedSets = new ArrayList<>(sets);
-                // Сортируем по setNumber (НЕ setOrder!) — setNumber это порядок от бэкенда
                 sortedSets.sort((a, b) -> {
                     int oa = a.getSetNumber() != null ? a.getSetNumber() : 0;
                     int ob = b.getSetNumber() != null ? b.getSetNumber() : 0;
@@ -429,10 +561,8 @@ public class SessionExerciseAdapter extends RecyclerView.Adapter<SessionExercise
 
         @Override
         public void onBindViewHolder(@NonNull SetViewHolder holder, int position) {
-            // Обновляем отсортированный список каждый раз
             updateSortedSets();
             if (position >= sortedSets.size()) return;
-
             SessionSetResponse set = sortedSets.get(position);
             holder.bind(set, exercise, position);
         }
@@ -446,25 +576,24 @@ public class SessionExerciseAdapter extends RecyclerView.Adapter<SessionExercise
         class SetViewHolder extends RecyclerView.ViewHolder {
             private final TextView setNumberTextView;
             private final LinearLayout weightColumn;
-            private final com.google.android.material.textfield.TextInputLayout weightInputLayout;
-            private final com.google.android.material.textfield.TextInputEditText weightInput;
+            private final TextInputLayout weightInputLayout;
+            private final TextInputEditText weightInput;
             private final LinearLayout repsColumn;
-            private final com.google.android.material.textfield.TextInputLayout repsInputLayout;
-            private final com.google.android.material.textfield.TextInputEditText repsInput;
+            private final TextInputLayout repsInputLayout;
+            private final TextInputEditText repsInput;
             private final LinearLayout timeColumn;
-            private final com.google.android.material.textfield.TextInputLayout timeInputLayout;
-            private final com.google.android.material.textfield.TextInputEditText timeInput;
+            private final TextInputLayout timeInputLayout;
+            private final TextInputEditText timeInput;
             private final LinearLayout distanceColumn;
-            private final com.google.android.material.textfield.TextInputLayout distanceInputLayout;
-            private final com.google.android.material.textfield.TextInputEditText distanceInput;
+            private final TextInputLayout distanceInputLayout;
+            private final TextInputEditText distanceInput;
             private final ImageButton deleteSetButton;
 
-            // Дропсет секция
             private final LinearLayout dropsetSection;
-            private final com.google.android.material.textfield.TextInputLayout dropsetWeightInputLayout;
-            private final com.google.android.material.textfield.TextInputEditText dropsetWeightInput;
-            private final com.google.android.material.textfield.TextInputLayout dropsetRepsInputLayout;
-            private final com.google.android.material.textfield.TextInputEditText dropsetRepsInput;
+            private final TextInputLayout dropsetWeightInputLayout;
+            private final TextInputEditText dropsetWeightInput;
+            private final TextInputLayout dropsetRepsInputLayout;
+            private final TextInputEditText dropsetRepsInput;
 
             // Отдых (на уровне подхода)
             private final LinearLayout restTimeRow;
@@ -473,7 +602,6 @@ public class SessionExerciseAdapter extends RecyclerView.Adapter<SessionExercise
             private final MaterialButton startRestTimerButton;
             private boolean timerUsed = false;
 
-            // Текущий подход и TextWatchers (устанавливаются один раз)
             private SessionSetResponse currentSet;
             private TextWatcher weightWatcher;
             private TextWatcher repsWatcher;
@@ -507,7 +635,6 @@ public class SessionExerciseAdapter extends RecyclerView.Adapter<SessionExercise
                 restTimeInput = itemView.findViewById(R.id.restTimeInput);
                 startRestTimerButton = itemView.findViewById(R.id.startRestTimerButton);
 
-                // TextWatchers — устанавливаются ОДИН РАЗ
                 weightWatcher = new TextWatcher() {
                     @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
                     @Override public void onTextChanged(CharSequence s, int start, int before, int count) {}
@@ -547,7 +674,6 @@ public class SessionExerciseAdapter extends RecyclerView.Adapter<SessionExercise
                 };
                 distanceInput.addTextChangedListener(distanceWatcher);
 
-                // Кнопка удаления
                 deleteSetButton.setOnClickListener(v -> {
                     if (currentSet != null && setActionListener != null) {
                         setActionListener.onDeleteSet(exercise, currentSet);
@@ -559,21 +685,15 @@ public class SessionExerciseAdapter extends RecyclerView.Adapter<SessionExercise
                 currentSet = set;
                 setNumberTextView.setText(String.valueOf(sortedPosition + 1));
 
-                // Берём тип упражнения из exerciseMap если есть, иначе из самого exercise
                 String exerciseType = exercise.getExerciseType();
                 if ((exerciseType == null || exerciseType.isEmpty()) && exerciseMap != null) {
                     Long exId = exercise.getExerciseId();
                     if (exId != null && exId > 0 && exerciseMap.containsKey(exId)) {
                         String mapType = exerciseMap.get(exId).getExerciseType();
-                        if (mapType != null && !mapType.isEmpty()) {
-                            exerciseType = mapType;
-                        }
+                        if (mapType != null && !mapType.isEmpty()) exerciseType = mapType;
                     }
                 }
-                // Fallback только если всё ещё null
-                if (exerciseType == null || exerciseType.isEmpty()) {
-                    exerciseType = "REPS_WEIGHT";
-                }
+                if (exerciseType == null || exerciseType.isEmpty()) exerciseType = "REPS_WEIGHT";
 
                 boolean isRepsWeight = "REPS_WEIGHT".equalsIgnoreCase(exerciseType);
                 boolean isTimeWeight = "TIME_WEIGHT".equalsIgnoreCase(exerciseType);
@@ -588,17 +708,13 @@ public class SessionExerciseAdapter extends RecyclerView.Adapter<SessionExercise
                 weightInput.setText(set.getWeight() != null ? String.valueOf(set.getWeight()) : "");
                 repsInput.setText(set.getReps() != null ? String.valueOf(set.getReps()) : "");
 
-                // Время: секунды → мм:сс
                 if (set.getDurationSeconds() != null) {
                     int sec = set.getDurationSeconds();
-                    int min = sec / 60;
-                    int s = sec % 60;
-                    timeInput.setText(String.format("%02d:%02d", min, s));
+                    timeInput.setText(String.format("%02d:%02d", sec / 60, sec % 60));
                 } else {
                     timeInput.setText("");
                 }
 
-                // Дистанция: метры → км
                 if (set.getDistanceMeters() != null) {
                     double km = set.getDistanceMeters() / 1000.0;
                     distanceInput.setText(String.valueOf(km));
@@ -606,25 +722,19 @@ public class SessionExerciseAdapter extends RecyclerView.Adapter<SessionExercise
                     distanceInput.setText("");
                 }
 
-                // Поле времени — NumberPicker по клику
                 timeInput.setFocusable(false);
                 timeInput.setClickable(true);
                 final SessionSetResponse[] setRef = new SessionSetResponse[]{set};
                 timeInput.setOnClickListener(v -> {
                     if (setActionListener != null) {
                         int currentSec = set.getDurationSeconds() != null ? set.getDurationSeconds() : 0;
-                        final int[] resultSec = {currentSec};
                         setActionListener.onTimePickerClick(exercise, setRef[0], seconds -> {
-                            resultSec[0] = seconds;
                             set.setDurationSeconds(seconds);
-                            int min = seconds / 60;
-                            int sec = seconds % 60;
-                            timeInput.setText(String.format("%02d:%02d", min, sec));
+                            timeInput.setText(String.format("%02d:%02d", seconds / 60, seconds % 60));
                         });
                     }
                 });
 
-                // Конвертация дистанции при потере фокуса (км → метры)
                 distanceInput.setOnFocusChangeListener((v, hasFocus) -> {
                     if (!hasFocus) {
                         String val = distanceInput.getText() != null ? distanceInput.getText().toString().trim() : "";
@@ -632,9 +742,7 @@ public class SessionExerciseAdapter extends RecyclerView.Adapter<SessionExercise
                             try {
                                 double km = Double.parseDouble(val);
                                 set.setDistanceMeters(km * 1000);
-                            } catch (NumberFormatException e) {
-                                // Оставляем как есть
-                            }
+                            } catch (NumberFormatException e) {}
                         }
                     }
                 });
@@ -688,10 +796,8 @@ public class SessionExerciseAdapter extends RecyclerView.Adapter<SessionExercise
                         .inflate(R.layout.dialog_time_picker, null);
                 android.widget.NumberPicker minutesPicker = dialogView.findViewById(R.id.minutesPicker);
                 android.widget.NumberPicker secondsPicker = dialogView.findViewById(R.id.secondsPicker);
-                minutesPicker.setMinValue(0);
-                minutesPicker.setMaxValue(59);
-                secondsPicker.setMinValue(0);
-                secondsPicker.setMaxValue(59);
+                minutesPicker.setMinValue(0); minutesPicker.setMaxValue(59);
+                secondsPicker.setMinValue(0); secondsPicker.setMaxValue(59);
                 int currentRest = set.getRestTime() != null ? set.getRestTime() : 0;
                 minutesPicker.setValue(currentRest / 60);
                 secondsPicker.setValue(currentRest % 60);

@@ -48,10 +48,21 @@ public class CompleteSessionRequest {
         @SerializedName("exerciseType")
         private String exerciseType;
 
+        @SerializedName("supersetGroupNumber")
+        private Integer supersetGroupNumber;
+
         @SerializedName("completedSets")
         private List<CompletedSetData> completedSets;
 
         public ExerciseCompletion() {}
+
+        public Integer getSupersetGroupNumber() {
+            return supersetGroupNumber;
+        }
+
+        public void setSupersetGroupNumber(Integer supersetGroupNumber) {
+            this.supersetGroupNumber = supersetGroupNumber;
+        }
 
         public Long getExerciseId() { return exerciseId; }
         public void setExerciseId(Long exerciseId) { this.exerciseId = exerciseId; }

@@ -1082,6 +1082,8 @@ public class SessionActivity extends AppCompatActivity {
             completion.setExerciseOrder(exercise.getExerciseOrder());
             // Отправляем exerciseType — бэкенд использует его для записи правильных полей
             completion.setExerciseType(exercise.getExerciseType());
+            // Отправляем номер суперсета (может быть null)
+            completion.setSupersetGroupNumber(exercise.getSupersetGroupNumber());
 
             List<CompleteSessionRequest.CompletedSetData> setData = new ArrayList<>();
             if (exercise.getCompletedSets() != null) {

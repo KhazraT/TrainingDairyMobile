@@ -574,6 +574,11 @@ public class SessionActivity extends AppCompatActivity {
             public void onTimePickerClick(SessionExerciseResponse exercise, SessionSetResponse set, SessionExerciseAdapter.OnTimeSelectedCallback callback) {
                 showInlineTimePicker(set, callback);
             }
+
+            @Override
+            public void onDeleteSuperset(int supersetGroup) {
+                confirmDeleteSuperset(supersetGroup);
+            }
         });
 
         adapter.setOnExerciseDeleteListener(new SessionExerciseAdapter.OnExerciseDeleteListener() {
@@ -953,6 +958,25 @@ public class SessionActivity extends AppCompatActivity {
             .setMessage("Удалить \"" + exerciseName + "\" из тренировки?")
             .setPositiveButton("Удалить", (dialog, which) -> {
                 removeExerciseFromSession(exercise);
+            })
+            .setNegativeButton("Отмена", null)
+            .show();
+    }
+
+    private void confirmDeleteSuperset(int supersetGroup) {
+        new AlertDialog.Builder(this)
+            .setTitle("Разгруппировать суперсет")
+            .setMessage("Разгруппировать упражнения суперсета?")
+            .setPositiveButton("Да", (dialog, which) -> {
+                // Разгруппировка: просто ставим null для supersetGroupNumber
+                for (SessionExerciseResponse ex : sessionExercises) {
+                    if (ex.getSupersetGroupNumber() != null && ex.getSupersetGroupNumber() == supersetGroup) {
+                        ex.setSupersetGroupNumber(null);
+                    }
+                }
+                adapter.setExercises(sessionExercises);
+                updateUI();
+                Toast.makeText(this, "Суперсет разгруппирован", Toast.LENGTH_SHORT).show();
             })
             .setNegativeButton("Отмена", null)
             .show();

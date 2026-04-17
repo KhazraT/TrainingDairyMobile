@@ -87,6 +87,7 @@ public class SessionExerciseAdapter extends RecyclerView.Adapter<RecyclerView.Vi
         void onAddSet(SessionExerciseResponse exercise);
         void onDeleteSet(SessionExerciseResponse exercise, SessionSetResponse set);
         void onTimePickerClick(SessionExerciseResponse exercise, SessionSetResponse set, OnTimeSelectedCallback callback);
+        void onDeleteSuperset(int supersetGroup);
     }
 
     public interface OnExerciseDeleteListener {
@@ -396,7 +397,11 @@ public class SessionExerciseAdapter extends RecyclerView.Adapter<RecyclerView.Vi
 
         void bind(Integer supersetGroup, List<SessionExerciseResponse> exercises) {
             supersetTitle.setText("Суперсет");
-            deleteSupersetButton.setOnClickListener(v -> {});
+            deleteSupersetButton.setOnClickListener(v -> {
+                if (supersetGroup != null && setActionListener != null) {
+                    setActionListener.onDeleteSuperset(supersetGroup);
+                }
+            });
 
             // Drag handle для суперсета
             supersetDragHandle.setOnTouchListener((v, event) -> {
@@ -412,6 +417,34 @@ public class SessionExerciseAdapter extends RecyclerView.Adapter<RecyclerView.Vi
             supersetExercisesRecyclerView.setAdapter(innerAdapter);
             supersetExercisesRecyclerView.setNestedScrollingEnabled(false);
             supersetExercisesRecyclerView.setHasFixedSize(true);
+
+            // Drag-and-drop внутри суперсета
+            ItemTouchHelper.Callback innerCallback = new ItemTouchHelper.SimpleCallback(
+                    ItemTouchHelper.UP | ItemTouchHelper.DOWN, 0) {
+                @Override
+                public boolean onMove(@NonNull RecyclerView recyclerView,
+                                      @NonNull RecyclerView.ViewHolder viewHolder,
+                                      @NonNull RecyclerView.ViewHolder target) {
+                    int from = viewHolder.getAdapterPosition();
+                    int to = target.getAdapterPosition();
+                    if (from >= 0 && from < exercises.size() && to >= 0 && to < exercises.size()) {
+                        SessionExerciseResponse moved = exercises.remove(from);
+                        exercises.add(to, moved);
+                        innerAdapter.notifyItemMoved(from, to);
+                        return true;
+                    }
+                    return false;
+                }
+
+                @Override
+                public void onSwiped(@NonNull RecyclerView.ViewHolder viewHolder, int direction) {}
+
+                @Override
+                public boolean isLongPressDragEnabled() {
+                    return true;
+                }
+            };
+            new ItemTouchHelper(innerCallback).attachToRecyclerView(supersetExercisesRecyclerView);
         }
     }
 
@@ -467,9 +500,9 @@ public class SessionExerciseAdapter extends RecyclerView.Adapter<RecyclerView.Vi
                 addSetButton = itemView.findViewById(R.id.addSetButton);
                 // Скрываем ненужные элементы внутри суперсета
                 View dragHandle = itemView.findViewById(R.id.dragHandle);
-                if (dragHandle != null) dragHandle.setVisibility(View.GONE);
+                if (dragHandle != null) dragHandle.setVisibility(View.VISIBLE);
                 View infoBtn = itemView.findViewById(R.id.exerciseInfoButton);
-                if (infoBtn != null) infoBtn.setVisibility(View.GONE);
+                if (infoBtn != null) infoBtn.setVisibility(View.VISIBLE); // Отображаем кнопку информации
                 View delBtn = itemView.findViewById(R.id.deleteExerciseButton);
                 if (delBtn != null) delBtn.setVisibility(View.GONE);
                 View muscleChip = itemView.findViewById(R.id.targetMusclesLayout);
@@ -479,9 +512,44 @@ public class SessionExerciseAdapter extends RecyclerView.Adapter<RecyclerView.Vi
             void bind(SessionExerciseResponse exercise) {
                 exerciseNameTextView.setText(getExerciseName(exercise));
 
-                boolean isExpanded = false;
-                expandIcon.setImageResource(R.drawable.ic_expand_more);
-                exerciseContentLayout.setVisibility(View.GONE);
+                // Кнопка "i" (информация об упражнении)
+                View infoBtn = itemView.findViewById(R.id.exerciseInfoButton);
+                if (infoBtn != null) {
+                    infoBtn.setOnClickListener(v -> {
+                        Intent intent = new Intent(itemView.getContext(), ExerciseDetailActivity.class);
+                        intent.putExtra("exercise_id", exercise.getExerciseId());
+                        itemView.getContext().startActivity(intent);
+                    });
+                }
+
+                // Drag handle для перетаскивания внутри суперсета
+                View dragHandle = itemView.findViewById(R.id.dragHandle);
+                if (dragHandle != null) {
+                    dragHandle.setOnTouchListener((v, event) -> {
+                        if (event.getActionMasked() == MotionEvent.ACTION_DOWN && itemTouchHelper != null) {
+                            itemTouchHelper.startDrag(this);
+                            return true;
+                        }
+                        return false;
+                    });
+                }
+
+                // ВОССТАНОВЛЕНИЕ СОСТОЯНИЯ:
+                // Уникальный ID для этого упражнения в рамках сессии
+                long exerciseId = exercise.getId();
+                boolean isExpanded = expandedPositions.contains((int) exerciseId); // Используем ID, а не позицию
+
+                if (isExpanded) {
+                    exerciseContentLayout.setVisibility(View.VISIBLE);
+                    expandIcon.setImageResource(R.drawable.ic_expand_less);
+                    // ВОССТАНОВЛЕНИЕ ВИДЕО:
+                    if (expandListener != null) {
+                        expandListener.onExpand(exercise, exerciseVideoView);
+                    }
+                } else {
+                    exerciseContentLayout.setVisibility(View.GONE);
+                    expandIcon.setImageResource(R.drawable.ic_expand_more);
+                }
 
                 List<SessionSetResponse> completedSets = exercise.getCompletedSets();
                 if (completedSets == null) completedSets = new ArrayList<>();
@@ -499,12 +567,14 @@ public class SessionExerciseAdapter extends RecyclerView.Adapter<RecyclerView.Vi
                     if (exerciseContentLayout.getVisibility() == View.VISIBLE) {
                         exerciseContentLayout.setVisibility(View.GONE);
                         expandIcon.setImageResource(R.drawable.ic_expand_more);
+                        expandedPositions.remove((int) exerciseId);
                         if (exerciseVideoView != null && exerciseVideoView.isPlaying()) {
                             exerciseVideoView.stopPlayback();
                         }
                     } else {
                         exerciseContentLayout.setVisibility(View.VISIBLE);
                         expandIcon.setImageResource(R.drawable.ic_expand_less);
+                        expandedPositions.add((int) exerciseId);
                         if (expandListener != null) expandListener.onExpand(exercise, exerciseVideoView);
                     }
                 });
@@ -534,6 +604,8 @@ public class SessionExerciseAdapter extends RecyclerView.Adapter<RecyclerView.Vi
         void updateExercise(SessionExerciseResponse exercise) {
             this.exercise = exercise;
             updateSortedSets();
+            // Используем notifyDataSetChanged только для вложенного адаптера подходов,
+            // так как он не содержит раскрывающихся упражнений.
             notifyDataSetChanged();
         }
 

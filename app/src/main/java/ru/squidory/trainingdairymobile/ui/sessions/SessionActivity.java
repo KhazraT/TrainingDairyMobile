@@ -1350,8 +1350,8 @@ public class SessionActivity extends AppCompatActivity {
             if (sets == null || sets.isEmpty()) return false;
 
             for (SessionSetResponse set : sets) {
-                // Пропускаем элементы отдыха и дропсет-подходы (они не требуют заполнения)
-                if (set.isRest() || set.isDropsetPart()) continue;
+                // Пропускаем только элементы отдыха
+                if (set.isRest()) continue;
 
                 if (isRepsWeight) {
                     if (set.getWeight() == null || set.getReps() == null) return false;
@@ -1392,7 +1392,7 @@ public class SessionActivity extends AppCompatActivity {
                     return Integer.compare(oa, ob);
                 });
 
-                // Собираем группы дропсетов
+                // Собираем группы дропсетов (main + parts + rest item)
                 Map<Long, List<SessionSetResponse>> dropsetGroups = new HashMap<>();
                 for (SessionSetResponse set : sortedSets) {
                     if (set.getDropsetGroupId() != null) {
@@ -1400,12 +1400,9 @@ public class SessionActivity extends AppCompatActivity {
                     }
                 }
 
-                // Отправляем подходы, пропуская дропсет-подходы и элементы отдыха
+                // Отправляем подходы, пропуская дропсет-части и rest-item (они упакуются в основной)
                 for (SessionSetResponse set : sortedSets) {
-                    // Пропускаем элементы отдыха
                     if (set.isRest()) continue;
-
-                    // Пропускаем дропсет-подходы (они уже учтены в основном подходе)
                     if (set.isDropsetPart()) continue;
 
                     CompleteSessionRequest.CompletedSetData data = new CompleteSessionRequest.CompletedSetData();
@@ -1416,37 +1413,50 @@ public class SessionActivity extends AppCompatActivity {
                     data.setSetOrder(set.getSetNumber());
                     data.setIsWarmup(set.isWarmup());
 
-                    // Проверяем, есть ли связанные дропсет-подходы
                     Long groupId = set.getDropsetGroupId();
                     if (groupId != null && dropsetGroups.containsKey(groupId)) {
                         List<SessionSetResponse> groupSets = dropsetGroups.get(groupId);
 
-                        // Собираем все дропсет-подходы (исключая сам основной и rest)
-                        List<Double> dropsetWeights = new ArrayList<>();
-                        List<Integer> dropsetRepsList = new ArrayList<>();
+                        // Берём части дропсета и отдых после цепочки
+                        List<SessionSetResponse> parts = new ArrayList<>();
                         Integer restAfterDropset = null;
-
                         for (SessionSetResponse gs : groupSets) {
-                            if (gs == set) continue; // Пропускаем сам основной
+                            if (gs == set) continue;
                             if (gs.isDropsetPart()) {
-                                dropsetWeights.add(gs.getWeight());
-                                dropsetRepsList.add(gs.getReps());
+                                parts.add(gs);
                             } else if (gs.isRest()) {
                                 restAfterDropset = gs.getRestTime();
                             }
                         }
+                        parts.sort((a, b) -> {
+                            int oa = a.getSetNumber() != null ? a.getSetNumber() : 0;
+                            int ob = b.getSetNumber() != null ? b.getSetNumber() : 0;
+                            return Integer.compare(oa, ob);
+                        });
 
-                        if (!dropsetWeights.isEmpty()) {
+                        if (!parts.isEmpty()) {
+                            List<Double> dropsetWeights = new ArrayList<>();
+                            List<Integer> dropsetRepsList = new ArrayList<>();
+                            for (SessionSetResponse p : parts) {
+                                dropsetWeights.add(p.getWeight());
+                                dropsetRepsList.add(p.getReps());
+                            }
+
                             data.setIsDropset(true);
-                            data.setDropsetWeight(dropsetWeights.get(0));
-                            data.setDropsetReps(dropsetRepsList.get(0));
-                            data.setDropsetWeights(dropsetWeights.size() > 1 ? dropsetWeights.subList(1, dropsetWeights.size()) : null);
-                            data.setDropsetRepsList(dropsetRepsList.size() > 1 ? dropsetRepsList.subList(1, dropsetRepsList.size()) : null);
+                            // ВЕСЬ дропсет отправляем списками (как просит бэкенд/ТЗ)
+                            data.setDropsetWeight(null);
+                            data.setDropsetReps(null);
+                            data.setDropsetWeights(dropsetWeights);
+                            data.setDropsetRepsList(dropsetRepsList);
+                            data.setRestTime(restAfterDropset);
+                        } else {
+                            // Есть groupId, но нет частей — считаем обычным
+                            data.setIsDropset(false);
+                            data.setRestTime(set.getRestTime());
                         }
-                        data.setRestTime(restAfterDropset);
                     } else {
-                        // Обычный подход без дропсета
                         data.setIsDropset(false);
+                        data.setRestTime(set.getRestTime());
                     }
 
                     setData.add(data);

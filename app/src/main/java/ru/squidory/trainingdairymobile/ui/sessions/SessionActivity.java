@@ -1044,20 +1044,19 @@ public class SessionActivity extends AppCompatActivity {
         }
 
         // Отдых после последнего подхода дропсета
-        if (restTime != null && restTime > 0) {
-            SessionSetResponse restSet = new SessionSetResponse();
-            restSet.setSetNumber(maxSetNumber + weights.size() + 1);
-            restSet.setSetOrder(maxSetNumber + weights.size());
-            restSet.setWeight(null);
-            restSet.setReps(null);
-            restSet.setIsDropset(false);
-            restSet.setIsDropsetPart(false);
-            restSet.setIsRest(true); // Флаг что это элемент отдыха
-            restSet.setRestTime(restTime);
-            restSet.setIsWarmup(false);
-            restSet.setDropsetGroupId(dropsetGroupId); // Та же группа
-            completedSets.add(restSet);
-        }
+        // Рисуем отдых отдельным элементом (даже если 0) — только после цепочки дропсета
+        SessionSetResponse restSet = new SessionSetResponse();
+        restSet.setSetNumber(maxSetNumber + weights.size() + 1);
+        restSet.setSetOrder(maxSetNumber + weights.size());
+        restSet.setWeight(null);
+        restSet.setReps(null);
+        restSet.setIsDropset(false);
+        restSet.setIsDropsetPart(false);
+        restSet.setIsRest(true); // Флаг что это элемент отдыха
+        restSet.setRestTime(restTime != null ? restTime : 0);
+        restSet.setIsWarmup(false);
+        restSet.setDropsetGroupId(dropsetGroupId); // Та же группа
+        completedSets.add(restSet);
 
         adapter.notifyDataSetChanged();
     }

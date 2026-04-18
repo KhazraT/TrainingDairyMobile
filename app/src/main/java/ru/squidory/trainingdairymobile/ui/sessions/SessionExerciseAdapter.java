@@ -649,6 +649,12 @@ public class SessionExerciseAdapter extends RecyclerView.Adapter<RecyclerView.Vi
             if (set.isRest()) {
                 return false;
             }
+
+            // Для любых элементов, принадлежащих дропсет-группе, не показываем строку отдыха:
+            // отдых в этом сценарии рисуется отдельным элементом после цепочки дропсета.
+            if (set.getDropsetGroupId() != null) {
+                return false;
+            }
             
             // Для дропсета: только после последнего подхода дропсета
             if (set.isDropset() || set.isDropsetPart()) {
@@ -797,20 +803,22 @@ public class SessionExerciseAdapter extends RecyclerView.Adapter<RecyclerView.Vi
                     setItemRoot.setBackgroundColor(0x10FF9800);
                     setTypeLabel.setVisibility(View.VISIBLE);
                     setTypeLabel.setText("дропсет");
+                    setNumberTextView.setVisibility(View.VISIBLE);
                     setNumberTextView.setBackgroundTintList(android.content.res.ColorStateList.valueOf(0xFFFF9800));
                 } else {
                     setItemRoot.setBackgroundColor(0x00000000);
                     setTypeLabel.setVisibility(View.GONE);
+                    setNumberTextView.setVisibility(View.VISIBLE);
                     setNumberTextView.setBackgroundTintList(null);
                 }
 
                 // Для элемента отдыха - особое отображение
                 if (isRestItem) {
-                    setItemRoot.setBackgroundColor(0x2000FF00);
-                    setTypeLabel.setVisibility(View.VISIBLE);
-                    setTypeLabel.setText("отдых");
-                    setTypeLabel.setTextColor(0xFF00C853);
-                    setNumberTextView.setBackgroundTintList(android.content.res.ColorStateList.valueOf(0xFF00C853));
+                    // Отдых после дропсета: отдельный элемент на обычном фоне
+                    setItemRoot.setBackgroundColor(0x00000000);
+                    setTypeLabel.setVisibility(View.GONE);
+                    setNumberTextView.setVisibility(View.GONE);
+                    setNumberTextView.setBackgroundTintList(null);
                     
                     // Скрываем поля ввода
                     weightColumn.setVisibility(View.GONE);
@@ -818,6 +826,7 @@ public class SessionExerciseAdapter extends RecyclerView.Adapter<RecyclerView.Vi
                     timeColumn.setVisibility(View.GONE);
                     distanceColumn.setVisibility(View.GONE);
                     deleteSetButton.setVisibility(View.GONE);
+                    startRestTimerButton.setBackgroundTintList(null);
                     
                     // Показываем отдых
                     restTimeRow.setVisibility(View.VISIBLE);
@@ -827,7 +836,8 @@ public class SessionExerciseAdapter extends RecyclerView.Adapter<RecyclerView.Vi
                     } else {
                         restTimeInput.setText("00:00");
                     }
-                    restTimeInput.setEnabled(false);
+                    restTimeInput.setEnabled(true);
+                    restTimeInput.setOnClickListener(v -> showRestTimePickerForSet(set));
                     startRestTimerButton.setVisibility(View.VISIBLE);
                     startRestTimerButton.setEnabled(true);
                     startRestTimerButton.setText("▶");
@@ -852,6 +862,10 @@ public class SessionExerciseAdapter extends RecyclerView.Adapter<RecyclerView.Vi
                     });
                     return;
                 }
+
+                // Для обычных/дропсет подходов возвращаем видимость
+                setNumberTextView.setVisibility(View.VISIBLE);
+                deleteSetButton.setVisibility(View.VISIBLE);
 
                 // Сбрасываем цвета для обычного подхода
                 setTypeLabel.setTextColor(0xFFFF9800);

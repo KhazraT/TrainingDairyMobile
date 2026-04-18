@@ -636,7 +636,45 @@ public class SessionExerciseAdapter extends RecyclerView.Adapter<RecyclerView.Vi
             updateSortedSets();
             if (position >= sortedSets.size()) return;
             SessionSetResponse set = sortedSets.get(position);
-            holder.bind(set, exercise, position);
+            
+            // Определяем, показывать ли отдых для этого подхода
+            // Для дропсета: показываем отдых только после последнего подхода дропсета
+            boolean showRestTime = shouldShowRestTime(set, position);
+            
+            holder.bind(set, exercise, position, showRestTime);
+        }
+
+        private boolean shouldShowRestTime(SessionSetResponse set, int position) {
+            // Если это элемент отдыха - не показываем отдых
+            if (set.isRest()) {
+                return false;
+            }
+            
+            // Для дропсета: только после последнего подхода дропсета
+            if (set.isDropset() || set.isDropsetPart()) {
+                // Ищем следующий подход в цепочке дропсета
+                for (int i = position + 1; i < sortedSets.size(); i++) {
+                    SessionSetResponse nextSet = sortedSets.get(i);
+                    // Если следующий элемент - тоже часть дропсета, скрываем отдых
+                    if (nextSet.isDropsetPart()) {
+                        return false;
+                    }
+                    // Если следующий элемент - отдельный подход, скрываем отдых текущего
+                    // (отдых будет показан после последнего подхода дропсета)
+                    if (!nextSet.isDropset() && !nextSet.isDropsetPart() && !nextSet.isRest()) {
+                        return false;
+                    }
+                    // Если следующий элемент - отдых после дропсета, скрываем отдых текущего
+                    if (nextSet.isRest()) {
+                        return false;
+                    }
+                }
+                // Это последний подход в цепочке дропсета
+                return true;
+            }
+            
+            // Для обычного подхода - показываем отдых
+            return true;
         }
 
         @Override
@@ -646,7 +684,9 @@ public class SessionExerciseAdapter extends RecyclerView.Adapter<RecyclerView.Vi
         }
 
         class SetViewHolder extends RecyclerView.ViewHolder {
+            private final LinearLayout setItemRoot;
             private final TextView setNumberTextView;
+            private final TextView setTypeLabel;
             private final LinearLayout weightColumn;
             private final TextInputLayout weightInputLayout;
             private final TextInputEditText weightInput;
@@ -660,12 +700,6 @@ public class SessionExerciseAdapter extends RecyclerView.Adapter<RecyclerView.Vi
             private final TextInputLayout distanceInputLayout;
             private final TextInputEditText distanceInput;
             private final ImageButton deleteSetButton;
-
-            private final LinearLayout dropsetSection;
-            private final TextInputLayout dropsetWeightInputLayout;
-            private final TextInputEditText dropsetWeightInput;
-            private final TextInputLayout dropsetRepsInputLayout;
-            private final TextInputEditText dropsetRepsInput;
 
             // Отдых (на уровне подхода)
             private final LinearLayout restTimeRow;
@@ -681,7 +715,9 @@ public class SessionExerciseAdapter extends RecyclerView.Adapter<RecyclerView.Vi
 
             SetViewHolder(@NonNull View itemView) {
                 super(itemView);
+                setItemRoot = itemView.findViewById(R.id.setItemRoot);
                 setNumberTextView = itemView.findViewById(R.id.setNumberTextView);
+                setTypeLabel = itemView.findViewById(R.id.setTypeLabel);
                 weightColumn = itemView.findViewById(R.id.weightColumn);
                 weightInputLayout = itemView.findViewById(R.id.weightInputLayout);
                 weightInput = itemView.findViewById(R.id.weightInput);
@@ -695,12 +731,6 @@ public class SessionExerciseAdapter extends RecyclerView.Adapter<RecyclerView.Vi
                 distanceInputLayout = itemView.findViewById(R.id.distanceInputLayout);
                 distanceInput = itemView.findViewById(R.id.distanceInput);
                 deleteSetButton = itemView.findViewById(R.id.deleteSetButton);
-
-                dropsetSection = itemView.findViewById(R.id.dropsetSection);
-                dropsetWeightInputLayout = itemView.findViewById(R.id.dropsetWeightInputLayout);
-                dropsetWeightInput = itemView.findViewById(R.id.dropsetWeightInput);
-                dropsetRepsInputLayout = itemView.findViewById(R.id.dropsetRepsInputLayout);
-                dropsetRepsInput = itemView.findViewById(R.id.dropsetRepsInput);
 
                 restTimeRow = itemView.findViewById(R.id.restTimeRow);
                 restTimeInputLayout = itemView.findViewById(R.id.restTimeInputLayout);
@@ -753,9 +783,79 @@ public class SessionExerciseAdapter extends RecyclerView.Adapter<RecyclerView.Vi
                 });
             }
 
-            void bind(SessionSetResponse set, SessionExerciseResponse exercise, int sortedPosition) {
+            void bind(SessionSetResponse set, SessionExerciseResponse exercise, int sortedPosition, boolean showRestTime) {
                 currentSet = set;
                 setNumberTextView.setText(String.valueOf(sortedPosition + 1));
+
+                // Определяем тип подхода для визуального отображения
+                boolean isDropsetSet = set.isDropset();
+                boolean isDropsetPart = set.isDropsetPart();
+                boolean isRestItem = set.isRest();
+
+                // Дропсет подходы и их части - оранжевый фон
+                if (isDropsetSet || isDropsetPart) {
+                    setItemRoot.setBackgroundColor(0x10FF9800);
+                    setTypeLabel.setVisibility(View.VISIBLE);
+                    setTypeLabel.setText("дропсет");
+                    setNumberTextView.setBackgroundTintList(android.content.res.ColorStateList.valueOf(0xFFFF9800));
+                } else {
+                    setItemRoot.setBackgroundColor(0x00000000);
+                    setTypeLabel.setVisibility(View.GONE);
+                    setNumberTextView.setBackgroundTintList(null);
+                }
+
+                // Для элемента отдыха - особое отображение
+                if (isRestItem) {
+                    setItemRoot.setBackgroundColor(0x2000FF00);
+                    setTypeLabel.setVisibility(View.VISIBLE);
+                    setTypeLabel.setText("отдых");
+                    setTypeLabel.setTextColor(0xFF00C853);
+                    setNumberTextView.setBackgroundTintList(android.content.res.ColorStateList.valueOf(0xFF00C853));
+                    
+                    // Скрываем поля ввода
+                    weightColumn.setVisibility(View.GONE);
+                    repsColumn.setVisibility(View.GONE);
+                    timeColumn.setVisibility(View.GONE);
+                    distanceColumn.setVisibility(View.GONE);
+                    deleteSetButton.setVisibility(View.GONE);
+                    
+                    // Показываем отдых
+                    restTimeRow.setVisibility(View.VISIBLE);
+                    Integer restTime = set.getRestTime();
+                    if (restTime != null && restTime > 0) {
+                        restTimeInput.setText(String.format("%02d:%02d", restTime / 60, restTime % 60));
+                    } else {
+                        restTimeInput.setText("00:00");
+                    }
+                    restTimeInput.setEnabled(false);
+                    startRestTimerButton.setVisibility(View.VISIBLE);
+                    startRestTimerButton.setEnabled(true);
+                    startRestTimerButton.setText("▶");
+                    startRestTimerButton.setAlpha(1.0f);
+                    
+                    timerUsed = false;
+                    startRestTimerButton.setOnClickListener(v -> {
+                        if (timerUsed) return;
+                        Integer rt = set.getRestTime();
+                        if (rt == null || rt <= 0) {
+                            Toast.makeText(itemView.getContext(), "Укажите время отдыха", Toast.LENGTH_SHORT).show();
+                            return;
+                        }
+                        timerUsed = true;
+                        startRestTimerButton.setEnabled(false);
+                        startRestTimerButton.setText("⏳");
+                        startRestTimerButton.setAlpha(0.5f);
+
+                        RestTimerDialog timerDialog = new RestTimerDialog(itemView.getContext(), rt);
+                        timerDialog.setOnFinishListener(() -> mainHandler.post(() -> startRestTimerButton.setText("✓")));
+                        timerDialog.show();
+                    });
+                    return;
+                }
+
+                // Сбрасываем цвета для обычного подхода
+                setTypeLabel.setTextColor(0xFFFF9800);
+                restTimeInput.setEnabled(true);
 
                 String exerciseType = exercise.getExerciseType();
                 if ((exerciseType == null || exerciseType.isEmpty()) && exerciseMap != null) {
@@ -776,6 +876,7 @@ public class SessionExerciseAdapter extends RecyclerView.Adapter<RecyclerView.Vi
                 repsColumn.setVisibility(isRepsWeight ? View.VISIBLE : View.GONE);
                 timeColumn.setVisibility(isTimeWeight || isTimeDistance || isTimeWeightDistance ? View.VISIBLE : View.GONE);
                 distanceColumn.setVisibility(isTimeDistance || isTimeWeightDistance ? View.VISIBLE : View.GONE);
+                deleteSetButton.setVisibility(View.VISIBLE);
 
                 weightInput.setText(set.getWeight() != null ? String.valueOf(set.getWeight()) : "");
                 repsInput.setText(set.getReps() != null ? String.valueOf(set.getReps()) : "");
@@ -819,48 +920,49 @@ public class SessionExerciseAdapter extends RecyclerView.Adapter<RecyclerView.Vi
                     }
                 });
 
-                boolean hasDropset = set.isDropset() || set.getDropsetWeight() != null || set.getDropsetReps() != null;
-                dropsetSection.setVisibility(hasDropset ? View.VISIBLE : View.GONE);
-                if (hasDropset) {
-                    dropsetSection.setBackgroundColor(0x1AFF9800);
-                    dropsetWeightInput.setText(set.getDropsetWeight() != null ? String.valueOf(set.getDropsetWeight()) : "");
-                    dropsetRepsInput.setText(set.getDropsetReps() != null ? String.valueOf(set.getDropsetReps()) : "");
-                } else {
-                    dropsetSection.setBackgroundColor(0x00000000);
-                }
-
-                // Отдых — под каждым подходом (всегда виден)
-                restTimeRow.setVisibility(View.VISIBLE);
-                Integer restTime = set.getRestTime();
-                if (restTime != null && restTime > 0) {
-                    restTimeInput.setText(String.format("%02d:%02d", restTime / 60, restTime % 60));
-                } else {
-                    restTimeInput.setText("");
-                }
-
-                timerUsed = false;
-                startRestTimerButton.setEnabled(true);
-                startRestTimerButton.setText("▶");
-                startRestTimerButton.setAlpha(1.0f);
-
-                restTimeInput.setOnClickListener(v -> showRestTimePickerForSet(set));
-
-                startRestTimerButton.setOnClickListener(v -> {
-                    if (timerUsed) return;
-                    Integer rt = set.getRestTime();
-                    if (rt == null || rt <= 0) {
-                        Toast.makeText(itemView.getContext(), "Укажите время отдыха", Toast.LENGTH_SHORT).show();
-                        return;
+                // Отдых — показываем только для обычных подходов или последнего подхода дропсета
+                if (showRestTime) {
+                    restTimeRow.setVisibility(View.VISIBLE);
+                    Integer restTime = set.getRestTime();
+                    if (restTime != null && restTime > 0) {
+                        restTimeInput.setText(String.format("%02d:%02d", restTime / 60, restTime % 60));
+                    } else {
+                        restTimeInput.setText("");
                     }
-                    timerUsed = true;
-                    startRestTimerButton.setEnabled(false);
-                    startRestTimerButton.setText("⏳");
-                    startRestTimerButton.setAlpha(0.5f);
 
-                    RestTimerDialog timerDialog = new RestTimerDialog(itemView.getContext(), rt);
-                    timerDialog.setOnFinishListener(() -> mainHandler.post(() -> startRestTimerButton.setText("✓")));
-                    timerDialog.show();
-                });
+                    timerUsed = false;
+                    startRestTimerButton.setEnabled(true);
+                    startRestTimerButton.setText("▶");
+                    startRestTimerButton.setAlpha(1.0f);
+                    
+                    // Если это дропсет - кнопка оранжевая
+                    if (isDropsetSet || isDropsetPart) {
+                        startRestTimerButton.setBackgroundTintList(android.content.res.ColorStateList.valueOf(0xFFFF9800));
+                    } else {
+                        startRestTimerButton.setBackgroundTintList(null);
+                    }
+
+                    restTimeInput.setOnClickListener(v -> showRestTimePickerForSet(set));
+
+                    startRestTimerButton.setOnClickListener(v -> {
+                        if (timerUsed) return;
+                        Integer rt = set.getRestTime();
+                        if (rt == null || rt <= 0) {
+                            Toast.makeText(itemView.getContext(), "Укажите время отдыха", Toast.LENGTH_SHORT).show();
+                            return;
+                        }
+                        timerUsed = true;
+                        startRestTimerButton.setEnabled(false);
+                        startRestTimerButton.setText("⏳");
+                        startRestTimerButton.setAlpha(0.5f);
+
+                        RestTimerDialog timerDialog = new RestTimerDialog(itemView.getContext(), rt);
+                        timerDialog.setOnFinishListener(() -> mainHandler.post(() -> startRestTimerButton.setText("✓")));
+                        timerDialog.show();
+                    });
+                } else {
+                    restTimeRow.setVisibility(View.GONE);
+                }
             }
 
             private void showRestTimePickerForSet(SessionSetResponse set) {

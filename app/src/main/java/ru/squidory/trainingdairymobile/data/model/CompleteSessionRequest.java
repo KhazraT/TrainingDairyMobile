@@ -111,6 +111,12 @@ public class CompleteSessionRequest {
         @SerializedName("dropsetReps")
         private Integer dropsetReps;
 
+        @SerializedName("dropsetWeights")
+        private List<Double> dropsetWeights;
+
+        @SerializedName("dropsetRepsList")
+        private List<Integer> dropsetRepsList;
+
         @SerializedName("restTime")
         private Integer restTime;
 
@@ -140,6 +146,7 @@ public class CompleteSessionRequest {
         public Boolean isWarmup() { return isWarmup != null && isWarmup; }
         public void setIsWarmup(Boolean isWarmup) { this.isWarmup = isWarmup; }
 
+        public Boolean getIsDropset() { return isDropset; }
         public Boolean isDropset() { return isDropset != null && isDropset; }
         public void setIsDropset(Boolean isDropset) { this.isDropset = isDropset; }
 
@@ -148,6 +155,12 @@ public class CompleteSessionRequest {
 
         public Integer getDropsetReps() { return dropsetReps; }
         public void setDropsetReps(Integer dropsetReps) { this.dropsetReps = dropsetReps; }
+
+        public List<Double> getDropsetWeights() { return dropsetWeights; }
+        public void setDropsetWeights(List<Double> dropsetWeights) { this.dropsetWeights = dropsetWeights; }
+
+        public List<Integer> getDropsetRepsList() { return dropsetRepsList; }
+        public void setDropsetRepsList(List<Integer> dropsetRepsList) { this.dropsetRepsList = dropsetRepsList; }
 
         public Integer getRestTime() { return restTime; }
         public void setRestTime(Integer restTime) { this.restTime = restTime; }

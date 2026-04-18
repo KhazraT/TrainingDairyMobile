@@ -8,9 +8,9 @@
     android:orientation="vertical"
     android:paddingVertical="2dp"
     android:paddingHorizontal="8dp"
-    android:background="@android:color/transparent">
+    android:background="#10FF9800">
 
-    <!-- Основной подход -->
+    <!-- Основной подход дропсета -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -24,6 +24,7 @@
             android:layout_height="28dp"
             android:layout_marginEnd="6dp"
             android:background="@drawable/set_number_background"
+            android:backgroundTint="#FF9800"
             android:gravity="center"
             android:textAppearance="?attr/textAppearanceLabelSmall"
             android:textColor="#FFFFFF"
@@ -39,10 +40,10 @@
             android:textAppearance="?attr/textAppearanceLabelSmall"
             android:textColor="#FF9800"
             android:textStyle="bold"
-            android:visibility="gone"
+            android:visibility="visible"
             android:layout_marginEnd="8dp" />
 
-        <!-- Колонки с полями (равномерно распределены) -->
+        <!-- Колонки с полями (вес и повторения) -->
         <LinearLayout
             android:layout_width="0dp"
             android:layout_height="wrap_content"
@@ -59,7 +60,7 @@
                 android:orientation="vertical"
                 android:gravity="center"
                 android:layout_marginHorizontal="2dp"
-                android:visibility="gone">
+                android:visibility="visible">
 
                 <com.google.android.material.textfield.TextInputLayout
                     android:id="@+id/weightInputLayout"
@@ -67,7 +68,7 @@
                     android:layout_height="wrap_content"
                     style="@style/Widget.Material3.TextInputLayout.OutlinedBox.Dense"
                     app:boxStrokeWidth="0dp"
-                    app:boxBackgroundColor="?attr/colorSurface">
+                    app:boxBackgroundColor="#10FF9800">
 
                     <com.google.android.material.textfield.TextInputEditText
                         android:id="@+id/weightInput"
@@ -77,6 +78,7 @@
                         android:inputType="numberDecimal"
                         android:textAppearance="?attr/textAppearanceBodyMedium"
                         android:textSize="14sp"
+                        android:textColor="#FF9800"
                         tools:text="80" />
 
                 </com.google.android.material.textfield.TextInputLayout>
@@ -86,7 +88,7 @@
                     android:layout_height="wrap_content"
                     android:text="кг"
                     android:textAppearance="?attr/textAppearanceLabelSmall"
-                    android:textColor="?android:attr/textColorSecondary" />
+                    android:textColor="#FF9800" />
 
             </LinearLayout>
 
@@ -99,7 +101,7 @@
                 android:orientation="vertical"
                 android:gravity="center"
                 android:layout_marginHorizontal="2dp"
-                android:visibility="gone">
+                android:visibility="visible">
 
                 <com.google.android.material.textfield.TextInputLayout
                     android:id="@+id/repsInputLayout"
@@ -107,7 +109,7 @@
                     android:layout_height="wrap_content"
                     style="@style/Widget.Material3.TextInputLayout.OutlinedBox.Dense"
                     app:boxStrokeWidth="0dp"
-                    app:boxBackgroundColor="?attr/colorSurface">
+                    app:boxBackgroundColor="#10FF9800">
 
                     <com.google.android.material.textfield.TextInputEditText
                         android:id="@+id/repsInput"
@@ -117,6 +119,7 @@
                         android:inputType="number"
                         android:textAppearance="?attr/textAppearanceBodyMedium"
                         android:textSize="14sp"
+                        android:textColor="#FF9800"
                         tools:text="10" />
 
                 </com.google.android.material.textfield.TextInputLayout>
@@ -126,87 +129,7 @@
                     android:layout_height="wrap_content"
                     android:text="повт"
                     android:textAppearance="?attr/textAppearanceLabelSmall"
-                    android:textColor="?android:attr/textColorSecondary" />
-
-            </LinearLayout>
-
-            <!-- Колонка: Время -->
-            <LinearLayout
-                android:id="@+id/timeColumn"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:orientation="vertical"
-                android:gravity="center"
-                android:layout_marginHorizontal="2dp"
-                android:visibility="gone">
-
-                <com.google.android.material.textfield.TextInputLayout
-                    android:id="@+id/timeInputLayout"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    style="@style/Widget.Material3.TextInputLayout.OutlinedBox.Dense"
-                    app:boxStrokeWidth="0dp"
-                    app:boxBackgroundColor="?attr/colorSurface">
-
-                    <com.google.android.material.textfield.TextInputEditText
-                        android:id="@+id/timeInput"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:gravity="center"
-                        android:inputType="number"
-                        android:textAppearance="?attr/textAppearanceBodyMedium"
-                        android:textSize="14sp"
-                        tools:text="30" />
-
-                </com.google.android.material.textfield.TextInputLayout>
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="мм:сс"
-                    android:textAppearance="?attr/textAppearanceLabelSmall"
-                    android:textColor="?android:attr/textColorSecondary" />
-
-            </LinearLayout>
-
-            <!-- Колонка: Дистанция -->
-            <LinearLayout
-                android:id="@+id/distanceColumn"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:orientation="vertical"
-                android:gravity="center"
-                android:layout_marginHorizontal="2dp"
-                android:visibility="gone">
-
-                <com.google.android.material.textfield.TextInputLayout
-                    android:id="@+id/distanceInputLayout"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    style="@style/Widget.Material3.TextInputLayout.OutlinedBox.Dense"
-                    app:boxStrokeWidth="0dp"
-                    app:boxBackgroundColor="?attr/colorSurface">
-
-                    <com.google.android.material.textfield.TextInputEditText
-                        android:id="@+id/distanceInput"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:gravity="center"
-                        android:inputType="numberDecimal"
-                        android:textAppearance="?attr/textAppearanceBodyMedium"
-                        android:textSize="14sp"
-                        tools:text="500" />
-
-                </com.google.android.material.textfield.TextInputLayout>
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="км"
-                    android:textAppearance="?attr/textAppearanceLabelSmall"
-                    android:textColor="?android:attr/textColorSecondary" />
+                    android:textColor="#FF9800" />
 
             </LinearLayout>
 
@@ -224,7 +147,7 @@
 
     </LinearLayout>
 
-    <!-- Время отдыха + кнопка таймера (под каждым подходом, скрывается для дропсета) -->
+    <!-- Время отдыха + кнопка таймера (ТОЛЬКО для последнего подхода дропсета) -->
     <LinearLayout
         android:id="@+id/restTimeRow"
         android:layout_width="match_parent"
@@ -233,13 +156,15 @@
         android:gravity="center_vertical"
         android:paddingVertical="4dp"
         android:paddingStart="34dp"
-        android:paddingEnd="8dp">
+        android:paddingEnd="8dp"
+        android:visibility="gone">
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Отдых:"
             android:textAppearance="?attr/textAppearanceBodySmall"
+            android:textColor="#FF9800"
             android:layout_marginEnd="6dp"
             android:minWidth="40dp" />
 
@@ -250,7 +175,7 @@
             android:layout_weight="1"
             android:hint="мм:сс"
             app:boxStrokeWidth="0dp"
-            app:boxBackgroundColor="?attr/colorSurface"
+            app:boxBackgroundColor="#10FF9800"
             style="@style/Widget.Material3.TextInputLayout.OutlinedBox.Dense">
 
             <com.google.android.material.textfield.TextInputEditText
@@ -262,7 +187,8 @@
                 android:clickable="true"
                 android:textAppearance="?attr/textAppearanceBodySmall"
                 android:fontFamily="monospace"
-                android:textSize="12sp" />
+                android:textSize="12sp"
+                android:textColor="#FF9800" />
 
         </com.google.android.material.textfield.TextInputLayout>
 
@@ -275,6 +201,7 @@
             android:minWidth="36dp"
             android:minHeight="36dp"
             android:textSize="12sp"
+            android:backgroundTint="#FF9800"
             style="@style/Widget.Material3.Button" />
 
     </LinearLayout>

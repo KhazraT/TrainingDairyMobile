@@ -47,6 +47,12 @@ public class SessionSetResponse {
     @SerializedName("isDropset")
     private Boolean isDropset;
 
+    @SerializedName("isDropsetPart")
+    private Boolean isDropsetPart;
+
+    @SerializedName("isRest")
+    private Boolean isRest;
+
     @SerializedName("dropsetWeight")
     private Double dropsetWeight;
 
@@ -61,6 +67,9 @@ public class SessionSetResponse {
 
     @SerializedName("restTime")
     private Integer restTimeLegacy;
+
+    // Внутреннее поле для группировки подходов дропсета (не отправляется на сервер)
+    private transient Long dropsetGroupId;
 
     public SessionSetResponse() {}
 
@@ -106,6 +115,12 @@ public class SessionSetResponse {
     public Boolean isDropset() { return isDropset != null && isDropset; }
     public void setIsDropset(Boolean isDropset) { this.isDropset = isDropset; }
 
+    public Boolean isDropsetPart() { return isDropsetPart != null && isDropsetPart; }
+    public void setIsDropsetPart(Boolean isDropsetPart) { this.isDropsetPart = isDropsetPart; }
+
+    public Boolean isRest() { return isRest != null && isRest; }
+    public void setIsRest(Boolean isRest) { this.isRest = isRest; }
+
     public Double getDropsetWeight() { return dropsetWeight; }
     public void setDropsetWeight(Double dropsetWeight) { this.dropsetWeight = dropsetWeight; }
 
@@ -120,4 +135,8 @@ public class SessionSetResponse {
 
     public Integer getRestTime() { return restTimeLegacy; }
     public void setRestTime(Integer restTime) { this.restTimeLegacy = restTime; }
+
+    // Группировка подходов дропсета (transient - не сериализуется)
+    public Long getDropsetGroupId() { return dropsetGroupId; }
+    public void setDropsetGroupId(Long dropsetGroupId) { this.dropsetGroupId = dropsetGroupId; }
 }

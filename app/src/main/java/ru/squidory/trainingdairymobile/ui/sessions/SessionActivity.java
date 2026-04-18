@@ -9,6 +9,7 @@ import android.os.Looper;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -33,6 +34,7 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -703,25 +705,7 @@ public class SessionActivity extends AppCompatActivity {
         View dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_add_session_set, null);
         builder.setView(dialogView);
 
-        com.google.android.material.textfield.TextInputLayout weightInputLayout = dialogView.findViewById(R.id.weightInputLayout);
-        com.google.android.material.textfield.TextInputEditText weightInput = dialogView.findViewById(R.id.weightInput);
-        com.google.android.material.textfield.TextInputLayout repsInputLayout = dialogView.findViewById(R.id.repsInputLayout);
-        com.google.android.material.textfield.TextInputEditText repsInput = dialogView.findViewById(R.id.repsInput);
-        com.google.android.material.textfield.TextInputLayout timeInputLayout = dialogView.findViewById(R.id.timeInputLayout);
-        com.google.android.material.textfield.TextInputEditText timeInput = dialogView.findViewById(R.id.timeInput);
-        com.google.android.material.textfield.TextInputLayout distanceInputLayout = dialogView.findViewById(R.id.distanceInputLayout);
-        com.google.android.material.textfield.TextInputEditText distanceInput = dialogView.findViewById(R.id.distanceInput);
-
-        com.google.android.material.button.MaterialButton addRegularButton = dialogView.findViewById(R.id.addRegularSetButton);
-        com.google.android.material.button.MaterialButton addDropsetButton = dialogView.findViewById(R.id.addDropsetButton);
-
-        View dropsetDivider = dialogView.findViewById(R.id.dropsetDivider);
-        TextView dropsetLabel = dialogView.findViewById(R.id.dropsetLabel);
-        com.google.android.material.button.MaterialButton dialogCancelButton = dialogView.findViewById(R.id.dialogCancelButton);
-        com.google.android.material.button.MaterialButton dialogAddButton = dialogView.findViewById(R.id.dialogAddButton);
-        LinearLayout dropsetEntriesContainer = dialogView.findViewById(R.id.dropsetEntriesContainer);
-        com.google.android.material.button.MaterialButton addDropsetEntryButton = dialogView.findViewById(R.id.addDropsetEntryButton);
-
+        // Получаем тип упражнения
         String exerciseType = exercise.getExerciseType();
         if ((exerciseType == null || exerciseType.isEmpty()) && exerciseMap != null) {
             Long exId = exercise.getExerciseId();
@@ -733,114 +717,349 @@ public class SessionActivity extends AppCompatActivity {
         if (exerciseType == null || exerciseType.isEmpty()) exerciseType = "REPS_WEIGHT";
 
         boolean isRepsWeight = "REPS_WEIGHT".equalsIgnoreCase(exerciseType);
-        boolean isTimeWeight = "TIME_WEIGHT".equalsIgnoreCase(exerciseType);
-        boolean isTimeDistance = "TIME_DISTANCE".equalsIgnoreCase(exerciseType);
-        boolean isTimeWeightDistance = "TIME_WEIGHT_DISTANCE".equalsIgnoreCase(exerciseType);
 
-        weightInputLayout.setVisibility(isRepsWeight || isTimeWeight || isTimeWeightDistance ? View.VISIBLE : View.GONE);
-        repsInputLayout.setVisibility(isRepsWeight ? View.VISIBLE : View.GONE);
-        timeInputLayout.setVisibility(isTimeWeight || isTimeDistance || isTimeWeightDistance ? View.VISIBLE : View.GONE);
-        distanceInputLayout.setVisibility(isTimeDistance || isTimeWeightDistance ? View.VISIBLE : View.GONE);
+        // Элементы диалога
+        TextView setTypeTitle = dialogView.findViewById(R.id.setTypeTitle);
+        
+        // Кнопки выбора типа подхода
+        MaterialButton addRegularButton = dialogView.findViewById(R.id.addRegularSetButton);
+        MaterialButton addDropsetButton = dialogView.findViewById(R.id.addDropsetButton);
+        
+        // Поля для обычного подхода
+        com.google.android.material.textfield.TextInputLayout weightInputLayout = dialogView.findViewById(R.id.weightInputLayout);
+        com.google.android.material.textfield.TextInputEditText weightInput = dialogView.findViewById(R.id.weightInput);
+        com.google.android.material.textfield.TextInputLayout repsInputLayout = dialogView.findViewById(R.id.repsInputLayout);
+        com.google.android.material.textfield.TextInputEditText repsInput = dialogView.findViewById(R.id.repsInput);
 
-        addDropsetButton.setVisibility(isRepsWeight ? View.VISIBLE : View.GONE);
+        // Поля для дропсета
+        com.google.android.material.textfield.TextInputLayout restTimeInputLayout = dialogView.findViewById(R.id.restTimeInputLayout);
+        com.google.android.material.textfield.TextInputEditText restTimeInput = dialogView.findViewById(R.id.restTimeInput);
+        View divider = dialogView.findViewById(R.id.divider);
+        TextView dropsetEntriesTitle = dialogView.findViewById(R.id.dropsetEntriesTitle);
+        LinearLayout dropsetEntriesContainer = dialogView.findViewById(R.id.dropsetEntriesContainer);
+        MaterialButton addDropsetEntryButton = dialogView.findViewById(R.id.addDropsetEntryButton);
 
-        if (timeInputLayout.getVisibility() == View.VISIBLE) {
-            timeInput.setFocusable(false);
-            timeInput.setClickable(true);
-            timeInput.setOnClickListener(v -> showTimePickerDialog(timeInput));
+        // Кнопки диалога
+        MaterialButton dialogCancelButton = dialogView.findViewById(R.id.dialogCancelButton);
+        MaterialButton dialogAddButton = dialogView.findViewById(R.id.dialogAddButton);
+
+        // Состояние по умолчанию - обычный подход
+        final boolean[] isDropsetMode = {false};
+        final List<DropsetEntry> dropsetEntries = new ArrayList<>();
+
+        // Настройка видимости в зависимости от типа упражнения
+        if (isRepsWeight) {
+            // REPS_WEIGHT - показываем обе кнопки
+            addDropsetButton.setVisibility(View.VISIBLE);
+        } else {
+            // Другие типы - только обычный подход
+            addDropsetButton.setVisibility(View.GONE);
         }
 
-        final List<DropsetRow> dropsetRows = new ArrayList<>();
-        addDropsetEntryButton.setOnClickListener(v -> addDropsetRow(dropsetEntriesContainer, dropsetRows));
+        // По умолчанию скрываем поля обычного подхода
+        weightInputLayout.setVisibility(View.GONE);
+        repsInputLayout.setVisibility(View.GONE);
 
-        addRegularButton.setOnClickListener(v -> {
-            dropsetDivider.setVisibility(View.GONE);
-            dropsetLabel.setVisibility(View.GONE);
-            dropsetEntriesContainer.setVisibility(View.GONE);
-            addDropsetEntryButton.setVisibility(View.GONE);
-        });
+        // По умолчанию скрываем поля дропсета
+        restTimeInputLayout.setVisibility(View.GONE);
+        divider.setVisibility(View.GONE);
+        dropsetEntriesTitle.setVisibility(View.GONE);
+        dropsetEntriesContainer.setVisibility(View.GONE);
+        addDropsetEntryButton.setVisibility(View.GONE);
 
-        addDropsetButton.setOnClickListener(v -> {
-            dropsetDivider.setVisibility(View.VISIBLE);
-            dropsetLabel.setVisibility(View.VISIBLE);
-            dropsetEntriesContainer.setVisibility(View.VISIBLE);
-            addDropsetEntryButton.setVisibility(View.VISIBLE);
-        });
+        // Обработчики для поля отдыха
+        restTimeInput.setFocusable(false);
+        restTimeInput.setClickable(true);
+        restTimeInput.setOnClickListener(v -> showRestTimePicker(restTimeInput, null));
 
         AlertDialog dialog = builder.create();
         dialog.setCancelable(false);
 
+        // Обработчик выбора "Обычный"
+        addRegularButton.setOnClickListener(v -> {
+            isDropsetMode[0] = false;
+            addRegularButton.setBackgroundColor(0xFF6200EE);
+            addRegularButton.setTextColor(0xFFFFFFFF);
+            addDropsetButton.setBackgroundColor(0x00000000);
+            addDropsetButton.setTextColor(0xFF6200EE);
+
+            // Показываем поля обычного подхода
+            weightInputLayout.setVisibility(View.VISIBLE);
+            repsInputLayout.setVisibility(View.VISIBLE);
+
+            // Скрываем поля дропсета
+            restTimeInputLayout.setVisibility(View.GONE);
+            divider.setVisibility(View.GONE);
+            dropsetEntriesTitle.setVisibility(View.GONE);
+            dropsetEntriesContainer.setVisibility(View.GONE);
+            addDropsetEntryButton.setVisibility(View.GONE);
+        });
+
+        // Обработчик выбора "Дропсет"
+        addDropsetButton.setOnClickListener(v -> {
+            isDropsetMode[0] = true;
+            addDropsetButton.setBackgroundColor(0xFFFF9800);
+            addDropsetButton.setTextColor(0xFFFFFFFF);
+            addRegularButton.setBackgroundColor(0x00000000);
+            addRegularButton.setTextColor(0xFF6200EE);
+
+            // Скрываем поля обычного подхода
+            weightInputLayout.setVisibility(View.GONE);
+            repsInputLayout.setVisibility(View.GONE);
+
+            // Показываем поля дропсета
+            restTimeInputLayout.setVisibility(View.VISIBLE);
+            divider.setVisibility(View.VISIBLE);
+            dropsetEntriesTitle.setVisibility(View.VISIBLE);
+            dropsetEntriesContainer.setVisibility(View.VISIBLE);
+            addDropsetEntryButton.setVisibility(View.VISIBLE);
+
+            // Добавляем 2 записи дропсета по умолчанию
+            dropsetEntries.clear();
+            dropsetEntriesContainer.removeAllViews();
+            if (dropsetEntries.size() < 2) {
+                addDropsetRow(dropsetEntriesContainer, dropsetEntries, 1);
+                addDropsetRow(dropsetEntriesContainer, dropsetEntries, 2);
+            }
+        });
+
+        // Обработчик добавления записи дропсета
+        addDropsetEntryButton.setOnClickListener(v -> {
+            addDropsetRow(dropsetEntriesContainer, dropsetEntries, dropsetEntries.size() + 1);
+        });
+
+        // Обработчик кнопки "Отмена"
         dialogCancelButton.setOnClickListener(v -> dialog.dismiss());
 
+        // Обработчик кнопки "Добавить"
         dialogAddButton.setOnClickListener(v -> {
-            SessionSetResponse newSet = new SessionSetResponse();
-            boolean isDropsetMode = dropsetEntriesContainer.getVisibility() == View.VISIBLE && !dropsetRows.isEmpty();
+            if (!isDropsetMode[0]) {
+                // Обычный подход
+                SessionSetResponse newSet = new SessionSetResponse();
+                newSet.setIsWarmup(false);
+                newSet.setIsDropset(false);
+                newSet.setIsDropsetPart(false);
 
-            if (isDropsetMode) {
-                if (dropsetRows.isEmpty()) {
-                    Toast.makeText(this, "Добавьте хотя бы одну запись дропсета", Toast.LENGTH_SHORT).show();
+                String wStr = getInputText(weightInput);
+                String rStr = getInputText(repsInput);
+
+                if (!wStr.isEmpty()) {
+                    try {
+                        newSet.setWeight(Double.parseDouble(wStr));
+                    } catch (NumberFormatException e) {
+                        weightInputLayout.setError("Неверный формат");
+                        return;
+                    }
+                }
+
+                if (!rStr.isEmpty()) {
+                    try {
+                        newSet.setReps(Integer.parseInt(rStr));
+                    } catch (NumberFormatException e) {
+                        repsInputLayout.setError("Неверный формат");
+                        return;
+                    }
+                }
+
+                addSetToExercise(exercise, newSet);
+            } else {
+                // Дропсет
+                Integer restTime = parseRestTime(restTimeInput.getText() != null ? restTimeInput.getText().toString() : "");
+
+                // Собираем данные из записей дропсета
+                List<Double> weights = new ArrayList<>();
+                List<Integer> repsList = new ArrayList<>();
+
+                boolean hasValidData = false;
+                for (DropsetEntry entry : dropsetEntries) {
+                    String wStr = entry.getWeight();
+                    String rStr = entry.getReps();
+                    if (!wStr.isEmpty() && !rStr.isEmpty()) {
+                        try {
+                            weights.add(Double.parseDouble(wStr));
+                            repsList.add(Integer.parseInt(rStr));
+                            hasValidData = true;
+                        } catch (NumberFormatException e) {
+                            // Skip invalid
+                        }
+                    }
+                }
+
+                if (!hasValidData || weights.size() < 2) {
+                    Toast.makeText(this, "Заполните минимум 2 записи с весом и повторениями", Toast.LENGTH_SHORT).show();
                     return;
                 }
-                DropsetRow firstRow = dropsetRows.get(0);
-                String wStr = firstRow.getWeight();
-                String rStr = firstRow.getReps();
-                if (!wStr.isEmpty()) try { newSet.setWeight(Double.parseDouble(wStr)); } catch (NumberFormatException e) {}
-                if (!rStr.isEmpty()) try { newSet.setReps(Integer.parseInt(rStr)); } catch (NumberFormatException e) {}
-                if (dropsetRows.size() >= 2) {
-                    DropsetRow dropRow = dropsetRows.get(1);
-                    String dw = dropRow.getWeight();
-                    String dr = dropRow.getReps();
-                    if (!dw.isEmpty()) try { newSet.setDropsetWeight(Double.parseDouble(dw)); } catch (NumberFormatException e) {}
-                    if (!dr.isEmpty()) try { newSet.setDropsetReps(Integer.parseInt(dr)); } catch (NumberFormatException e) {}
-                    newSet.setIsDropset(true);
-                }
-            } else {
-                if (isRepsWeight || isTimeWeight || isTimeWeightDistance) {
-                    String wStr = getInputText(weightInput);
-                    if (!wStr.isEmpty()) {
-                        try { newSet.setWeight(Double.parseDouble(wStr)); }
-                        catch (NumberFormatException e) { weightInputLayout.setError("Неверный формат"); return; }
-                    }
-                }
-                if (isRepsWeight) {
-                    String rStr = getInputText(repsInput);
-                    if (!rStr.isEmpty()) {
-                        try { newSet.setReps(Integer.parseInt(rStr)); }
-                        catch (NumberFormatException e) { repsInputLayout.setError("Неверный формат"); return; }
-                    }
-                }
-                if (isTimeWeight || isTimeDistance || isTimeWeightDistance) {
-                    String tStr = getInputText(timeInput);
-                    if (!tStr.isEmpty()) {
-                        try {
-                            if (tStr.contains(":")) {
-                                String[] parts = tStr.split(":");
-                                int min = Integer.parseInt(parts[0]);
-                                int sec = Integer.parseInt(parts[1]);
-                                newSet.setDurationSeconds(min * 60 + sec);
-                            } else {
-                                newSet.setDurationSeconds(Integer.parseInt(tStr));
-                            }
-                        } catch (NumberFormatException e) { timeInputLayout.setError("Неверный формат"); return; }
-                    }
-                }
-                if (isTimeDistance || isTimeWeightDistance) {
-                    String dStr = getInputText(distanceInput);
-                    if (!dStr.isEmpty()) {
-                        try {
-                            newSet.setDistanceMeters(Double.parseDouble(dStr) * 1000);
-                        } catch (NumberFormatException e) { distanceInputLayout.setError("Неверный формат"); return; }
-                    }
-                }
-                newSet.setIsDropset(false);
+
+                // Добавляем подходы дропсета
+                addDropsetToExercise(exercise, weights, repsList, restTime);
             }
 
-            newSet.setIsWarmup(false);
-            addSetToExercise(exercise, newSet);
             dialog.dismiss();
         });
 
         dialog.show();
+    }
+
+    private void addDropsetRow(LinearLayout container, List<DropsetEntry> entries, int number) {
+        View row = LayoutInflater.from(this).inflate(R.layout.item_dropset_entry, container, false);
+        
+        TextView numberView = row.findViewById(R.id.dropsetEntryNumber);
+        TextView typeView = row.findViewById(R.id.dropsetEntryType);
+        com.google.android.material.textfield.TextInputEditText weightInput = row.findViewById(R.id.dropsetWeightInput);
+        com.google.android.material.textfield.TextInputEditText repsInput = row.findViewById(R.id.dropsetRepsInput);
+        ImageButton removeButton = row.findViewById(R.id.removeDropsetEntryButton);
+
+        numberView.setText(String.valueOf(number));
+
+        // Первая запись - основной, остальные - дропсет
+        boolean isFirst = (number == 1);
+        if (isFirst) {
+            typeView.setText("основной");
+            typeView.setTextColor(0xFF6200EE);
+        } else {
+            typeView.setText("дропсет");
+            typeView.setTextColor(0xFFFF9800);
+        }
+
+        // Создаём entry перед использованием в callback
+        final DropsetEntry entry = new DropsetEntry(weightInput, repsInput);
+        entries.add(entry);
+
+        // Кнопка удаления: видна только если записей > 2 (для основного скрыта всегда)
+        boolean canRemove = entries.size() > 2;
+        removeButton.setVisibility(canRemove ? View.VISIBLE : View.GONE);
+
+        // Обработчик удаления
+        removeButton.setOnClickListener(v -> {
+            // Нельзя удалить если останется меньше 2 записей
+            if (entries.size() <= 2) {
+                Toast.makeText(this, "Минимум 2 записи в дропсете", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            container.removeView(row);
+            entries.remove(entry);
+            // Перенумеровываем оставшиеся и обновляем типы
+            renumberDropsetEntries(container);
+        });
+
+        container.addView(row);
+    }
+
+    private void updateRemoveButtonVisibility(LinearLayout container, ImageButton removeButton, int entryIndex) {
+        // Кнопка видна только если записей > 2 И это не первая запись
+        boolean canRemove = container.getChildCount() > 2 && entryIndex > 0;
+        removeButton.setVisibility(canRemove ? View.VISIBLE : View.GONE);
+    }
+
+    private void renumberDropsetEntries(LinearLayout container) {
+        for (int i = 0; i < container.getChildCount(); i++) {
+            View child = container.getChildAt(i);
+            TextView numberView = child.findViewById(R.id.dropsetEntryNumber);
+            TextView typeView = child.findViewById(R.id.dropsetEntryType);
+            ImageButton removeButton = child.findViewById(R.id.removeDropsetEntryButton);
+
+            if (numberView != null) {
+                numberView.setText(String.valueOf(i + 1));
+            }
+
+            // Обновляем тип записи
+            boolean isFirst = (i == 0);
+            if (typeView != null) {
+                if (isFirst) {
+                    typeView.setText("основной");
+                    typeView.setTextColor(0xFF6200EE);
+                } else {
+                    typeView.setText("дропсет");
+                    typeView.setTextColor(0xFFFF9800);
+                }
+            }
+
+            // Обновляем видимость кнопки удаления
+            updateRemoveButtonVisibility(container, removeButton, i);
+        }
+    }
+
+    private Integer parseRestTime(String text) {
+        if (text == null || text.isEmpty()) return 0;
+        try {
+            if (text.contains(":")) {
+                String[] parts = text.split(":");
+                return Integer.parseInt(parts[0]) * 60 + Integer.parseInt(parts[1]);
+            }
+            return Integer.parseInt(text);
+        } catch (NumberFormatException e) {
+            return 0;
+        }
+    }
+
+    private void addDropsetToExercise(SessionExerciseResponse exercise, List<Double> weights, List<Integer> reps, Integer restTime) {
+        List<SessionSetResponse> completedSets = exercise.getCompletedSets();
+        if (completedSets == null) {
+            completedSets = new ArrayList<>();
+            exercise.setCompletedSets(completedSets);
+        }
+
+        // Генерируем уникальный ID группы для всех подходов дропсета
+        final long dropsetGroupId = System.currentTimeMillis();
+
+        // Определяем начальный номер подхода
+        int maxSetNumber = 0;
+        for (SessionSetResponse s : completedSets) {
+            int n = s.getSetNumber() != null ? s.getSetNumber() : 0;
+            if (n > maxSetNumber) maxSetNumber = n;
+        }
+
+        // Первый подход - ОСНОВНОЙ/ОБЫЧНЫЙ (isDropsetPart=false)
+        // Это обычный подход в конвейере дропсета
+        SessionSetResponse mainSet = new SessionSetResponse();
+        mainSet.setSetNumber(maxSetNumber + 1);
+        mainSet.setSetOrder(maxSetNumber);
+        mainSet.setWeight(weights.get(0));
+        mainSet.setReps(reps.get(0));
+        mainSet.setIsDropset(false);
+        mainSet.setIsDropsetPart(false); // Основной подход (первый в конвейере)
+        mainSet.setRestTime(null);       // У основного подхода нет отдыха
+        mainSet.setIsWarmup(false);
+        mainSet.setDropsetGroupId(dropsetGroupId); // ID группы для связи
+        // Сохраняем все дропсет-подходы в списках для отправки
+        if (weights.size() > 1) {
+            mainSet.setDropsetWeight(weights.get(1));
+            mainSet.setDropsetReps(reps.get(1));
+        }
+        completedSets.add(mainSet);
+
+        // Остальные подходы - дропсет-подходы (isDropsetPart=true)
+        for (int i = 1; i < weights.size(); i++) {
+            SessionSetResponse dropSet = new SessionSetResponse();
+            dropSet.setSetNumber(maxSetNumber + 1 + i);
+            dropSet.setSetOrder(maxSetNumber + i);
+            dropSet.setWeight(weights.get(i));
+            dropSet.setReps(reps.get(i));
+            dropSet.setIsDropset(false);
+            dropSet.setIsDropsetPart(true); // Часть дропсета
+            dropSet.setRestTime(null);       // Нет своего отдыха
+            dropSet.setIsWarmup(false);
+            dropSet.setDropsetGroupId(dropsetGroupId); // Тот же ID группы
+            completedSets.add(dropSet);
+        }
+
+        // Отдых после последнего подхода дропсета
+        if (restTime != null && restTime > 0) {
+            SessionSetResponse restSet = new SessionSetResponse();
+            restSet.setSetNumber(maxSetNumber + weights.size() + 1);
+            restSet.setSetOrder(maxSetNumber + weights.size());
+            restSet.setWeight(null);
+            restSet.setReps(null);
+            restSet.setIsDropset(false);
+            restSet.setIsDropsetPart(false);
+            restSet.setIsRest(true); // Флаг что это элемент отдыха
+            restSet.setRestTime(restTime);
+            restSet.setIsWarmup(false);
+            restSet.setDropsetGroupId(dropsetGroupId); // Та же группа
+            completedSets.add(restSet);
+        }
+
+        adapter.notifyDataSetChanged();
     }
 
     private void showTimePickerDialog(com.google.android.material.textfield.TextInputEditText timeInput) {
@@ -918,33 +1137,75 @@ public class SessionActivity extends AppCompatActivity {
     }
 
     private void confirmDeleteSet(SessionExerciseResponse exercise, SessionSetResponse set) {
+        String message;
+        if (set.isRest()) {
+            message = "Удалить отдых?";
+        } else if (set.isDropsetPart()) {
+            message = "Удалить дропсет-подход?";
+        } else {
+            message = "Удалить подход?\n(Удалятся все связанные дропсет-подходы)";
+        }
+
         new AlertDialog.Builder(this)
             .setTitle("Удалить подход")
-            .setMessage("Удалить подход?")
+            .setMessage(message)
             .setPositiveButton("Удалить", (dialog, which) -> {
                 List<SessionSetResponse> completedSets = exercise.getCompletedSets();
-                if (completedSets != null) {
-                    // Удаляем по ссылке на объект (не по ID!)
-                    boolean removed = completedSets.remove(set);
-                    if (!removed) {
-                        // Fallback: удаляем по setNumber
-                        completedSets.removeIf(s -> s.getSetNumber() != null &&
-                            s.getSetNumber().equals(set.getSetNumber()));
-                    }
-                    // Перенумеруем
-                    for (int i = 0; i < completedSets.size(); i++) {
-                        completedSets.get(i).setSetNumber(i + 1);
-                        completedSets.get(i).setSetOrder(i);
+                if (completedSets == null) return;
+
+                Long groupId = set.getDropsetGroupId();
+
+                if (set.isDropsetPart()) {
+                    // Удаляем ТОЛЬКО этот дропсет-подход
+                    completedSets.remove(set);
+
+                    // Проверяем, остались ли ещё дропсет-подходы у этой группы
+                    boolean hasDropsetParts = false;
+                    for (SessionSetResponse s : completedSets) {
+                        if (s.getDropsetGroupId() != null && s.getDropsetGroupId().equals(groupId) && s.isDropsetPart()) {
+                            hasDropsetParts = true;
+                            break;
+                        }
                     }
 
-                    // АВТОУДАЛЕНИЕ: если подходов не осталось — удаляем упражнение
-                    if (completedSets.isEmpty()) {
-                        removeExerciseFromSession(exercise);
-                        return;
+                    // Если дропсет-подходов не осталось, основной становится обычным подходом
+                    if (!hasDropsetParts) {
+                        for (SessionSetResponse s : completedSets) {
+                            if (s.getDropsetGroupId() != null && s.getDropsetGroupId().equals(groupId) && !s.isDropsetPart() && !s.isRest()) {
+                                s.setIsDropsetPart(false); // Теперь это обычный подход
+                                // Очищаем данные дропсета
+                                s.setDropsetWeight(null);
+                                s.setDropsetReps(null);
+                                break;
+                            }
+                        }
                     }
-
-                    // НЕ отправляем на сервер — только локально
+                } else if (set.isRest()) {
+                    // Удаляем ТОЛЬКО элемент отдыха
+                    completedSets.remove(set);
+                } else {
+                    // Удаляем основной подход и ВСЕ связанные подходы (дропсет-подходы + отдых)
+                    Iterator<SessionSetResponse> iterator = completedSets.iterator();
+                    while (iterator.hasNext()) {
+                        SessionSetResponse s = iterator.next();
+                        if (s == set || (groupId != null && groupId.equals(s.getDropsetGroupId()))) {
+                            iterator.remove();
+                        }
+                    }
                 }
+
+                // Перенумеруем оставшиеся подходы
+                for (int i = 0; i < completedSets.size(); i++) {
+                    completedSets.get(i).setSetNumber(i + 1);
+                    completedSets.get(i).setSetOrder(i);
+                }
+
+                // АВТОУДАЛЕНИЕ: если подходов не осталось — удаляем упражнение
+                if (completedSets.isEmpty()) {
+                    removeExerciseFromSession(exercise);
+                    return;
+                }
+
                 adapter.notifyDataSetChanged();
             })
             .setNegativeButton("Отмена", null)
@@ -995,36 +1256,47 @@ public class SessionActivity extends AppCompatActivity {
         }
     }
 
-    private void addDropsetRow(LinearLayout container, List<DropsetRow> rows) {
-        View row = LayoutInflater.from(this).inflate(R.layout.item_dropset_entry, container, false);
-        com.google.android.material.textfield.TextInputEditText wInput = row.findViewById(R.id.dropsetWeightInput);
-        com.google.android.material.textfield.TextInputEditText rInput = row.findViewById(R.id.dropsetRepsInput);
-        android.widget.ImageButton removeButton = row.findViewById(R.id.removeDropsetEntryButton);
-        TextView label = row.findViewById(R.id.dropsetEntryLabel);
+    private void showRestTimePicker(com.google.android.material.textfield.TextInputEditText restTimeInput, Integer currentValue) {
+        View dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_time_picker, null);
+        android.widget.NumberPicker minutesPicker = dialogView.findViewById(R.id.minutesPicker);
+        android.widget.NumberPicker secondsPicker = dialogView.findViewById(R.id.secondsPicker);
 
-        label.setText("Запись #" + (rows.size() + 1));
+        minutesPicker.setMinValue(0);
+        minutesPicker.setMaxValue(59);
+        secondsPicker.setMinValue(0);
+        secondsPicker.setMaxValue(59);
 
-        DropsetRow rowObj = new DropsetRow(wInput, rInput);
-        rows.add(rowObj);
+        if (currentValue != null && currentValue > 0) {
+            minutesPicker.setValue(currentValue / 60);
+            secondsPicker.setValue(currentValue % 60);
+        } else {
+            minutesPicker.setValue(1);
+            secondsPicker.setValue(0);
+        }
 
-        removeButton.setOnClickListener(v -> {
-            container.removeView(row);
-            rows.remove(rowObj);
-        });
-
-        container.addView(row);
+        new AlertDialog.Builder(this)
+                .setTitle("Время отдыха")
+                .setView(dialogView)
+                .setPositiveButton("OK", (d, w) -> {
+                    int min = minutesPicker.getValue();
+                    int sec = secondsPicker.getValue();
+                    restTimeInput.setText(String.format("%02d:%02d", min, sec));
+                })
+                .setNegativeButton("Отмена", null)
+                .show();
     }
 
     private String getInputText(com.google.android.material.textfield.TextInputEditText input) {
         return input.getText() != null ? input.getText().toString().trim() : "";
     }
 
-    private static class DropsetRow {
-        final com.google.android.material.textfield.TextInputEditText weightInput;
-        final com.google.android.material.textfield.TextInputEditText repsInput;
+    // Вспомогательный класс для записи дропсета
+    private static class DropsetEntry {
+        private final com.google.android.material.textfield.TextInputEditText weightInput;
+        private final com.google.android.material.textfield.TextInputEditText repsInput;
 
-        DropsetRow(com.google.android.material.textfield.TextInputEditText weightInput,
-                   com.google.android.material.textfield.TextInputEditText repsInput) {
+        DropsetEntry(com.google.android.material.textfield.TextInputEditText weightInput,
+                     com.google.android.material.textfield.TextInputEditText repsInput) {
             this.weightInput = weightInput;
             this.repsInput = repsInput;
         }
@@ -1079,6 +1351,9 @@ public class SessionActivity extends AppCompatActivity {
             if (sets == null || sets.isEmpty()) return false;
 
             for (SessionSetResponse set : sets) {
+                // Пропускаем элементы отдыха и дропсет-подходы (они не требуют заполнения)
+                if (set.isRest() || set.isDropsetPart()) continue;
+
                 if (isRepsWeight) {
                     if (set.getWeight() == null || set.getReps() == null) return false;
                 } else if (isTimeWeight) {
@@ -1117,7 +1392,23 @@ public class SessionActivity extends AppCompatActivity {
                     int ob = b.getSetNumber() != null ? b.getSetNumber() : 0;
                     return Integer.compare(oa, ob);
                 });
+
+                // Собираем группы дропсетов
+                Map<Long, List<SessionSetResponse>> dropsetGroups = new HashMap<>();
                 for (SessionSetResponse set : sortedSets) {
+                    if (set.getDropsetGroupId() != null) {
+                        dropsetGroups.computeIfAbsent(set.getDropsetGroupId(), k -> new ArrayList<>()).add(set);
+                    }
+                }
+
+                // Отправляем подходы, пропуская дропсет-подходы и элементы отдыха
+                for (SessionSetResponse set : sortedSets) {
+                    // Пропускаем элементы отдыха
+                    if (set.isRest()) continue;
+
+                    // Пропускаем дропсет-подходы (они уже учтены в основном подходе)
+                    if (set.isDropsetPart()) continue;
+
                     CompleteSessionRequest.CompletedSetData data = new CompleteSessionRequest.CompletedSetData();
                     data.setWeight(set.getWeight());
                     data.setReps(set.getReps());
@@ -1125,10 +1416,40 @@ public class SessionActivity extends AppCompatActivity {
                     data.setDistanceMeters(set.getDistanceMeters());
                     data.setSetOrder(set.getSetNumber());
                     data.setIsWarmup(set.isWarmup());
-                    data.setIsDropset(set.isDropset());
-                    data.setDropsetWeight(set.getDropsetWeight());
-                    data.setDropsetReps(set.getDropsetReps());
-                    data.setRestTime(set.getRestTime());
+
+                    // Проверяем, есть ли связанные дропсет-подходы
+                    Long groupId = set.getDropsetGroupId();
+                    if (groupId != null && dropsetGroups.containsKey(groupId)) {
+                        List<SessionSetResponse> groupSets = dropsetGroups.get(groupId);
+
+                        // Собираем все дропсет-подходы (исключая сам основной и rest)
+                        List<Double> dropsetWeights = new ArrayList<>();
+                        List<Integer> dropsetRepsList = new ArrayList<>();
+                        Integer restAfterDropset = null;
+
+                        for (SessionSetResponse gs : groupSets) {
+                            if (gs == set) continue; // Пропускаем сам основной
+                            if (gs.isDropsetPart()) {
+                                dropsetWeights.add(gs.getWeight());
+                                dropsetRepsList.add(gs.getReps());
+                            } else if (gs.isRest()) {
+                                restAfterDropset = gs.getRestTime();
+                            }
+                        }
+
+                        if (!dropsetWeights.isEmpty()) {
+                            data.setIsDropset(true);
+                            data.setDropsetWeight(dropsetWeights.get(0));
+                            data.setDropsetReps(dropsetRepsList.get(0));
+                            data.setDropsetWeights(dropsetWeights.size() > 1 ? dropsetWeights.subList(1, dropsetWeights.size()) : null);
+                            data.setDropsetRepsList(dropsetRepsList.size() > 1 ? dropsetRepsList.subList(1, dropsetRepsList.size()) : null);
+                        }
+                        data.setRestTime(restAfterDropset);
+                    } else {
+                        // Обычный подход без дропсета
+                        data.setIsDropset(false);
+                    }
+
                     setData.add(data);
                 }
             }
@@ -1147,7 +1468,8 @@ public class SessionActivity extends AppCompatActivity {
                     Log.d(TAG, "  set: weight=" + sd.getWeight() +
                             ", reps=" + sd.getReps() +
                             ", duration=" + sd.getDurationSeconds() +
-                            ", distance=" + sd.getDistanceMeters());
+                            ", distance=" + sd.getDistanceMeters() +
+                            ", isDropset=" + sd.getIsDropset());
                 }
             }
         }

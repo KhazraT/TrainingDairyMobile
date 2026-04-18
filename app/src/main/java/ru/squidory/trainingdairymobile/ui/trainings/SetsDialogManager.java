@@ -303,9 +303,9 @@ class SetsDialogManager {
         TextInputEditText wInput = row.findViewById(R.id.dropsetWeightInput);
         TextInputEditText rInput = row.findViewById(R.id.dropsetRepsInput);
         android.widget.ImageButton removeButton = row.findViewById(R.id.removeDropsetEntryButton);
-        TextView label = row.findViewById(R.id.dropsetEntryLabel);
+        TextView numberView = row.findViewById(R.id.dropsetEntryNumber);
 
-        label.setText("Запись #" + (rows.size() + 1));
+        numberView.setText(String.valueOf(rows.size() + 1));
         if (weight != null) wInput.setText(String.valueOf(weight));
         if (reps != null) rInput.setText(String.valueOf(reps));
 

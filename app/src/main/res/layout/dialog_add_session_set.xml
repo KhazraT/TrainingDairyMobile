@@ -10,6 +10,15 @@
         android:orientation="vertical"
         android:padding="16dp">
 
+        <!-- Заголовок -->
+        <TextView
+            android:id="@+id/setTypeTitle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Добавить подход"
+            android:textAppearance="?attr/textAppearanceHeadlineSmall"
+            android:layout_marginBottom="16dp" />
+
         <!-- Тип подхода: кнопки -->
         <TextView
             android:layout_width="match_parent"
@@ -41,12 +50,69 @@
                 android:layout_weight="1"
                 android:layout_marginStart="4dp"
                 android:text="Дропсет"
-                style="@style/Widget.Material3.Button.OutlinedButton"
-                android:visibility="gone" />
+                style="@style/Widget.Material3.Button.OutlinedButton" />
 
         </LinearLayout>
 
-        <!-- Поле: Вес -->
+        <!-- Поле: Отдых (для дропсета) -->
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/restTimeInputLayout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"
+            android:hint="Отдых после дропсета (мм:сс)"
+            app:boxStrokeColor="?attr/colorPrimary"
+            style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+            android:visibility="gone">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/restTimeInput"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="none"
+                android:focusable="false"
+                android:clickable="true" />
+
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <!-- Разделитель для дропсета -->
+        <View
+            android:id="@+id/divider"
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:layout_marginBottom="16dp"
+            android:background="?attr/colorOutlineVariant"
+            android:visibility="gone" />
+
+        <!-- Заголовок записей дропсета -->
+        <TextView
+            android:id="@+id/dropsetEntriesTitle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Записи дропсета (минимум 2)"
+            android:textAppearance="?attr/textAppearanceLabelLarge"
+            android:textStyle="bold"
+            android:visibility="gone"
+            android:layout_marginBottom="8dp" />
+
+        <!-- Контейнер для записей дропсета -->
+        <LinearLayout
+            android:id="@+id/dropsetEntriesContainer"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:visibility="gone" />
+
+        <!-- Кнопка добавления записи дропсета -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/addDropsetEntryButton"
+            style="@style/Widget.Material3.Button.TextButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="+ Добавить запись"
+            android:visibility="gone" />
+
+        <!-- Поле: Вес (для обычного подхода) -->
         <com.google.android.material.textfield.TextInputLayout
             android:id="@+id/weightInputLayout"
             android:layout_width="match_parent"
@@ -54,7 +120,8 @@
             android:layout_marginBottom="8dp"
             android:hint="Вес (кг)"
             app:boxStrokeColor="?attr/colorPrimary"
-            style="@style/Widget.Material3.TextInputLayout.OutlinedBox">
+            style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+            android:visibility="gone">
 
             <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/weightInput"
@@ -64,7 +131,7 @@
 
         </com.google.android.material.textfield.TextInputLayout>
 
-        <!-- Поле: Повторения -->
+        <!-- Поле: Повторения (для обычного подхода) -->
         <com.google.android.material.textfield.TextInputLayout
             android:id="@+id/repsInputLayout"
             android:layout_width="match_parent"
@@ -72,7 +139,8 @@
             android:layout_marginBottom="8dp"
             android:hint="Повторения"
             app:boxStrokeColor="?attr/colorPrimary"
-            style="@style/Widget.Material3.TextInputLayout.OutlinedBox">
+            style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+            android:visibility="gone">
 
             <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/repsInput"
@@ -82,86 +150,12 @@
 
         </com.google.android.material.textfield.TextInputLayout>
 
-        <!-- Поле: Время (клик → TimePickerDialog) -->
-        <com.google.android.material.textfield.TextInputLayout
-            android:id="@+id/timeInputLayout"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="8dp"
-            android:hint="Время (сек)"
-            app:boxStrokeColor="?attr/colorPrimary"
-            style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
-            android:visibility="gone">
-
-            <com.google.android.material.textfield.TextInputEditText
-                android:id="@+id/timeInput"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:inputType="none"
-                android:focusable="false"
-                android:clickable="true" />
-
-        </com.google.android.material.textfield.TextInputLayout>
-
-        <!-- Поле: Дистанция -->
-        <com.google.android.material.textfield.TextInputLayout
-            android:id="@+id/distanceInputLayout"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="8dp"
-            android:hint="Дистанция (м)"
-            app:boxStrokeColor="?attr/colorPrimary"
-            style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
-            android:visibility="gone">
-
-            <com.google.android.material.textfield.TextInputEditText
-                android:id="@+id/distanceInput"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:inputType="numberDecimal" />
-
-        </com.google.android.material.textfield.TextInputLayout>
-
-        <!-- Дропсет: контейнер для записей -->
-        <View
-            android:id="@+id/dropsetDivider"
-            android:layout_width="match_parent"
-            android:layout_height="1dp"
-            android:layout_marginVertical="12dp"
-            android:background="?attr/colorOutlineVariant"
-            android:visibility="gone" />
-
-        <TextView
-            android:id="@+id/dropsetLabel"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Дропсет:"
-            android:textAppearance="?attr/textAppearanceLabelLarge"
-            android:textStyle="bold"
-            android:visibility="gone"
-            android:layout_marginBottom="8dp" />
-
-        <LinearLayout
-            android:id="@+id/dropsetEntriesContainer"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:visibility="gone" />
-
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/addDropsetEntryButton"
-            style="@style/Widget.Material3.Button.TextButton"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="+ Добавить запись дропсета"
-            android:visibility="gone" />
-
         <!-- Кнопки действий -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
-            android:layout_marginTop="16dp">
+            android:layout_marginTop="24dp">
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/dialogCancelButton"

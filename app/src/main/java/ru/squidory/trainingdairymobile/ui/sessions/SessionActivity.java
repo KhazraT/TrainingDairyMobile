@@ -469,18 +469,82 @@ public class SessionActivity extends AppCompatActivity {
                     List<SessionSetResponse> sessionSets = new ArrayList<>();
                     for (int j = 0; j < sorted.size(); j++) {
                         PlannedSetResponse ps = sorted.get(j);
-                        SessionSetResponse ss = new SessionSetResponse();
-                        ss.setId(ps.getId());
-                        ss.setSetNumber(ps.getSetNumber());
-                        ss.setSetOrder(j);
-                        ss.setWeight(ps.getTargetWeight());
-                        ss.setReps(ps.getTargetReps());
-                        ss.setDurationSeconds(ps.getTargetTime());
-                        ss.setDistanceMeters(ps.getTargetDistance());
-                        ss.setRestTime(ps.getRestTime());
-                        ss.setIsWarmup(false);
-                        ss.setIsDropset(false);
-                        sessionSets.add(ss);
+
+                        // Проверяем, является ли подход дропсетом
+                        String setType = ps.getSetType();
+                        List<PlannedSetResponse.DropsetEntry> dropsetEntries = ps.getDropsetEntries();
+                        boolean isDropset = "DROPSET".equalsIgnoreCase(setType) && dropsetEntries != null && !dropsetEntries.isEmpty();
+
+                        if (isDropset) {
+                            // Обрабатываем дропсет: создаём основной подход + подходы дропсета + отдых
+                            final long dropsetGroupId = System.currentTimeMillis() + j;
+
+                            // Определяем начальный номер подхода
+                            int maxSetNumber = 0;
+                            for (SessionSetResponse s : sessionSets) {
+                                int n = s.getSetNumber() != null ? s.getSetNumber() : 0;
+                                if (n > maxSetNumber) maxSetNumber = n;
+                            }
+                            int baseSetNumber = maxSetNumber + 1;
+
+                            // Основной подход (родительский) с targetWeight/targetReps
+                            SessionSetResponse mainSet = new SessionSetResponse();
+                            mainSet.setId(ps.getId());
+                            mainSet.setSetNumber(baseSetNumber);
+                            mainSet.setSetOrder(sessionSets.size());
+                            mainSet.setWeight(ps.getTargetWeight());
+                            mainSet.setReps(ps.getTargetReps());
+                            mainSet.setIsDropset(false);
+                            mainSet.setIsDropsetPart(false);
+                            mainSet.setRestTime(null);
+                            mainSet.setIsWarmup(false);
+                            mainSet.setDropsetGroupId(dropsetGroupId);
+                            sessionSets.add(mainSet);
+
+                            // Подходы дропсета из entries
+                            for (int k = 0; k < dropsetEntries.size(); k++) {
+                                PlannedSetResponse.DropsetEntry entry = dropsetEntries.get(k);
+                                SessionSetResponse dropSet = new SessionSetResponse();
+                                dropSet.setSetNumber(baseSetNumber + 1 + k);
+                                dropSet.setSetOrder(sessionSets.size());
+                                dropSet.setWeight(entry.getWeight());
+                                dropSet.setReps(entry.getReps());
+                                dropSet.setIsDropset(false);
+                                dropSet.setIsDropsetPart(true);
+                                dropSet.setRestTime(null);
+                                dropSet.setIsWarmup(false);
+                                dropSet.setDropsetGroupId(dropsetGroupId);
+                                sessionSets.add(dropSet);
+                            }
+
+                            // Отдых после дропсета
+                            SessionSetResponse restSet = new SessionSetResponse();
+                            restSet.setSetNumber(baseSetNumber + dropsetEntries.size() + 1);
+                            restSet.setSetOrder(sessionSets.size());
+                            restSet.setWeight(null);
+                            restSet.setReps(null);
+                            restSet.setIsDropset(false);
+                            restSet.setIsDropsetPart(false);
+                            restSet.setIsRest(true);
+                            restSet.setRestTime(ps.getRestTime() != null ? ps.getRestTime() : 0);
+                            restSet.setIsWarmup(false);
+                            restSet.setDropsetGroupId(dropsetGroupId);
+                            sessionSets.add(restSet);
+                        } else {
+                            // Обычный подход
+                            SessionSetResponse ss = new SessionSetResponse();
+                            ss.setId(ps.getId());
+                            ss.setSetNumber(ps.getSetNumber());
+                            ss.setSetOrder(j);
+                            ss.setWeight(ps.getTargetWeight());
+                            ss.setReps(ps.getTargetReps());
+                            ss.setDurationSeconds(ps.getTargetTime());
+                            ss.setDistanceMeters(ps.getTargetDistance());
+                            ss.setRestTime(ps.getRestTime());
+                            ss.setIsWarmup(false);
+                            ss.setIsDropset(false);
+                            sessionSets.add(ss);
+                        }
                     }
                     se.setCompletedSets(sessionSets);
                     Log.d(TAG, "Loaded " + sessionSets.size() + " sets for exercise #" + index);

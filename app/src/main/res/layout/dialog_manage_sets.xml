@@ -23,31 +23,14 @@
         android:minHeight="200dp"
         android:clipToPadding="false" />
 
-    <!-- Кнопки -->
-    <LinearLayout
+    <!-- Кнопка добавления -->
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/addSetButton"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:layout_marginTop="12dp">
-
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/addRegularSetButton"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:layout_marginEnd="4dp"
-            android:text="@string/add_regular_set"
-            style="@style/Widget.MaterialComponents.Button.OutlinedButton" />
-
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/addDropsetButton"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:layout_marginStart="4dp"
-            android:text="@string/add_dropset"
-            style="@style/Widget.MaterialComponents.Button.OutlinedButton" />
-    </LinearLayout>
+        android:layout_marginTop="12dp"
+        android:text="Добавить подход"
+        style="@style/Widget.MaterialComponents.Button.OutlinedButton" />
 
     <LinearLayout
         android:layout_width="match_parent"

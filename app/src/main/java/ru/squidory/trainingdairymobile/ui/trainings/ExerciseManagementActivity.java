@@ -743,19 +743,9 @@ public class ExerciseManagementActivity extends AppCompatActivity {
         builder.setView(dialogView);
 
         RecyclerView setsRecyclerView = dialogView.findViewById(R.id.setsRecyclerView);
-        MaterialButton addRegularSetButton = dialogView.findViewById(R.id.addRegularSetButton);
-        MaterialButton addDropsetButton = dialogView.findViewById(R.id.addDropsetButton);
+        MaterialButton addSetButton = dialogView.findViewById(R.id.addSetButton);
         MaterialButton saveSetsButton = dialogView.findViewById(R.id.saveSetsButton);
         MaterialButton closeSetsButton = dialogView.findViewById(R.id.closeSetsButton);
-
-        // Для не-REPS_WEIGHT упражнений — только одна кнопка, переименовываем
-        if (!isRepsWeight) {
-            addRegularSetButton.setText("Добавить подход");
-            addDropsetButton.setVisibility(View.GONE);
-        } else {
-            addRegularSetButton.setText("+ Обычный");
-            addDropsetButton.setVisibility(View.VISIBLE);
-        }
 
         // Локальный буфер — изменения не отправляются на сервер до нажатия "Сохранить"
         final List<PlannedSetResponse> localSets = new ArrayList<>();
@@ -817,16 +807,10 @@ public class ExerciseManagementActivity extends AppCompatActivity {
             }
         });
 
-        addRegularSetButton.setOnClickListener(v -> {
+        addSetButton.setOnClickListener(v -> {
             SetsDialogManager.showForAdd(ExerciseManagementActivity.this, exercise, exerciseType,
                     localSets, setAdapter, false);
         });
-        if (isRepsWeight) {
-            addDropsetButton.setOnClickListener(v -> {
-                SetsDialogManager.showForAdd(ExerciseManagementActivity.this, exercise, exerciseType,
-                        localSets, setAdapter, true);
-            });
-        }
 
         saveSetsButton.setOnClickListener(v -> {
             if (!loaded[0]) {

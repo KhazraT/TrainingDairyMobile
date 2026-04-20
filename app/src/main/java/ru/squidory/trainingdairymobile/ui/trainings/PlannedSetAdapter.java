@@ -156,15 +156,23 @@ public class PlannedSetAdapter extends RecyclerView.Adapter<PlannedSetAdapter.Se
             }
 
             // Дропсет записи — объединены в один элемент
-            if (isDropset && set.getDropsetEntries() != null && !set.getDropsetEntries().isEmpty()) {
+            if (isDropset) {
                 dropsetEntriesLayout.setVisibility(View.VISIBLE);
                 dropsetEntriesLayout.removeAllViews();
 
                 StringBuilder sb = new StringBuilder();
-                for (int i = 0; i < set.getDropsetEntries().size(); i++) {
-                    PlannedSetResponse.DropsetEntry entry = set.getDropsetEntries().get(i);
-                    if (i > 0) sb.append("  →  ");
-                    sb.append(String.format(Locale.getDefault(), "%.1f кг × %d", entry.getWeight(), entry.getReps()));
+                
+                // 1. Добавляем основной подход как первую ступень
+                if (set.getTargetWeight() != null && set.getTargetReps() != null) {
+                    sb.append(String.format(Locale.getDefault(), "%.1f кг × %d", set.getTargetWeight(), set.getTargetReps()));
+                }
+
+                // 2. Добавляем остальные ступени
+                if (set.getDropsetEntries() != null) {
+                    for (PlannedSetResponse.DropsetEntry entry : set.getDropsetEntries()) {
+                        if (sb.length() > 0) sb.append("  →  ");
+                        sb.append(String.format(Locale.getDefault(), "%.1f кг × %d", entry.getWeight(), entry.getReps()));
+                    }
                 }
 
                 TextView dropsetSummary = new TextView(ctx);

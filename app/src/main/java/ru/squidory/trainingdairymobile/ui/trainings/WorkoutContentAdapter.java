@@ -164,11 +164,16 @@ public class WorkoutContentAdapter extends RecyclerView.Adapter<WorkoutContentAd
 
             if ("DROPSET".equalsIgnoreCase(set.getSetType())) {
                 sb.append(" [Дропсет]");
-                if (set.getDropsetEntries() != null && !set.getDropsetEntries().isEmpty()) {
-                    for (int i = 0; i < set.getDropsetEntries().size(); i++) {
-                        PlannedSetResponse.DropsetEntry entry = set.getDropsetEntries().get(i);
-                        if (i > 0) sb.append(" → ");
-                        sb.append(String.format(Locale.getDefault(), "%.1f кг × %d повт.",
+                // 1. Добавляем основной подход как первую ступень
+                if (set.getTargetWeight() != null && set.getTargetReps() != null) {
+                    sb.append(String.format(Locale.getDefault(), " %.1f кг × %d повт.",
+                            set.getTargetWeight(), set.getTargetReps()));
+                }
+
+                // 2. Добавляем записи дропсета
+                if (set.getDropsetEntries() != null) {
+                    for (PlannedSetResponse.DropsetEntry entry : set.getDropsetEntries()) {
+                        sb.append(" → ").append(String.format(Locale.getDefault(), "%.1f кг × %d повт.",
                                 entry.getWeight(), entry.getReps()));
                     }
                 }

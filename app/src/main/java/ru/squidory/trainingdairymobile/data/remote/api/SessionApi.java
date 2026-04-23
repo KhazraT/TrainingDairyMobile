@@ -12,6 +12,7 @@ import retrofit2.http.Query;
 import ru.squidory.trainingdairymobile.data.model.CompleteSessionRequest;
 import ru.squidory.trainingdairymobile.data.model.SessionExerciseRequest;
 import ru.squidory.trainingdairymobile.data.model.SessionExerciseResponse;
+import ru.squidory.trainingdairymobile.data.model.SessionHistoryResponse;
 import ru.squidory.trainingdairymobile.data.model.SessionRequest;
 import ru.squidory.trainingdairymobile.data.model.SessionResponse;
 import ru.squidory.trainingdairymobile.data.model.SessionSetRequest;
@@ -77,6 +78,22 @@ public interface SessionApi {
      */
     @GET("workouts/{workoutId}/sessions")
     Call<List<SessionResponse>> getSessionsByWorkout(@Path("workoutId") long workoutId);
+
+    /**
+     * Получить историю сессий пользователя, сгруппированную по дням.
+     * GET /api/sessions/history
+     * @param year Год (опционально, по умолчанию текущий)
+     * @param month Месяц 1-12 (опционально, по умолчанию текущий)
+     * @param page Номер страницы (по умолчанию 0)
+     * @param size Размер страницы (по умолчанию 20)
+     */
+    @GET("sessions/history")
+    Call<SessionHistoryResponse> getSessionHistory(
+            @Query("year") Integer year,
+            @Query("month") Integer month,
+            @Query("page") Integer page,
+            @Query("size") Integer size
+    );
 
     /**
      * Получить статистику сессии.

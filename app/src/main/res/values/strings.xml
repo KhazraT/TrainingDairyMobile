@@ -160,4 +160,6 @@
     <string name="dropset_label">ДРОПСЕТ</string>
     <string name="regular_label">ОБЫЧНЫЙ</string>
     <string name="set_number">Подход #%d</string>
+    <string name="history">История</string>
+    <string name="session_history">История тренировок</string>
 </resources>

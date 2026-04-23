@@ -17,7 +17,7 @@
         android:theme="@style/Theme.TrainingDairyMobile"
         android:usesCleartextTraffic="true"
         tools:targetApi="31">
-        
+
         <!-- Splash Activity как точка входа -->
         <activity
             android:name=".SplashActivity"
@@ -28,17 +28,17 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        
+
         <!-- Login Activity -->
         <activity
             android:name=".ui.auth.LoginActivity"
             android:exported="false" />
-        
+
         <!-- Register Activity -->
         <activity
             android:name=".ui.auth.RegisterActivity"
             android:exported="false" />
-        
+
         <!-- Main Activity -->
         <activity
             android:name=".ui.main.MainActivity"
@@ -67,7 +67,7 @@
         <activity
             android:name=".ui.trainings.WorkoutManagementActivity"
             android:exported="false"
-            android:parentActivityName=".ui.main.MainActivity" />
+            android:parentActivityName=".ui.trainings.ProgramDetailActivity" />
 
         <!-- Workout Content Activity -->
         <activity
@@ -93,6 +93,11 @@
             android:exported="false"
             android:parentActivityName=".ui.trainings.ProgramDetailActivity" />
 
-    </application>
+        <!-- Session History Activity (история тренировок) -->
+        <activity
+            android:name=".ui.trainings.SessionHistoryActivity"
+            android:exported="false"
+            android:parentActivityName=".ui.trainings.TrainingsFragment" />
 
+    </application>
 </manifest>

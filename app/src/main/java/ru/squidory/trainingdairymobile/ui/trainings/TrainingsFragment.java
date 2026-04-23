@@ -23,6 +23,7 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.button.MaterialButton;
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.android.material.textfield.TextInputLayout;
 
@@ -50,13 +51,11 @@ public class TrainingsFragment extends BaseFragment {
     private ImageButton addProgramButton;
     private EditText searchEditText;
     private ImageButton clearSearchButton;
-
+    private FloatingActionButton historyFab;
     private ProgramAdapter adapter;
     private ProgramRepository repository;
-
     private final List<ProgramResponse> allPrograms = new ArrayList<>();
     private String searchQuery = "";
-
     private ActivityResultLauncher<Intent> programDetailLauncher;
 
     @Override
@@ -81,9 +80,7 @@ public class TrainingsFragment extends BaseFragment {
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
-
         repository = ProgramRepository.getInstance();
-
         initViews(view);
         setupRecyclerView();
         setupListeners();
@@ -97,13 +94,13 @@ public class TrainingsFragment extends BaseFragment {
         addProgramButton = view.findViewById(R.id.addProgramButton);
         searchEditText = view.findViewById(R.id.searchEditText);
         clearSearchButton = view.findViewById(R.id.clearSearchButton);
+        historyFab = view.findViewById(R.id.historyFab);
     }
 
     private void setupRecyclerView() {
         adapter = new ProgramAdapter();
         programsRecyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
         programsRecyclerView.setAdapter(adapter);
-
         adapter.setOnProgramClickListener(new ProgramAdapter.OnProgramClickListener() {
             @Override
             public void onProgramClick(ProgramResponse program) {
@@ -131,14 +128,25 @@ public class TrainingsFragment extends BaseFragment {
     private void setupListeners() {
         addProgramButton.setOnClickListener(v -> showCreateProgramDialog());
 
+        // Обработчик кнопки истории
+        historyFab.setOnClickListener(v -> {
+            Intent intent = new Intent(getContext(), SessionHistoryActivity.class);
+            startActivity(intent);
+        });
+
         searchEditText.addTextChangedListener(new TextWatcher() {
-            @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
-            @Override public void onTextChanged(CharSequence s, int start, int before, int count) {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
                 searchQuery = s.toString().trim();
                 clearSearchButton.setVisibility(searchQuery.isEmpty() ? View.GONE : View.VISIBLE);
                 applyFilters();
             }
-            @Override public void afterTextChanged(Editable s) {}
+
+            @Override
+            public void afterTextChanged(Editable s) {}
         });
 
         clearSearchButton.setOnClickListener(v -> {
@@ -180,12 +188,10 @@ public class TrainingsFragment extends BaseFragment {
 
         saveButton.setOnClickListener(v -> {
             String name = nameInput.getText() != null ? nameInput.getText().toString().trim() : "";
-
             if (name.isEmpty()) {
                 nameLayout.setError("Введите название программы");
                 return;
             }
-
             nameLayout.setError(null);
 
             String description = descriptionInput.getText() != null ? descriptionInput.getText().toString().trim() : "";
@@ -218,6 +224,7 @@ public class TrainingsFragment extends BaseFragment {
     private void loadPrograms() {
         if (!isAdded()) return;
         showLoading(true);
+
         repository.getPrograms(new ProgramRepository.ProgramsCallback() {
             @Override
             public void onSuccess(List<ProgramResponse> programs) {
@@ -225,7 +232,6 @@ public class TrainingsFragment extends BaseFragment {
                 allPrograms.clear();
                 allPrograms.addAll(programs);
                 applyFilters();
-
                 // Загружаем количество тренировок для каждой программы
                 loadWorkoutCounts(programs);
             }
@@ -260,7 +266,6 @@ public class TrainingsFragment extends BaseFragment {
                     if (!isAdded()) return;
                     counts.put(program.getId(), workouts.size());
                     pendingRequests[0]--;
-
                     if (pendingRequests[0] == 0) {
                         // Все запросы завершены
                         showLoading(false);
@@ -274,7 +279,6 @@ public class TrainingsFragment extends BaseFragment {
                     if (!isAdded()) return;
                     counts.put(program.getId(), 0);
                     pendingRequests[0]--;
-
                     if (pendingRequests[0] == 0) {
                         showLoading(false);
                         adapter.updateWorkoutCounts(counts);

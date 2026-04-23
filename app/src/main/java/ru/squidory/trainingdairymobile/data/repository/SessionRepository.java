@@ -27,6 +27,7 @@ import ru.squidory.trainingdairymobile.data.local.entity.ActiveSessionEntity;
 import ru.squidory.trainingdairymobile.data.model.CompleteSessionRequest;
 import ru.squidory.trainingdairymobile.data.model.SessionExerciseRequest;
 import ru.squidory.trainingdairymobile.data.model.SessionExerciseResponse;
+import ru.squidory.trainingdairymobile.data.model.SessionHistoryResponse;
 import ru.squidory.trainingdairymobile.data.model.SessionResponse;
 import ru.squidory.trainingdairymobile.data.model.SessionSetResponse;
 import ru.squidory.trainingdairymobile.data.model.StartSessionRequest;
@@ -44,7 +45,6 @@ public class SessionRepository {
     private static final String STATUS_COMPLETED = "COMPLETED";
 
     private static SessionRepository instance;
-
     private final SessionApi sessionApi;
     private final ActiveSessionDao activeSessionDao;
     private final Gson gson;
@@ -78,6 +78,11 @@ public class SessionRepository {
         void onError(String error);
     }
 
+    public interface SessionHistoryCallback {
+        void onSuccess(SessionHistoryResponse history);
+        void onError(String error);
+    }
+
     public interface SessionExerciseCallback {
         void onSuccess(SessionExerciseResponse exercise);
         void onError(String error);
@@ -93,6 +98,10 @@ public class SessionRepository {
         void onError(String error);
     }
 
+    public interface ActiveSessionCallback {
+        void onResult(ActiveSessionEntity session);
+    }
+
     // ==================== Начало сессии ====================
 
     /**
@@ -101,7 +110,6 @@ public class SessionRepository {
      */
     public void startSession(long workoutId, SessionCallback callback) {
         StartSessionRequest request = new StartSessionRequest(workoutId);
-
         Timber.d("Calling startSession with workoutId=%d", workoutId);
 
         sessionApi.startSession(request).enqueue(new Callback<SessionResponse>() {
@@ -112,8 +120,7 @@ public class SessionRepository {
                 if (response.isSuccessful() && response.body() != null) {
                     SessionResponse session = response.body();
                     Timber.d("Session started: sessionId=%d, workoutId=%d, exercises=%s",
-                            session.getSessionId(),
-                            session.getWorkoutId(),
+                            session.getSessionId(), session.getWorkoutId(),
                             session.getExercises() != null ? session.getExercises().size() : "null");
 
                     // Сохраняем в Room
@@ -131,7 +138,6 @@ public class SessionRepository {
                             );
                             activeSessionDao.insertOrUpdate(entity);
                             Timber.d("Session saved to local cache: sessionId=%d", session.getSessionId());
-
                             mainHandler.post(() -> callback.onSuccess(session));
                         } catch (Exception e) {
                             Timber.e(e, "Failed to save session to local cache");
@@ -177,10 +183,6 @@ public class SessionRepository {
                 mainHandler.post(() -> callback.onResult(null));
             }
         });
-    }
-
-    public interface ActiveSessionCallback {
-        void onResult(ActiveSessionEntity session);
     }
 
     /**
@@ -239,7 +241,6 @@ public class SessionRepository {
                 String updatedJson = gson.toJson(exercises);
                 activeSessionDao.updateExercises(sessionId, updatedJson, System.currentTimeMillis());
                 Timber.d("Updated sets for exercise: sessionExerciseId=%d, sets=%d", sessionExerciseId, sets.size());
-
             } catch (Exception e) {
                 Timber.e(e, "Failed to update exercise sets");
             }
@@ -274,7 +275,6 @@ public class SessionRepository {
                 String updatedJson = gson.toJson(exercises);
                 activeSessionDao.updateExercises(sessionId, updatedJson, System.currentTimeMillis());
                 Timber.d("Added exercise to session: sessionId=%d, exerciseId=%d", sessionId, exercise.getExerciseId());
-
             } catch (Exception e) {
                 Timber.e(e, "Failed to add exercise to session");
             }
@@ -309,7 +309,6 @@ public class SessionRepository {
                             Timber.e(e, "Failed to cache exercise locally");
                         }
                     });
-
                     mainHandler.post(() -> callback.onSuccess(exercise));
                 } else {
                     String error = getErrorMessage(response);
@@ -351,19 +350,10 @@ public class SessionRepository {
                 // Удаляем упражнение из списка
                 exercises.removeIf(ex -> ex.getSessionExerciseId() == sessionExerciseId);
 
-//                 // Добавляем ID в removedExerciseIds
-//                 List<Long> removedIds = getRemovedExerciseIds(entity);
-//                 if (!removedIds.contains(sessionExerciseId)) {
-//                     removedIds.add(sessionExerciseId);
-//                     String removedJson = gson.toJson(removedIds);
-//                     activeSessionDao.updateRemovedExerciseIds(sessionId, removedJson, System.currentTimeMillis());
-//                 }
-
                 // Сохраняем обновлённый список упражнений
                 String updatedJson = gson.toJson(exercises);
                 activeSessionDao.updateExercises(sessionId, updatedJson, System.currentTimeMillis());
                 Timber.d("Removed exercise from session: sessionId=%d, exerciseId=%d", sessionId, sessionExerciseId);
-
             } catch (Exception e) {
                 Timber.e(e, "Failed to remove exercise from session");
             }
@@ -437,7 +427,6 @@ public class SessionRepository {
                 String updatedJson = gson.toJson(reordered);
                 activeSessionDao.updateExercises(sessionId, updatedJson, System.currentTimeMillis());
                 Timber.d("Reordered exercises in session: sessionId=%d, count=%d", sessionId, exerciseIds.size());
-
             } catch (Exception e) {
                 Timber.e(e, "Failed to reorder exercises");
             }
@@ -523,7 +512,6 @@ public class SessionRepository {
             public void onResponse(Call<Void> call, Response<Void> response) {
                 if (response.isSuccessful()) {
                     Timber.d("Session deleted via API: sessionId=%d", sessionId);
-
                     // Удаляем и локально
                     executor.execute(() -> {
                         try {
@@ -532,7 +520,6 @@ public class SessionRepository {
                             Timber.e(e, "Failed to delete session locally");
                         }
                     });
-
                     mainHandler.post(callback::onSuccess);
                 } else {
                     String error = getErrorMessage(response);
@@ -549,8 +536,33 @@ public class SessionRepository {
         });
     }
 
-    // ==================== Синхронизация ====================
+    // ==================== История сессий ====================
 
+    /**
+     * Получить историю сессий пользователя, сгруппированную по дням.
+     */
+    public void getSessionHistory(Integer year, Integer month, Integer page, Integer size, SessionHistoryCallback callback) {
+        sessionApi.getSessionHistory(year, month, page, size).enqueue(new Callback<SessionHistoryResponse>() {
+            @Override
+            public void onResponse(Call<SessionHistoryResponse> call, Response<SessionHistoryResponse> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    mainHandler.post(() -> callback.onSuccess(response.body()));
+                } else {
+                    String error = getErrorMessage(response);
+                    Timber.e("Failed to get session history: %s", error);
+                    mainHandler.post(() -> callback.onError("Ошибка сервера (" + response.code() + "): " + error));
+                }
+            }
+
+            @Override
+            public void onFailure(Call<SessionHistoryResponse> call, Throwable t) {
+                Timber.e(t, "Network error getting session history");
+                mainHandler.post(() -> callback.onError("Нет связи с сервером: " + t.getMessage()));
+            }
+        });
+    }
+
+    // ==================== Синхронизация ====================
 
     private String getErrorMessage(Response<?> response) {
         if (response.errorBody() != null) {

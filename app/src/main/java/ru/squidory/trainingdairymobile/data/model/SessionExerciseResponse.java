@@ -44,6 +44,10 @@ public class SessionExerciseResponse {
     @SerializedName("completedSets")
     private List<SessionSetResponse> completedSets;
 
+    // Fallback для API, которое возвращает "sets" вместо "completedSets"
+    @SerializedName("sets")
+    private List<SessionSetResponse> sets;
+
     @SerializedName("workoutExerciseId")
     private Long workoutExerciseId;
 
@@ -94,7 +98,10 @@ public class SessionExerciseResponse {
     public List<PlannedSetResponse> getPlannedSets() { return plannedSets; }
     public void setPlannedSets(List<PlannedSetResponse> plannedSets) { this.plannedSets = plannedSets; }
 
-    public List<SessionSetResponse> getCompletedSets() { return completedSets; }
+    public List<SessionSetResponse> getCompletedSets() {
+        if (completedSets != null) return completedSets;
+        return sets;
+    }
     public void setCompletedSets(List<SessionSetResponse> completedSets) { this.completedSets = completedSets; }
 
     // Legacy compatibility

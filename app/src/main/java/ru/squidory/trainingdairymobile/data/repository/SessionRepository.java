@@ -536,6 +536,32 @@ public class SessionRepository {
         });
     }
 
+    // ==================== Получение сессии по ID ====================
+
+    /**
+     * Получить сессию по ID.
+     */
+    public void getSessionById(long sessionId, SessionCallback callback) {
+        sessionApi.getSessionById(sessionId).enqueue(new Callback<SessionResponse>() {
+            @Override
+            public void onResponse(Call<SessionResponse> call, Response<SessionResponse> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    mainHandler.post(() -> callback.onSuccess(response.body()));
+                } else {
+                    String error = getErrorMessage(response);
+                    Timber.e("Failed to get session by id: %s", error);
+                    mainHandler.post(() -> callback.onError("Ошибка сервера (" + response.code() + "): " + error));
+                }
+            }
+
+            @Override
+            public void onFailure(Call<SessionResponse> call, Throwable t) {
+                Timber.e(t, "Network error getting session by id");
+                mainHandler.post(() -> callback.onError("Нет связи с сервером: " + t.getMessage()));
+            }
+        });
+    }
+
     // ==================== История сессий ====================
 
     /**

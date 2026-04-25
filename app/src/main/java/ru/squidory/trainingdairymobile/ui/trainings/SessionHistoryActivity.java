@@ -13,7 +13,9 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.appbar.MaterialToolbar;
 
+import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.List;
 
 import ru.squidory.trainingdairymobile.R;
 import ru.squidory.trainingdairymobile.data.model.SessionHistoryResponse;
@@ -32,6 +34,7 @@ public class SessionHistoryActivity extends AppCompatActivity implements Session
 
     private SessionHistoryAdapter adapter;
     private SessionRepository repository;
+    private List<SessionHistoryResponse.DaySessions> daySessionsList = new ArrayList<>();
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -82,7 +85,9 @@ public class SessionHistoryActivity extends AppCompatActivity implements Session
             public void onSuccess(SessionHistoryResponse history) {
                 showLoading(false);
                 if (history.getSessionHistory() != null && !history.getSessionHistory().isEmpty()) {
-                    adapter.setDaySessionsList(history.getSessionHistory());
+                    daySessionsList.clear();
+                    daySessionsList.addAll(history.getSessionHistory());
+                    adapter.setDaySessionsList(daySessionsList);
                     checkEmptyState();
                 } else {
                     emptyText.setText("В этом месяце нет тренировок");
@@ -125,7 +130,34 @@ public class SessionHistoryActivity extends AppCompatActivity implements Session
 
     @Override
     public void onSessionClick(Long sessionId, Long workoutId) {
-        // TODO: Открыть детали сессии
-        Toast.makeText(this, "Session " + sessionId + ", Workout " + workoutId, Toast.LENGTH_SHORT).show();
+        // Находим сессию в загруженных данных
+        SessionHistoryResponse.SessionInHistory session = findSessionById(sessionId);
+        if (session != null) {
+            SessionDetailActivity.start(
+                    this,
+                    sessionId,
+                    session.getWorkoutName(),
+                    session.getProgramName(),
+                    session.getCompletedAt(),
+                    session.getDurationMinutes() != null ? session.getDurationMinutes() : 0,
+                    session.getTotalTonnage() != null ? session.getTotalTonnage() : 0.0,
+                    session.getTotalSets() != null ? session.getTotalSets() : 0
+            );
+        } else {
+            Toast.makeText(this, "Сессия не найдена", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private SessionHistoryResponse.SessionInHistory findSessionById(Long sessionId) {
+        for (SessionHistoryResponse.DaySessions day : daySessionsList) {
+            if (day.getSessions() != null) {
+                for (SessionHistoryResponse.SessionInHistory session : day.getSessions()) {
+                    if (sessionId.equals(session.getSessionId())) {
+                        return session;
+                    }
+                }
+            }
+        }
+        return null;
     }
 }

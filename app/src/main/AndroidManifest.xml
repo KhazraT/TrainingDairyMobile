@@ -97,7 +97,13 @@
         <activity
             android:name=".ui.trainings.SessionHistoryActivity"
             android:exported="false"
-            android:parentActivityName=".ui.trainings.TrainingsFragment" />
+            android:parentActivityName=".ui.main.MainActivity" />
+
+        <!-- Session Detail Activity (детали сессии) -->
+        <activity
+            android:name=".ui.trainings.SessionDetailActivity"
+            android:exported="false"
+            android:parentActivityName=".ui.trainings.SessionHistoryActivity" />
 
     </application>
 </manifest>

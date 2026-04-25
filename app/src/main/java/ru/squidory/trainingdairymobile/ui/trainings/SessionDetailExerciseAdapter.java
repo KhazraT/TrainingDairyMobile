@@ -5,6 +5,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageButton;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -92,18 +93,20 @@ public class SessionDetailExerciseAdapter extends RecyclerView.Adapter<RecyclerV
     @Override
     public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         LayoutInflater inflater = LayoutInflater.from(parent.getContext());
-        return new ExerciseViewHolder(inflater.inflate(R.layout.item_session_detail_exercise, parent, false));
+        if (viewType == TYPE_SUPERSET_GROUP) {
+            return new SupersetGroupViewHolder(inflater.inflate(R.layout.item_session_detail_superset, parent, false));
+        } else {
+            return new SingleViewHolder(inflater.inflate(R.layout.item_session_detail_exercise, parent, false));
+        }
     }
 
     @Override
     public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position) {
         DisplayItem item = items.get(position);
-        if (holder instanceof ExerciseViewHolder) {
-            if (item.type == TYPE_SINGLE) {
-                ((ExerciseViewHolder) holder).bindSingle(item.exercise);
-            } else {
-                ((ExerciseViewHolder) holder).bindSuperset(item.supersetGroup, item.ssExercises);
-            }
+        if (holder instanceof SingleViewHolder) {
+            ((SingleViewHolder) holder).bind(item.exercise);
+        } else if (holder instanceof SupersetGroupViewHolder) {
+            ((SupersetGroupViewHolder) holder).bind(item.supersetGroup, item.ssExercises);
         }
     }
 
@@ -112,47 +115,29 @@ public class SessionDetailExerciseAdapter extends RecyclerView.Adapter<RecyclerV
         return items.size();
     }
 
-    static class ExerciseViewHolder extends RecyclerView.ViewHolder {
+    // ================== SingleViewHolder ==================
+
+    static class SingleViewHolder extends RecyclerView.ViewHolder {
         protected final TextView exerciseNameText;
-        protected final TextView supersetLabel;
         protected final RecyclerView setsRecyclerView;
         protected final TextView noSetsText;
         protected final ImageButton exerciseInfoButton;
 
-        ExerciseViewHolder(@NonNull View itemView) {
+        SingleViewHolder(@NonNull View itemView) {
             super(itemView);
             exerciseNameText = itemView.findViewById(R.id.exerciseNameText);
-            supersetLabel = itemView.findViewById(R.id.supersetLabel);
             setsRecyclerView = itemView.findViewById(R.id.setsRecyclerView);
             noSetsText = itemView.findViewById(R.id.noSetsText);
             exerciseInfoButton = itemView.findViewById(R.id.exerciseInfoButton);
         }
 
-        void bindSingle(SessionExerciseResponse exercise) {
+        void bind(SessionExerciseResponse exercise) {
             exerciseNameText.setText(getExerciseName(exercise));
-            supersetLabel.setVisibility(View.GONE);
             setupInfoButton(exercise);
-
-            List<SessionExerciseResponse> singleList = new ArrayList<>();
-            singleList.add(exercise);
-            bindSets(singleList);
+            bindSets(exercise);
         }
 
-        void bindSuperset(Integer supersetGroup, List<SessionExerciseResponse> exercises) {
-            StringBuilder nameBuilder = new StringBuilder();
-            for (int i = 0; i < exercises.size(); i++) {
-                if (i > 0) nameBuilder.append(" / ");
-                nameBuilder.append(getExerciseName(exercises.get(i)));
-            }
-            exerciseNameText.setText(nameBuilder.toString());
-            supersetLabel.setVisibility(View.VISIBLE);
-            supersetLabel.setText("Суперсет (" + exercises.size() + ")");
-            exerciseInfoButton.setVisibility(View.GONE);
-
-            bindSets(exercises);
-        }
-
-        private void setupInfoButton(SessionExerciseResponse exercise) {
+        protected void setupInfoButton(SessionExerciseResponse exercise) {
             long exerciseId = exercise.getExerciseId() != null ? exercise.getExerciseId() : 0;
             if (exerciseId > 0) {
                 exerciseInfoButton.setVisibility(View.VISIBLE);
@@ -167,34 +152,102 @@ public class SessionDetailExerciseAdapter extends RecyclerView.Adapter<RecyclerV
             }
         }
 
-        protected void bindSets(List<SessionExerciseResponse> exercises) {
-            List<SessionSetResponse> allSets = new ArrayList<>();
-            for (SessionExerciseResponse ex : exercises) {
-                List<SessionSetResponse> completed = ex.getCompletedSets();
-                if (completed != null && !completed.isEmpty()) {
-                    allSets.addAll(completed);
-                }
-            }
-
-            if (allSets.isEmpty()) {
+        protected void bindSets(SessionExerciseResponse exercise) {
+            List<SessionSetResponse> sets = exercise.getCompletedSets();
+            if (sets == null || sets.isEmpty()) {
                 setsRecyclerView.setVisibility(View.GONE);
                 noSetsText.setVisibility(View.VISIBLE);
-            } else {
-                setsRecyclerView.setVisibility(View.VISIBLE);
-                noSetsText.setVisibility(View.GONE);
-
-                SessionExerciseResponse wrapper = new SessionExerciseResponse();
-                wrapper.setExerciseType(exercises.get(0).getExerciseType());
-                wrapper.setCompletedSets(allSets);
-
-                SessionDetailSetsAdapter adapter = new SessionDetailSetsAdapter(wrapper);
-                setsRecyclerView.setLayoutManager(new LinearLayoutManager(itemView.getContext()));
-                setsRecyclerView.setAdapter(adapter);
-                setsRecyclerView.setNestedScrollingEnabled(false);
+                return;
             }
+
+            setsRecyclerView.setVisibility(View.VISIBLE);
+            noSetsText.setVisibility(View.GONE);
+
+            SessionDetailSetsAdapter adapter = new SessionDetailSetsAdapter(exercise);
+            setsRecyclerView.setLayoutManager(new LinearLayoutManager(itemView.getContext()));
+            setsRecyclerView.setAdapter(adapter);
+            setsRecyclerView.setNestedScrollingEnabled(false);
         }
 
         protected String getExerciseName(SessionExerciseResponse ex) {
+            if (ex.getExercise() != null && ex.getExercise().getName() != null) {
+                return ex.getExercise().getName();
+            }
+            if (ex.getExerciseName() != null && !ex.getExerciseName().isEmpty()) {
+                return ex.getExerciseName();
+            }
+            return "Упражнение";
+        }
+    }
+
+    // ================== SupersetGroupViewHolder ==================
+
+    static class SupersetGroupViewHolder extends RecyclerView.ViewHolder {
+        private final LinearLayout exercisesContainer;
+
+        SupersetGroupViewHolder(@NonNull View itemView) {
+            super(itemView);
+            exercisesContainer = itemView.findViewById(R.id.exercisesContainer);
+        }
+
+        void bind(Integer supersetGroup, List<SessionExerciseResponse> exercises) {
+            // Очищаем контейнер
+            exercisesContainer.removeAllViews();
+
+            // Добавляем каждое упражнение суперсета отдельно со своими подходами
+            for (int i = 0; i < exercises.size(); i++) {
+                SessionExerciseResponse ex = exercises.get(i);
+                View exerciseView = LayoutInflater.from(itemView.getContext())
+                        .inflate(R.layout.item_session_detail_exercise, exercisesContainer, false);
+
+                // Убираем margin, т.к. родитель уже имеет карточку
+                ViewGroup.MarginLayoutParams params = (ViewGroup.MarginLayoutParams) exerciseView.getLayoutParams();
+                params.setMargins(0, i > 0 ? 8 : 0, 0, 0);
+                exerciseView.setLayoutParams(params);
+
+                TextView nameText = exerciseView.findViewById(R.id.exerciseNameText);
+                RecyclerView setsRecyclerView = exerciseView.findViewById(R.id.setsRecyclerView);
+                TextView noSetsText = exerciseView.findViewById(R.id.noSetsText);
+                ImageButton infoButton = exerciseView.findViewById(R.id.exerciseInfoButton);
+                TextView supersetLabel = exerciseView.findViewById(R.id.supersetLabel);
+
+                supersetLabel.setVisibility(View.GONE);
+
+                nameText.setText(getExerciseName(ex));
+
+                long exerciseId = ex.getExerciseId() != null ? ex.getExerciseId() : 0;
+                if (exerciseId > 0) {
+                    infoButton.setVisibility(View.VISIBLE);
+                    infoButton.setOnClickListener(v -> {
+                        Intent intent = new Intent(itemView.getContext(), ExerciseDetailActivity.class);
+                        intent.putExtra(ExerciseDetailActivity.EXTRA_EXERCISE_ID, exerciseId);
+                        intent.putExtra(ExerciseDetailActivity.EXTRA_EXERCISE_NAME, getExerciseName(ex));
+                        itemView.getContext().startActivity(intent);
+                    });
+                } else {
+                    infoButton.setVisibility(View.GONE);
+                }
+
+                // Подходы для конкретного упражнения
+                List<SessionSetResponse> sets = ex.getCompletedSets();
+                if (sets == null || sets.isEmpty()) {
+                    setsRecyclerView.setVisibility(View.GONE);
+                    noSetsText.setVisibility(View.VISIBLE);
+                } else {
+                    setsRecyclerView.setVisibility(View.VISIBLE);
+                    noSetsText.setVisibility(View.GONE);
+
+                    SessionDetailSetsAdapter adapter = new SessionDetailSetsAdapter(ex);
+                    setsRecyclerView.setLayoutManager(new LinearLayoutManager(itemView.getContext()));
+                    setsRecyclerView.setAdapter(adapter);
+                    setsRecyclerView.setNestedScrollingEnabled(false);
+                }
+
+                exercisesContainer.addView(exerciseView);
+            }
+        }
+
+        private String getExerciseName(SessionExerciseResponse ex) {
             if (ex.getExercise() != null && ex.getExercise().getName() != null) {
                 return ex.getExercise().getName();
             }

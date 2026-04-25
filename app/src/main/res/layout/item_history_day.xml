@@ -12,39 +12,51 @@
         android:layout_height="wrap_content"
         android:orientation="vertical">
 
-        <!-- Заголовок даты -->
         <LinearLayout
+            android:id="@+id/dayHeader"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:padding="16dp"
+            android:background="?attr/colorPrimary"
+            android:clickable="true"
+            android:focusable="true"
+            android:foreground="?attr/selectableItemBackground"
             android:gravity="center_vertical"
-            android:background="?attr/colorPrimary">
+            android:orientation="horizontal"
+            android:padding="16dp">
 
             <TextView
                 android:id="@+id/dateText"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
+                android:text="20 апреля 2026"
                 android:textColor="@android:color/white"
                 android:textSize="18sp"
-                android:textStyle="bold"
-                android:text="20 апреля 2026" />
+                android:textStyle="bold" />
 
             <TextView
                 android:id="@+id/sessionsCountText"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:layout_marginEnd="12dp"
+                android:text="2 тренировки"
                 android:textColor="@android:color/white"
-                android:textSize="14sp"
-                android:text="2 тренировки" />
+                android:textSize="14sp" />
+
+            <ImageView
+                android:id="@+id/expandIcon"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:contentDescription="@string/expand_collapse"
+                android:src="@drawable/ic_expand_more"
+                app:tint="@android:color/white" />
         </LinearLayout>
 
-        <!-- Список тренировок за день -->
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/sessionsRecyclerView"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:padding="8dp" />
+            android:padding="8dp"
+            android:visibility="gone" />
     </LinearLayout>
 </com.google.android.material.card.MaterialCardView>

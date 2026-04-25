@@ -162,4 +162,5 @@
     <string name="set_number">Подход #%d</string>
     <string name="history">История</string>
     <string name="session_history">История тренировок</string>
+    <string name="expand_collapse">Раскрыть / свернуть</string>
 </resources>

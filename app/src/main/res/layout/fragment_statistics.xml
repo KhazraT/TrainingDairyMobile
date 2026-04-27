@@ -20,53 +20,29 @@
             android:textStyle="bold"
             android:layout_marginBottom="16dp" />
 
-        <!-- Период для графика Тоннаж -->
+        <!-- Период для всех графиков -->
         <com.google.android.material.chip.ChipGroup
-            android:id="@+id/chip_group_volume"
+            android:id="@+id/chip_group_period"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="8dp"
+            android:layout_marginBottom="16dp"
             app:singleSelection="true"
-            app:checkedChip="@+id/chip_volume_weekly">
+            app:checkedChip="@+id/chip_weekly">
 
             <com.google.android.material.chip.Chip
-                android:id="@+id/chip_volume_weekly"
+                android:id="@+id/chip_weekly"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Неделя"
-                android:checked="true" />
+                android:text="Неделя" />
 
             <com.google.android.material.chip.Chip
-                android:id="@+id/chip_volume_monthly"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Месяц" />
-        </com.google.android.material.chip.ChipGroup>
-
-        <!-- Период для графика Тренировки -->
-        <com.google.android.material.chip.ChipGroup
-            android:id="@+id/chip_group_workout"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="8dp"
-            app:singleSelection="true"
-            app:checkedChip="@+id/chip_workout_weekly">
-
-            <com.google.android.material.chip.Chip
-                android:id="@+id/chip_workout_weekly"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Неделя"
-                android:checked="true" />
-
-            <com.google.android.material.chip.Chip
-                android:id="@+id/chip_workout_monthly"
+                android:id="@+id/chip_monthly"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Месяц" />
 
             <com.google.android.material.chip.Chip
-                android:id="@+id/chip_workout_yearly"
+                android:id="@+id/chip_yearly"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Год" />

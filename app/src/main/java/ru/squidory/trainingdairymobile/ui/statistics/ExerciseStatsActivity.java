@@ -22,6 +22,7 @@ import com.github.mikephil.charting.formatter.IndexAxisValueFormatter;
 import com.github.mikephil.charting.utils.ColorTemplate;
 import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.card.MaterialCardView;
+import com.google.android.material.chip.Chip;
 import com.google.android.material.chip.ChipGroup;
 
 import java.util.ArrayList;
@@ -116,14 +117,26 @@ public class ExerciseStatsActivity extends AppCompatActivity {
     }
 
     private void setupListeners() {
-        periodChipGroup.setOnCheckedStateChangeListener((group, checkedIds) -> {
-            if (checkedIds.contains(R.id.chipWeekly)) {
-                currentPeriodType = "WEEKLY";
-            } else {
-                currentPeriodType = "MONTHLY";
-            }
+        Chip chipWeekly = findViewById(R.id.chipWeekly);
+        Chip chipMonthly = findViewById(R.id.chipMonthly);
+
+        chipWeekly.setOnClickListener(v -> {
+            periodChipGroup.check(R.id.chipWeekly);
+            currentPeriodType = "WEEKLY";
             if (selectedExercise != null) {
                 loadExerciseProgress();
+            } else {
+                Toast.makeText(this, "Сначала выберите упражнение", Toast.LENGTH_SHORT).show();
+            }
+        });
+
+        chipMonthly.setOnClickListener(v -> {
+            periodChipGroup.check(R.id.chipMonthly);
+            currentPeriodType = "MONTHLY";
+            if (selectedExercise != null) {
+                loadExerciseProgress();
+            } else {
+                Toast.makeText(this, "Сначала выберите упражнение", Toast.LENGTH_SHORT).show();
             }
         });
     }

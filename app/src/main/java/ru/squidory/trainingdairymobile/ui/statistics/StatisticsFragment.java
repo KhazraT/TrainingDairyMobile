@@ -2,6 +2,7 @@ package ru.squidory.trainingdairymobile.ui.statistics;
 
 import ru.squidory.trainingdairymobile.R;
 import android.content.Intent;
+import com.google.android.material.chip.Chip;
 import com.google.android.material.chip.ChipGroup;
 import android.graphics.Color;
 import android.os.Bundle;
@@ -68,9 +69,8 @@ public class StatisticsFragment extends Fragment {
     private ProgressBar progressBar;
     
     // ChipGroup references for period selection
-    private com.google.android.material.chip.ChipGroup chipGroupVolume;
-    private com.google.android.material.chip.ChipGroup chipGroupWorkout;
-    
+    private com.google.android.material.chip.ChipGroup chipGroupPeriod;
+
     // Period type constants
     private static final int PERIOD_WEEKLY = 0;
     private static final int PERIOD_MONTHLY = 1;
@@ -79,7 +79,6 @@ public class StatisticsFragment extends Fragment {
     private StatsRepository statsRepository;
 
     private int loadingCounter = 0;
-    private static final int TOTAL_LOADS = 6;
 
     @Nullable
     @Override
@@ -156,29 +155,6 @@ public class StatisticsFragment extends Fragment {
         workoutCountChart.getAxisRight().setEnabled(false);
     }
 
-    private void setupChipGroupListeners() {
-        chipGroupVolume.setOnCheckedStateChangeListener((group, checkedIds) -> {
-            int checkedId = group.getCheckedChipId();
-            if (checkedId == R.id.chip_volume_weekly) {
-                // Need loadDurationData method
-                loadDurationData(PERIOD_WEEKLY);
-            } else if (checkedId == R.id.chip_volume_monthly) {
-                loadDurationData(PERIOD_MONTHLY);
-            }
-        });
-
-        chipGroupWorkout.setOnCheckedStateChangeListener((group, checkedIds) -> {
-            int checkedId = group.getCheckedChipId();
-            if (checkedId == R.id.chip_workout_weekly) {
-                loadWorkoutData(PERIOD_WEEKLY);
-            } else if (checkedId == R.id.chip_workout_monthly) {
-                loadWorkoutData(PERIOD_MONTHLY);
-            } else if (checkedId == R.id.chip_workout_yearly) {
-                loadWorkoutData(PERIOD_YEARLY);
-            }
-        });
-    }
-
     private void initViews(View view) {
         totalWorkoutsText = view.findViewById(R.id.totalWorkoutsText);
         totalVolumeText = view.findViewById(R.id.totalVolumeText);
@@ -193,9 +169,26 @@ public class StatisticsFragment extends Fragment {
         bodyMeasurementsButton = view.findViewById(R.id.bodyMeasurementsButton);
         exerciseStatsButton = view.findViewById(R.id.exerciseStatsButton);
         progressBar = view.findViewById(R.id.progressBar);
-        
-        chipGroupVolume = view.findViewById(R.id.chip_group_volume);
-        chipGroupWorkout = view.findViewById(R.id.chip_group_workout);
+
+        chipGroupPeriod = view.findViewById(R.id.chip_group_period);
+
+        // Setup chip click listeners
+        Chip chipWeekly = view.findViewById(R.id.chip_weekly);
+        Chip chipMonthly = view.findViewById(R.id.chip_monthly);
+        Chip chipYearly = view.findViewById(R.id.chip_yearly);
+
+        chipWeekly.setOnClickListener(v -> {
+            chipGroupPeriod.check(R.id.chip_weekly);
+            reloadChartsForPeriod(PERIOD_WEEKLY);
+        });
+        chipMonthly.setOnClickListener(v -> {
+            chipGroupPeriod.check(R.id.chip_monthly);
+            reloadChartsForPeriod(PERIOD_MONTHLY);
+        });
+        chipYearly.setOnClickListener(v -> {
+            chipGroupPeriod.check(R.id.chip_yearly);
+            reloadChartsForPeriod(PERIOD_YEARLY);
+        });
 
         bodyMeasurementsButton.setOnClickListener(v -> {
             Intent intent = new Intent(getActivity(), BodyMeasurementsActivity.class);
@@ -207,77 +200,12 @@ public class StatisticsFragment extends Fragment {
             startActivity(intent);
         });
 
-        setupChipGroupListeners();
         setupCharts();
+    }
 
-        // BarChart for volume
-        volumeChart.setDrawGridBackground(false);
-        volumeChart.setDrawBarShadow(false);
-        volumeChart.setHighlightFullBarEnabled(false);
-        volumeChart.getLegend().setEnabled(false);
-
-        XAxis xAxis = volumeChart.getXAxis();
-        xAxis.setPosition(XAxis.XAxisPosition.BOTTOM);
-        xAxis.setDrawGridLines(false);
-        xAxis.setGranularity(1f);
-
-        volumeChart.getAxisLeft().setDrawGridLines(true);
-        volumeChart.getAxisRight().setEnabled(false);
-
-        // PieChart for muscles
-        musclesPieChart.getDescription().setEnabled(false);
-        musclesPieChart.setUsePercentValues(true);
-        musclesPieChart.setDrawHoleEnabled(true);
-        musclesPieChart.setHoleColor(Color.TRANSPARENT);
-        musclesPieChart.setTransparentCircleRadius(0f);
-        musclesPieChart.getLegend().setEnabled(true);
-        musclesPieChart.setEntryLabelColor(Color.BLACK);
-        musclesPieChart.setEntryLabelTextSize(12f);
-
-        // BarChart for duration
-        durationChart.getDescription().setEnabled(false);
-        durationChart.setDrawGridBackground(false);
-        durationChart.setDrawBarShadow(false);
-        durationChart.setHighlightFullBarEnabled(false);
-        durationChart.getLegend().setEnabled(false);
-
-        XAxis dXAxis = durationChart.getXAxis();
-        dXAxis.setPosition(XAxis.XAxisPosition.BOTTOM);
-        dXAxis.setDrawGridLines(false);
-        dXAxis.setGranularity(1f);
-
-        durationChart.getAxisLeft().setDrawGridLines(true);
-        durationChart.getAxisRight().setEnabled(false);
-
-        // BarChart for sets
-        setsChart.getDescription().setEnabled(false);
-        setsChart.setDrawGridBackground(false);
-        setsChart.setDrawBarShadow(false);
-        setsChart.setHighlightFullBarEnabled(false);
-        setsChart.getLegend().setEnabled(false);
-
-        XAxis sXAxis = setsChart.getXAxis();
-        sXAxis.setPosition(XAxis.XAxisPosition.BOTTOM);
-        sXAxis.setDrawGridLines(false);
-        sXAxis.setGranularity(1f);
-
-        setsChart.getAxisLeft().setDrawGridLines(true);
-        setsChart.getAxisRight().setEnabled(false);
-
-        // BarChart for workout count
-        workoutCountChart.getDescription().setEnabled(false);
-        workoutCountChart.setDrawGridBackground(false);
-        workoutCountChart.setDrawBarShadow(false);
-        workoutCountChart.setHighlightFullBarEnabled(false);
-        workoutCountChart.getLegend().setEnabled(false);
-
-        XAxis wcXAxis = workoutCountChart.getXAxis();
-        wcXAxis.setPosition(XAxis.XAxisPosition.BOTTOM);
-        wcXAxis.setDrawGridLines(false);
-        wcXAxis.setGranularity(1f);
-
-        workoutCountChart.getAxisLeft().setDrawGridLines(true);
-        workoutCountChart.getAxisRight().setEnabled(false);
+    private void reloadChartsForPeriod(int period) {
+        loadDurationData(period);
+        loadWorkoutData(period);
     }
 
     private void loadDurationData(int period) {
@@ -291,6 +219,8 @@ public class StatisticsFragment extends Fragment {
                 @Override
                 public void onError(String error) {
                     durationChart.setNoDataText("Нет данных");
+                    durationChart.invalidate();
+                    Toast.makeText(getContext(), "Ошибка загрузки: " + error, Toast.LENGTH_SHORT).show();
                 }
             });
         } else {
@@ -302,6 +232,8 @@ public class StatisticsFragment extends Fragment {
                 @Override
                 public void onError(String error) {
                     durationChart.setNoDataText("Нет данных");
+                    durationChart.invalidate();
+                    Toast.makeText(getContext(), "Ошибка загрузки: " + error, Toast.LENGTH_SHORT).show();
                 }
             });
         }
@@ -318,6 +250,8 @@ public class StatisticsFragment extends Fragment {
                 @Override
                 public void onError(String error) {
                     workoutCountChart.setNoDataText("Нет данных");
+                    workoutCountChart.invalidate();
+                    Toast.makeText(getContext(), "Ошибка загрузки: " + error, Toast.LENGTH_SHORT).show();
                 }
             });
         } else if (period == PERIOD_MONTHLY) {
@@ -336,6 +270,8 @@ public class StatisticsFragment extends Fragment {
                 @Override
                 public void onError(String error) {
                     workoutCountChart.setNoDataText("Нет данных");
+                    workoutCountChart.invalidate();
+                    Toast.makeText(getContext(), "Ошибка загрузки: " + error, Toast.LENGTH_SHORT).show();
                 }
             });
         } else {
@@ -349,6 +285,8 @@ public class StatisticsFragment extends Fragment {
                 @Override
                 public void onError(String error) {
                     workoutCountChart.setNoDataText("Нет данных");
+                    workoutCountChart.invalidate();
+                    Toast.makeText(getContext(), "Ошибка загрузки: " + error, Toast.LENGTH_SHORT).show();
                 }
             });
         }
@@ -356,7 +294,7 @@ public class StatisticsFragment extends Fragment {
 
     private void loadStatistics() {
         showLoading(true);
-        loadingCounter = 0;
+        loadingCounter = 6; // Number of async operations
 
         int currentYear = Calendar.getInstance().get(Calendar.YEAR);
 
@@ -386,6 +324,8 @@ public class StatisticsFragment extends Fragment {
             @Override
             public void onError(String error) {
                 volumeChart.setNoDataText("Нет данных");
+                volumeChart.invalidate();
+                Toast.makeText(getContext(), "Ошибка загрузки тоннажа: " + error, Toast.LENGTH_SHORT).show();
                 checkLoadingComplete();
             }
         });
@@ -408,13 +348,25 @@ public class StatisticsFragment extends Fragment {
             @Override
             public void onError(String error) {
                 musclesPieChart.setNoDataText("Нет данных");
+                musclesPieChart.invalidate();
+                Toast.makeText(getContext(), "Ошибка загрузки мышц: " + error, Toast.LENGTH_SHORT).show();
                 checkLoadingComplete();
             }
         });
 
+        // Determine period once using chipGroupPeriod
+        int period = PERIOD_WEEKLY; // default
+        int checkedChipId = chipGroupPeriod.getCheckedChipId();
+        if (checkedChipId == R.id.chip_monthly) {
+            period = PERIOD_MONTHLY;
+        } else if (checkedChipId == R.id.chip_yearly) {
+            period = PERIOD_YEARLY;
+        }
+
         // Duration stats based on selected period
-        int durationPeriod = chipGroupVolume.getCheckedChipId();
-        if (durationPeriod == R.id.chip_volume_weekly) {
+        // Yearly is not supported for duration chart, treat it as Monthly
+        int durationPeriod = (period == PERIOD_YEARLY) ? PERIOD_MONTHLY : period;
+        if (durationPeriod == PERIOD_WEEKLY) {
             statsRepository.getDurationWeeklyStats(currentYear, new StatsRepository.DurationWeeklyCallback() {
                 @Override
                 public void onSuccess(List<DurationWeeklyStats> stats) {
@@ -425,6 +377,8 @@ public class StatisticsFragment extends Fragment {
                 @Override
                 public void onError(String error) {
                     durationChart.setNoDataText("Нет данных");
+                    durationChart.invalidate();
+                    Toast.makeText(getContext(), "Ошибка загрузки: " + error, Toast.LENGTH_SHORT).show();
                     checkLoadingComplete();
                 }
             });
@@ -439,29 +393,15 @@ public class StatisticsFragment extends Fragment {
                 @Override
                 public void onError(String error) {
                     durationChart.setNoDataText("Нет данных");
+                    durationChart.invalidate();
+                    Toast.makeText(getContext(), "Ошибка загрузки: " + error, Toast.LENGTH_SHORT).show();
                     checkLoadingComplete();
                 }
             });
         }
 
-        // Sets stats
-        statsRepository.getMuscleSetsStats(startDate, endDate, new StatsRepository.MuscleSetsCallback() {
-            @Override
-            public void onSuccess(List<MuscleSetsStats> stats) {
-                displaySetsChart(stats);
-                checkLoadingComplete();
-            }
-
-            @Override
-            public void onError(String error) {
-                setsChart.setNoDataText("Нет данных");
-                checkLoadingComplete();
-            }
-        });
-
         // Workout count stats based on selected period
-        int workoutPeriod = chipGroupWorkout.getCheckedChipId();
-        if (workoutPeriod == R.id.chip_workout_weekly) {
+        if (period == PERIOD_WEEKLY) {
             statsRepository.getWorkoutWeeklyStats(currentYear, new StatsRepository.WorkoutWeeklyCallback() {
                 @Override
                 public void onSuccess(List<WorkoutWeeklyStats> stats) {
@@ -472,10 +412,12 @@ public class StatisticsFragment extends Fragment {
                 @Override
                 public void onError(String error) {
                     workoutCountChart.setNoDataText("Нет данных");
+                    workoutCountChart.invalidate();
+                    Toast.makeText(getContext(), "Ошибка загрузки: " + error, Toast.LENGTH_SHORT).show();
                     checkLoadingComplete();
                 }
             });
-        } else if (workoutPeriod == R.id.chip_workout_monthly) {
+        } else if (period == PERIOD_MONTHLY) {
             statsRepository.getWorkoutMonthlyStats(currentYear, new StatsRepository.WorkoutMonthlyCallback() {
                 @Override
                 public void onSuccess(List<WorkoutMonthlyStats> stats) {
@@ -486,6 +428,8 @@ public class StatisticsFragment extends Fragment {
                 @Override
                 public void onError(String error) {
                     workoutCountChart.setNoDataText("Нет данных");
+                    workoutCountChart.invalidate();
+                    Toast.makeText(getContext(), "Ошибка загрузки: " + error, Toast.LENGTH_SHORT).show();
                     checkLoadingComplete();
                 }
             });
@@ -502,6 +446,8 @@ public class StatisticsFragment extends Fragment {
                 @Override
                 public void onError(String error) {
                     workoutCountChart.setNoDataText("Нет данных");
+                    workoutCountChart.invalidate();
+                    Toast.makeText(getContext(), "Ошибка загрузки: " + error, Toast.LENGTH_SHORT).show();
                     checkLoadingComplete();
                 }
             });
@@ -545,8 +491,8 @@ public class StatisticsFragment extends Fragment {
     }
 
     private void checkLoadingComplete() {
-        loadingCounter++;
-        if (loadingCounter >= TOTAL_LOADS) {
+        loadingCounter--;
+        if (loadingCounter <= 0) {
             showLoading(false);
         }
     }

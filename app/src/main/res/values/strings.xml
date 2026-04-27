@@ -104,7 +104,7 @@
     <string name="planned_sets">Планируемые подходы</string>
     <string name="target_weight">Вес: %s кг</string>
     <string name="target_reps">Повторения: %d</string>
-    <string name="dropset_entry">%s кг × %d</string>
+    <string name="dropset_entry" formatted="false">%s кг × %d</string>
     
     <!-- Create Exercise -->
     <string name="create_exercise_title">Создать упражнение</string>
@@ -159,7 +159,7 @@
     <string name="set_dropset">Дропсет</string>
     <string name="dropset_label">ДРОПСЕТ</string>
     <string name="regular_label">ОБЫЧНЫЙ</string>
-    <string name="set_number">Подход #%d</string>
+    <string name="set_number" formatted="false">Подход #%d</string>
     <string name="history">История</string>
     <string name="session_history">История тренировок</string>
     <string name="expand_collapse">Раскрыть / свернуть</string>

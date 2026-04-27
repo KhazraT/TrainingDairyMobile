@@ -105,5 +105,17 @@
             android:exported="false"
             android:parentActivityName=".ui.trainings.SessionHistoryActivity" />
 
+        <!-- Body Measurements Activity (измерения тела) -->
+        <activity
+            android:name=".ui.statistics.BodyMeasurementsActivity"
+            android:exported="false"
+            android:parentActivityName=".ui.main.MainActivity" />
+
+        <!-- Exercise Stats Activity (статистика по упражнениям) -->
+        <activity
+            android:name=".ui.statistics.ExerciseStatsActivity"
+            android:exported="false"
+            android:parentActivityName=".ui.main.MainActivity" />
+
     </application>
 </manifest>

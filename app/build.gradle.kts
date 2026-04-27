@@ -6,6 +6,11 @@ android {
     namespace = "ru.squidory.trainingdairymobile"
     compileSdk = 36
 
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_11
+        targetCompatibility = JavaVersion.VERSION_11
+    }
+
     defaultConfig {
         applicationId = "ru.squidory.trainingdairymobile"
         minSdk = 26

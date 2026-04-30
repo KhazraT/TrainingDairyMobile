@@ -372,26 +372,21 @@ public class StatisticsFragment extends Fragment {
             period = PERIOD_YEARLY;
         }
 
-        // Get period dates for volume, duration, workout count
+        // Get period dates for all data
         Pair<String, String> dates = getPeriodDates(period);
         String startDate = dates.first;
         String endDate = dates.second;
 
+        android.util.Log.d("StatsFragment", "loadStatistics: period=" + period + ", startDate=" + startDate + ", endDate=" + endDate);
+
         // Volume data - use new approach with daily data
         loadVolumeData(period, startDate, endDate);
 
-        // Muscle stats (last 90 days)
-        Calendar cal = Calendar.getInstance();
-        String endDateMuscle = String.format(Locale.US, "%d-%02d-%02d",
-                cal.get(Calendar.YEAR), cal.get(Calendar.MONTH) + 1, cal.get(Calendar.DAY_OF_MONTH));
-        cal.add(Calendar.DAY_OF_YEAR, -90);
-        String startDateMuscle = String.format(Locale.US, "%d-%02d-%02d",
-                cal.get(Calendar.YEAR), cal.get(Calendar.MONTH) + 1, cal.get(Calendar.DAY_OF_MONTH));
+        // Muscle stats and sets data using period dates
+        loadMuscleStats(startDate, endDate);
 
-        loadMuscleStats(startDateMuscle, endDateMuscle);
-
-        // Load sets data with same date range (last 90 days)
-        loadSetsData(startDateMuscle, endDateMuscle);
+        // Load sets data with period date range
+        loadSetsData(startDate, endDate);
 
         // Duration stats based on selected period
         loadDurationData(period, startDate, endDate);
@@ -828,6 +823,13 @@ public class StatisticsFragment extends Fragment {
         List<BarEntry> entries = new ArrayList<>();
         List<String> labels = new ArrayList<>();
 
+        android.util.Log.d("StatsFragment", "displaySetsChart: stats size=" + (stats != null ? stats.size() : 0));
+        if (stats != null) {
+            for (MuscleSetsStats stat : stats) {
+                android.util.Log.d("StatsFragment", "  Muscle: " + stat.getMuscleGroupName() + ", Sets: " + stat.getTotalSets());
+            }
+        }
+
         // Полный список групп мышц (из справочника)
         String[] allMuscleGroups = {
             "Грудь", "Спина", "Плечи", "Бицепс", "Трицепс", "Квадрицепс", "Бицепс бедра", "Ягодицы",
@@ -835,18 +837,26 @@ public class StatisticsFragment extends Fragment {
         };
         float[] values = new float[allMuscleGroups.length];
 
-        // Заполняем из API, если есть
+        // Заполняем из API, если есть (суммируем значения для одинаковых групп мышц)
         if (stats != null && !stats.isEmpty()) {
             for (MuscleSetsStats stat : stats) {
                 String muscleName = stat.getMuscleGroupName();
                 if (muscleName != null) {
                     for (int i = 0; i < allMuscleGroups.length; i++) {
                         if (allMuscleGroups[i].equalsIgnoreCase(muscleName)) {
-                            values[i] = stat.getTotalSets() != null ? stat.getTotalSets().floatValue() : 0f;
+                            float sets = stat.getTotalSets() != null ? stat.getTotalSets().floatValue() : 0f;
+                            values[i] += sets; // Суммируем, а не перезаписываем
                             break;
                         }
                     }
                 }
+            }
+        }
+
+        // Логируем итоговые значения для проверки
+        for (int i = 0; i < allMuscleGroups.length; i++) {
+            if (values[i] > 0) {
+                android.util.Log.d("StatsFragment", "  Final " + allMuscleGroups[i] + ": " + values[i] + " sets");
             }
         }
 

@@ -330,26 +330,13 @@ public class StatisticsFragment extends Fragment {
     private void reloadAllData(int period) {
         showLoading(true);
         loadingCounter = 0;
-        totalLoads = 5;
+        totalLoads = 6; // Now includes summary
         Pair<String, String> dates = getPeriodDates(period);
         String startDate = dates.first;
         String endDate = dates.second;
 
-        // Количество асинхронных вызовов в этом обновлении: 5 (тоннаж, длительность, тренировки, мышцы, подходы)
-        loadVolumeData(period, startDate, endDate);
-        loadDurationData(period, startDate, endDate);
-        loadWorkoutData(period, startDate, endDate);
-        loadMuscleStats(startDate, endDate);
-        loadSetsData(startDate, endDate);
-    }
-
-    private void loadStatistics() {
-        showLoading(true);
-        loadingCounter = 0;
-        totalLoads = 6;
-
-        // Summary
-        statsRepository.getStatsSummary(new StatsRepository.StatsSummaryCallback() {
+        // Load summary with period dates
+        statsRepository.getStatsSummary(startDate, endDate, new StatsRepository.StatsSummaryCallback() {
             @Override
             public void onSuccess(StatsSummaryResponse summary) {
                 displaySummary(summary);
@@ -362,6 +349,19 @@ public class StatisticsFragment extends Fragment {
                 checkLoadingComplete();
             }
         });
+
+        // Количество асинхронных вызовов: 5 (тоннаж, длительность, тренировки, мышцы, подходы)
+        loadVolumeData(period, startDate, endDate);
+        loadDurationData(period, startDate, endDate);
+        loadWorkoutData(period, startDate, endDate);
+        loadMuscleStats(startDate, endDate);
+        loadSetsData(startDate, endDate);
+    }
+
+    private void loadStatistics() {
+        showLoading(true);
+        loadingCounter = 0;
+        totalLoads = 6; // Includes summary now
 
         // Determine period once using chipGroupPeriod
         int period = PERIOD_WEEKLY; // default
@@ -378,6 +378,21 @@ public class StatisticsFragment extends Fragment {
         String endDate = dates.second;
 
         android.util.Log.d("StatsFragment", "loadStatistics: period=" + period + ", startDate=" + startDate + ", endDate=" + endDate);
+
+        // Load summary with period dates
+        statsRepository.getStatsSummary(startDate, endDate, new StatsRepository.StatsSummaryCallback() {
+            @Override
+            public void onSuccess(StatsSummaryResponse summary) {
+                displaySummary(summary);
+                checkLoadingComplete();
+            }
+
+            @Override
+            public void onError(String error) {
+                Toast.makeText(getContext(), "Ошибка загрузки сводки: " + error, Toast.LENGTH_SHORT).show();
+                checkLoadingComplete();
+            }
+        });
 
         // Volume data - use new approach with daily data
         loadVolumeData(period, startDate, endDate);
@@ -496,12 +511,16 @@ public class StatisticsFragment extends Fragment {
         totalWorkoutsText.setText(String.valueOf(summary.getTotalWorkouts() != null ? summary.getTotalWorkouts() : 0));
 
         double totalVolume = summary.getTotalVolume() != null ? summary.getTotalVolume() : 0;
-        totalVolumeText.setText(String.format(Locale.getDefault(), "%.1f т", totalVolume / 1000.0));
+        if (totalVolume < 1000) {
+            totalVolumeText.setText(String.format(Locale.getDefault(), "%.0f кг", totalVolume));
+        } else {
+            totalVolumeText.setText(String.format(Locale.getDefault(), "%.1f т", totalVolume / 1000.0));
+        }
 
-        totalSessionsText.setText(String.valueOf(summary.getTotalSessions() != null ? summary.getTotalSessions() : 0));
+        totalSessionsText.setText(String.valueOf(summary.getTotalSets() != null ? summary.getTotalSets() : 0));
 
-        int avgDuration = summary.getAverageSessionDuration() != null ? summary.getAverageSessionDuration() : 0;
-        avgDurationText.setText(String.format(Locale.getDefault(), "%d мин", avgDuration / 60));
+        int avgDuration = summary.getAverageDurationMinutes() != null ? summary.getAverageDurationMinutes() : 0;
+        avgDurationText.setText(String.format(Locale.getDefault(), "%d мин", avgDuration));
 
         if (summary.getFavoriteExercise() != null && !summary.getFavoriteExercise().isEmpty()) {
             favoriteExerciseText.setText("Любимое упражнение: " + summary.getFavoriteExercise());

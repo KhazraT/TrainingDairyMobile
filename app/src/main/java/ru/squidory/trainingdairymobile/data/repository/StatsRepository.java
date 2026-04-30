@@ -155,8 +155,8 @@ public class StatsRepository {
     // ==================== Методы API ====================
 
     /** Получить общую сводку статистики. */
-    public void getStatsSummary(StatsSummaryCallback callback) {
-        statisticsApi.getStatsSummary().enqueue(new Callback<StatsSummaryResponse>() {
+    public void getStatsSummary(String startDate, String endDate, StatsSummaryCallback callback) {
+        statisticsApi.getStatsSummary(startDate, endDate).enqueue(new Callback<StatsSummaryResponse>() {
             @Override
             public void onResponse(Call<StatsSummaryResponse> call, Response<StatsSummaryResponse> response) {
                 handleResponse(response, callback::onSuccess, callback::onError, "stats summary");

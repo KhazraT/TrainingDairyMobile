@@ -62,10 +62,13 @@ public interface StatisticsApi {
 
     /**
      * Общая сводка статистики.
-     * GET /api/stats/summary
+     * GET /api/stats/summary?startDate=...&endDate=...
      */
     @GET("stats/summary")
-    Call<StatsSummaryResponse> getStatsSummary();
+    Call<StatsSummaryResponse> getStatsSummary(
+            @Query("startDate") String startDate,
+            @Query("endDate") String endDate
+    );
 
     /**
      * Статистика по группам мышц.

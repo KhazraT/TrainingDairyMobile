@@ -522,12 +522,13 @@ public class StatisticsFragment extends Fragment {
         int avgDuration = summary.getAverageDurationMinutes() != null ? summary.getAverageDurationMinutes() : 0;
         avgDurationText.setText(String.format(Locale.getDefault(), "%d мин", avgDuration));
 
-        if (summary.getFavoriteExercise() != null && !summary.getFavoriteExercise().isEmpty()) {
-            favoriteExerciseText.setText("Любимое упражнение: " + summary.getFavoriteExercise());
-            favoriteExerciseText.setVisibility(View.VISIBLE);
+        if (summary.getFavoriteExercise() != null && !summary.getFavoriteExercise().isEmpty()
+                && !"Не указано".equals(summary.getFavoriteExercise())) {
+            favoriteExerciseText.setText(summary.getFavoriteExercise());
         } else {
-            favoriteExerciseText.setVisibility(View.GONE);
+            favoriteExerciseText.setText("Не указано");
         }
+        favoriteExerciseText.setVisibility(View.VISIBLE);
     }
 
     /**

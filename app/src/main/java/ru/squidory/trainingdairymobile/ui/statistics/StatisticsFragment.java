@@ -926,9 +926,9 @@ public class StatisticsFragment extends Fragment {
 
         for (int i = 0; i < muscles.size(); i++) {
             MuscleStatsResponse m = muscles.get(i);
-            float vol = m.getTotalVolume() != null ? m.getTotalVolume().floatValue() : 0f;
-            if (vol > 0) {
-                entries.add(new PieEntry(vol, m.getMuscleGroupName()));
+            float sets = m.getTotalSets() != null ? m.getTotalSets().floatValue() : 0f;
+            if (sets > 0) {
+                entries.add(new PieEntry(sets, m.getMuscleGroupName()));
                 colors.add(chartColors[i % chartColors.length]);
             }
         }
@@ -941,17 +941,17 @@ public class StatisticsFragment extends Fragment {
 
         PieDataSet dataSet = new PieDataSet(entries, "");
         dataSet.setColors(colors);
-        dataSet.setValueTextSize(11f);
-        dataSet.setValueTextColor(Color.BLACK);
+        dataSet.setDrawValues(false); // Отключаем отображение значений на сегментах
         dataSet.setSliceSpace(2f);
-        dataSet.setValueFormatter(new PercentFormatter(musclesPieChart));
 
         PieData data = new PieData(dataSet);
-        data.setValueFormatter(new PercentFormatter(musclesPieChart));
+
+        // Отключаем подписи на самой диаграмме (названия мышц)
+        musclesPieChart.setDrawEntryLabels(false);
 
         musclesPieChart.setData(data);
-        musclesPieChart.setCenterText("Распределение\nтоннажа");
-        musclesPieChart.setCenterTextSize(14f);
+        musclesPieChart.setCenterText("Распределение\nподходов");
+        musclesPieChart.setCenterTextSize(12f);
         musclesPieChart.setCenterTextColor(Color.DKGRAY);
 
         Legend legend = musclesPieChart.getLegend();

@@ -12,6 +12,7 @@ import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.ProgressBar;
 import android.widget.TextView;
+import android.util.Pair;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -20,6 +21,7 @@ import androidx.fragment.app.Fragment;
 
 import com.github.mikephil.charting.charts.BarChart;
 import com.github.mikephil.charting.charts.PieChart;
+import com.github.mikephil.charting.components.AxisBase;
 import com.github.mikephil.charting.components.Legend;
 import com.github.mikephil.charting.components.XAxis;
 import com.github.mikephil.charting.data.BarData;
@@ -30,21 +32,29 @@ import com.github.mikephil.charting.data.PieDataSet;
 import com.github.mikephil.charting.data.PieEntry;
 import com.github.mikephil.charting.formatter.IndexAxisValueFormatter;
 import com.github.mikephil.charting.formatter.PercentFormatter;
+import com.github.mikephil.charting.formatter.ValueFormatter;
 import com.github.mikephil.charting.utils.ColorTemplate;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 import ru.squidory.trainingdairymobile.R;
-import ru.squidory.trainingdairymobile.data.model.DurationWeeklyStats;
+import ru.squidory.trainingdairymobile.data.model.DurationDailyStats;
 import ru.squidory.trainingdairymobile.data.model.DurationMonthlyStats;
+import ru.squidory.trainingdairymobile.data.model.DurationWeeklyStats;
 import ru.squidory.trainingdairymobile.data.model.MonthlyVolumeResponse;
 import ru.squidory.trainingdairymobile.data.model.MuscleSetsStats;
 import ru.squidory.trainingdairymobile.data.model.MuscleStatsResponse;
 import ru.squidory.trainingdairymobile.data.model.StatsSummaryResponse;
+import ru.squidory.trainingdairymobile.data.model.VolumeDailyResponse;
+import ru.squidory.trainingdairymobile.data.model.WorkoutDailyStats;
 import ru.squidory.trainingdairymobile.data.model.WorkoutMonthlyStats;
 import ru.squidory.trainingdairymobile.data.model.WorkoutWeeklyStats;
 import ru.squidory.trainingdairymobile.data.repository.StatsRepository;
@@ -76,6 +86,8 @@ public class StatisticsFragment extends Fragment {
     private static final int PERIOD_MONTHLY = 1;
     private static final int PERIOD_YEARLY = 2;
 
+    private int totalLoads = 6;
+
     private StatsRepository statsRepository;
 
     private int loadingCounter = 0;
@@ -104,6 +116,10 @@ public class StatisticsFragment extends Fragment {
         volumeXAxis.setGranularity(1f);
         volumeChart.getAxisLeft().setDrawGridLines(true);
         volumeChart.getAxisRight().setEnabled(false);
+        // Настройка горизонтальной прокрутки и масштабирования
+        volumeChart.setDragEnabled(true);
+        volumeChart.setScaleEnabled(true);
+        volumeChart.setVisibleXRangeMaximum(7);
 
         // Configure Muscles pie chart
         musclesPieChart.getDescription().setEnabled(false);
@@ -127,6 +143,10 @@ public class StatisticsFragment extends Fragment {
         durationXAxis.setGranularity(1f);
         durationChart.getAxisLeft().setDrawGridLines(true);
         durationChart.getAxisRight().setEnabled(false);
+        // Настройка горизонтальной прокрутки и масштабирования
+        durationChart.setDragEnabled(true);
+        durationChart.setScaleEnabled(true);
+        durationChart.setVisibleXRangeMaximum(7);
 
         // Configure Sets chart
         setsChart.getDescription().setEnabled(false);
@@ -140,6 +160,10 @@ public class StatisticsFragment extends Fragment {
         setsXAxis.setGranularity(1f);
         setsChart.getAxisLeft().setDrawGridLines(true);
         setsChart.getAxisRight().setEnabled(false);
+        // Настройка горизонтальной прокрутки и масштабирования
+        setsChart.setDragEnabled(true);
+        setsChart.setScaleEnabled(true);
+        setsChart.setVisibleXRangeMaximum(7);
 
         // Configure Workout Count chart
         workoutCountChart.getDescription().setEnabled(false);
@@ -153,6 +177,10 @@ public class StatisticsFragment extends Fragment {
         wcXAxis.setGranularity(1f);
         workoutCountChart.getAxisLeft().setDrawGridLines(true);
         workoutCountChart.getAxisRight().setEnabled(false);
+        // Настройка горизонтальной прокрутки и масштабирования
+        workoutCountChart.setDragEnabled(true);
+        workoutCountChart.setScaleEnabled(true);
+        workoutCountChart.setVisibleXRangeMaximum(7);
     }
 
     private void initViews(View view) {
@@ -179,15 +207,15 @@ public class StatisticsFragment extends Fragment {
 
         chipWeekly.setOnClickListener(v -> {
             chipGroupPeriod.check(R.id.chip_weekly);
-            reloadChartsForPeriod(PERIOD_WEEKLY);
+            reloadAllData(PERIOD_WEEKLY);
         });
         chipMonthly.setOnClickListener(v -> {
             chipGroupPeriod.check(R.id.chip_monthly);
-            reloadChartsForPeriod(PERIOD_MONTHLY);
+            reloadAllData(PERIOD_MONTHLY);
         });
         chipYearly.setOnClickListener(v -> {
             chipGroupPeriod.check(R.id.chip_yearly);
-            reloadChartsForPeriod(PERIOD_YEARLY);
+            reloadAllData(PERIOD_YEARLY);
         });
 
         bodyMeasurementsButton.setOnClickListener(v -> {
@@ -203,100 +231,122 @@ public class StatisticsFragment extends Fragment {
         setupCharts();
     }
 
-    private void reloadChartsForPeriod(int period) {
-        loadDurationData(period);
-        loadWorkoutData(period);
+    private void loadDurationData(int period, String startDate, String endDate) {
+        // Используем daily эндпоинт для всех периодов
+        statsRepository.getDailyDuration(startDate, endDate, new StatsRepository.DurationDailyCallback() {
+            @Override
+            public void onSuccess(List<DurationDailyStats> dailyDurations) {
+                displayDurationChart(dailyDurations, period, startDate, endDate);
+                checkLoadingComplete();
+            }
+            @Override
+            public void onError(String error) {
+                durationChart.setNoDataText("Нет данных");
+                durationChart.invalidate();
+                Toast.makeText(getContext(), "Ошибка длительности: " + error, Toast.LENGTH_SHORT).show();
+                checkLoadingComplete();
+            }
+        });
     }
 
-    private void loadDurationData(int period) {
-        int currentYear = Calendar.getInstance().get(Calendar.YEAR);
-        if (period == PERIOD_WEEKLY) {
-            statsRepository.getDurationWeeklyStats(currentYear, new StatsRepository.DurationWeeklyCallback() {
-                @Override
-                public void onSuccess(List<DurationWeeklyStats> stats) {
-                    displayDurationChart(stats);
-                }
-                @Override
-                public void onError(String error) {
-                    durationChart.setNoDataText("Нет данных");
-                    durationChart.invalidate();
-                    Toast.makeText(getContext(), "Ошибка загрузки: " + error, Toast.LENGTH_SHORT).show();
-                }
-            });
-        } else {
-            statsRepository.getDurationMonthlyStats(currentYear, new StatsRepository.DurationMonthlyCallback() {
-                @Override
-                public void onSuccess(List<DurationMonthlyStats> stats) {
-                    displayDurationChart(stats);
-                }
-                @Override
-                public void onError(String error) {
-                    durationChart.setNoDataText("Нет данных");
-                    durationChart.invalidate();
-                    Toast.makeText(getContext(), "Ошибка загрузки: " + error, Toast.LENGTH_SHORT).show();
-                }
-            });
-        }
+    private void loadWorkoutData(int period, String startDate, String endDate) {
+        // Используем daily эндпоинт для всех периодов
+        statsRepository.getDailyWorkouts(startDate, endDate, new StatsRepository.WorkoutDailyCallback() {
+            @Override
+            public void onSuccess(List<WorkoutDailyStats> dailyWorkouts) {
+                displayWorkoutCountChart(dailyWorkouts, period, startDate, endDate);
+                checkLoadingComplete();
+            }
+            @Override
+            public void onError(String error) {
+                workoutCountChart.setNoDataText("Нет данных");
+                workoutCountChart.invalidate();
+                Toast.makeText(getContext(), "Ошибка тренировок: " + error, Toast.LENGTH_SHORT).show();
+                checkLoadingComplete();
+            }
+        });
     }
 
-    private void loadWorkoutData(int period) {
-        int currentYear = Calendar.getInstance().get(Calendar.YEAR);
-        if (period == PERIOD_WEEKLY) {
-            statsRepository.getWorkoutWeeklyStats(currentYear, new StatsRepository.WorkoutWeeklyCallback() {
-                @Override
-                public void onSuccess(List<WorkoutWeeklyStats> stats) {
-                    displayWorkoutCountChart(stats);
-                }
-                @Override
-                public void onError(String error) {
-                    workoutCountChart.setNoDataText("Нет данных");
-                    workoutCountChart.invalidate();
-                    Toast.makeText(getContext(), "Ошибка загрузки: " + error, Toast.LENGTH_SHORT).show();
-                }
-            });
-        } else if (period == PERIOD_MONTHLY) {
-            statsRepository.getWorkoutMonthlyStats(currentYear, new StatsRepository.WorkoutMonthlyCallback() {
-                @Override
-                public void onSuccess(List<WorkoutMonthlyStats> stats) {
-                    List<WorkoutWeeklyStats> converted = new ArrayList<>();
-                    for (WorkoutMonthlyStats m : stats) {
-                        WorkoutWeeklyStats w = new WorkoutWeeklyStats();
-                        w.setWeek(m.getMonth());
-                        w.setWorkoutCount(m.getWorkoutCount());
-                        converted.add(w);
+    private void loadVolumeData(int period, String startDate, String endDate) {
+        android.util.Log.d("StatsFragment", "loadVolumeData: period=" + period + ", startDate=" + startDate + ", endDate=" + endDate);
+        // Используем daily эндпоинт для всех периодов (включая год)
+        statsRepository.getDailyVolume(startDate, endDate, new StatsRepository.VolumeDailyCallback() {
+            @Override
+            public void onSuccess(List<VolumeDailyResponse> dailyVolumes) {
+                android.util.Log.d("StatsFragment", "loadVolumeData onSuccess: dailyVolumes size=" + (dailyVolumes != null ? dailyVolumes.size() : 0));
+                if (dailyVolumes != null) {
+                    for (VolumeDailyResponse vol : dailyVolumes) {
+                        android.util.Log.d("StatsFragment", "  date=" + vol.getDate() + ", volume=" + vol.getTotalVolume());
                     }
-                    displayWorkoutCountChart(converted);
                 }
-                @Override
-                public void onError(String error) {
-                    workoutCountChart.setNoDataText("Нет данных");
-                    workoutCountChart.invalidate();
-                    Toast.makeText(getContext(), "Ошибка загрузки: " + error, Toast.LENGTH_SHORT).show();
-                }
-            });
-        } else {
-            // Yearly - aggregate from monthly
-            statsRepository.getWorkoutMonthlyStats(currentYear, new StatsRepository.WorkoutMonthlyCallback() {
-                @Override
-                public void onSuccess(List<WorkoutMonthlyStats> stats) {
-                    List<WorkoutWeeklyStats> yearly = computeYearlyWorkoutStats(stats);
-                    displayWorkoutCountChart(yearly);
-                }
-                @Override
-                public void onError(String error) {
-                    workoutCountChart.setNoDataText("Нет данных");
-                    workoutCountChart.invalidate();
-                    Toast.makeText(getContext(), "Ошибка загрузки: " + error, Toast.LENGTH_SHORT).show();
-                }
-            });
-        }
+                displayVolumeChart(dailyVolumes, period, startDate, endDate);
+                checkLoadingComplete();
+            }
+            @Override
+            public void onError(String error) {
+                volumeChart.setNoDataText("Нет данных");
+                volumeChart.invalidate();
+                Toast.makeText(getContext(), "Ошибка загрузки тоннажа: " + error, Toast.LENGTH_SHORT).show();
+                checkLoadingComplete();
+            }
+        });
+    }
+
+    private void loadMuscleStats(String startDate, String endDate) {
+        statsRepository.getMuscleStats(startDate, endDate, new StatsRepository.MuscleStatsCallback() {
+            @Override
+            public void onSuccess(List<MuscleStatsResponse> muscles) {
+                displayMusclesPieChart(muscles);
+                checkLoadingComplete();
+            }
+            @Override
+            public void onError(String error) {
+                musclesPieChart.setNoDataText("Нет данных");
+                musclesPieChart.invalidate();
+                Toast.makeText(getContext(), "Ошибка загрузки мышц: " + error, Toast.LENGTH_SHORT).show();
+                checkLoadingComplete();
+            }
+        });
+    }
+
+    private void loadSetsData(String startDate, String endDate) {
+        statsRepository.getMuscleSetsStats(startDate, endDate, new StatsRepository.MuscleSetsCallback() {
+            @Override
+            public void onSuccess(List<MuscleSetsStats> stats) {
+                displaySetsChart(stats);
+                checkLoadingComplete();
+            }
+
+            @Override
+            public void onError(String error) {
+                setsChart.setNoDataText("Нет данных");
+                setsChart.invalidate();
+                Toast.makeText(getContext(), "Ошибка загрузки подходов: " + error, Toast.LENGTH_SHORT).show();
+                checkLoadingComplete();
+            }
+        });
+    }
+
+    private void reloadAllData(int period) {
+        showLoading(true);
+        loadingCounter = 0;
+        totalLoads = 5;
+        Pair<String, String> dates = getPeriodDates(period);
+        String startDate = dates.first;
+        String endDate = dates.second;
+
+        // Количество асинхронных вызовов в этом обновлении: 5 (тоннаж, длительность, тренировки, мышцы, подходы)
+        loadVolumeData(period, startDate, endDate);
+        loadDurationData(period, startDate, endDate);
+        loadWorkoutData(period, startDate, endDate);
+        loadMuscleStats(startDate, endDate);
+        loadSetsData(startDate, endDate);
     }
 
     private void loadStatistics() {
         showLoading(true);
-        loadingCounter = 6; // Number of async operations
-
-        int currentYear = Calendar.getInstance().get(Calendar.YEAR);
+        loadingCounter = 0;
+        totalLoads = 6;
 
         // Summary
         statsRepository.getStatsSummary(new StatsRepository.StatsSummaryCallback() {
@@ -313,47 +363,6 @@ public class StatisticsFragment extends Fragment {
             }
         });
 
-        // Monthly volume
-        statsRepository.getMonthlyVolume(currentYear, new StatsRepository.MonthlyVolumeCallback() {
-            @Override
-            public void onSuccess(List<MonthlyVolumeResponse> volumes) {
-                displayVolumeChart(volumes);
-                checkLoadingComplete();
-            }
-
-            @Override
-            public void onError(String error) {
-                volumeChart.setNoDataText("Нет данных");
-                volumeChart.invalidate();
-                Toast.makeText(getContext(), "Ошибка загрузки тоннажа: " + error, Toast.LENGTH_SHORT).show();
-                checkLoadingComplete();
-            }
-        });
-
-        // Muscle stats
-        Calendar cal = Calendar.getInstance();
-        String endDate = String.format(Locale.getDefault(), "%d-%02d-%02d",
-                cal.get(Calendar.YEAR), cal.get(Calendar.MONTH) + 1, cal.get(Calendar.DAY_OF_MONTH));
-        cal.add(Calendar.DAY_OF_YEAR, -90);
-        String startDate = String.format(Locale.getDefault(), "%d-%02d-%02d",
-                cal.get(Calendar.YEAR), cal.get(Calendar.MONTH) + 1, cal.get(Calendar.DAY_OF_MONTH));
-
-        statsRepository.getMuscleStats(startDate, endDate, new StatsRepository.MuscleStatsCallback() {
-            @Override
-            public void onSuccess(List<MuscleStatsResponse> muscles) {
-                displayMusclesPieChart(muscles);
-                checkLoadingComplete();
-            }
-
-            @Override
-            public void onError(String error) {
-                musclesPieChart.setNoDataText("Нет данных");
-                musclesPieChart.invalidate();
-                Toast.makeText(getContext(), "Ошибка загрузки мышц: " + error, Toast.LENGTH_SHORT).show();
-                checkLoadingComplete();
-            }
-        });
-
         // Determine period once using chipGroupPeriod
         int period = PERIOD_WEEKLY; // default
         int checkedChipId = chipGroupPeriod.getCheckedChipId();
@@ -363,95 +372,32 @@ public class StatisticsFragment extends Fragment {
             period = PERIOD_YEARLY;
         }
 
+        // Get period dates for volume, duration, workout count
+        Pair<String, String> dates = getPeriodDates(period);
+        String startDate = dates.first;
+        String endDate = dates.second;
+
+        // Volume data - use new approach with daily data
+        loadVolumeData(period, startDate, endDate);
+
+        // Muscle stats (last 90 days)
+        Calendar cal = Calendar.getInstance();
+        String endDateMuscle = String.format(Locale.US, "%d-%02d-%02d",
+                cal.get(Calendar.YEAR), cal.get(Calendar.MONTH) + 1, cal.get(Calendar.DAY_OF_MONTH));
+        cal.add(Calendar.DAY_OF_YEAR, -90);
+        String startDateMuscle = String.format(Locale.US, "%d-%02d-%02d",
+                cal.get(Calendar.YEAR), cal.get(Calendar.MONTH) + 1, cal.get(Calendar.DAY_OF_MONTH));
+
+        loadMuscleStats(startDateMuscle, endDateMuscle);
+
+        // Load sets data with same date range (last 90 days)
+        loadSetsData(startDateMuscle, endDateMuscle);
+
         // Duration stats based on selected period
-        // Yearly is not supported for duration chart, treat it as Monthly
-        int durationPeriod = (period == PERIOD_YEARLY) ? PERIOD_MONTHLY : period;
-        if (durationPeriod == PERIOD_WEEKLY) {
-            statsRepository.getDurationWeeklyStats(currentYear, new StatsRepository.DurationWeeklyCallback() {
-                @Override
-                public void onSuccess(List<DurationWeeklyStats> stats) {
-                    displayDurationChart(stats);
-                    checkLoadingComplete();
-                }
-
-                @Override
-                public void onError(String error) {
-                    durationChart.setNoDataText("Нет данных");
-                    durationChart.invalidate();
-                    Toast.makeText(getContext(), "Ошибка загрузки: " + error, Toast.LENGTH_SHORT).show();
-                    checkLoadingComplete();
-                }
-            });
-        } else {
-            statsRepository.getDurationMonthlyStats(currentYear, new StatsRepository.DurationMonthlyCallback() {
-                @Override
-                public void onSuccess(List<DurationMonthlyStats> stats) {
-                    displayDurationChart(stats);
-                    checkLoadingComplete();
-                }
-
-                @Override
-                public void onError(String error) {
-                    durationChart.setNoDataText("Нет данных");
-                    durationChart.invalidate();
-                    Toast.makeText(getContext(), "Ошибка загрузки: " + error, Toast.LENGTH_SHORT).show();
-                    checkLoadingComplete();
-                }
-            });
-        }
+        loadDurationData(period, startDate, endDate);
 
         // Workout count stats based on selected period
-        if (period == PERIOD_WEEKLY) {
-            statsRepository.getWorkoutWeeklyStats(currentYear, new StatsRepository.WorkoutWeeklyCallback() {
-                @Override
-                public void onSuccess(List<WorkoutWeeklyStats> stats) {
-                    displayWorkoutCountChart(stats);
-                    checkLoadingComplete();
-                }
-
-                @Override
-                public void onError(String error) {
-                    workoutCountChart.setNoDataText("Нет данных");
-                    workoutCountChart.invalidate();
-                    Toast.makeText(getContext(), "Ошибка загрузки: " + error, Toast.LENGTH_SHORT).show();
-                    checkLoadingComplete();
-                }
-            });
-        } else if (period == PERIOD_MONTHLY) {
-            statsRepository.getWorkoutMonthlyStats(currentYear, new StatsRepository.WorkoutMonthlyCallback() {
-                @Override
-                public void onSuccess(List<WorkoutMonthlyStats> stats) {
-                    displayWorkoutCountChart(stats);
-                    checkLoadingComplete();
-                }
-
-                @Override
-                public void onError(String error) {
-                    workoutCountChart.setNoDataText("Нет данных");
-                    workoutCountChart.invalidate();
-                    Toast.makeText(getContext(), "Ошибка загрузки: " + error, Toast.LENGTH_SHORT).show();
-                    checkLoadingComplete();
-                }
-            });
-        } else {
-            // Yearly - compute from monthly data
-            statsRepository.getWorkoutMonthlyStats(currentYear, new StatsRepository.WorkoutMonthlyCallback() {
-                @Override
-                public void onSuccess(List<WorkoutMonthlyStats> monthlyStats) {
-                    List<WorkoutWeeklyStats> yearlyStats = computeYearlyWorkoutStats(monthlyStats);
-                    displayWorkoutCountChart(yearlyStats);
-                    checkLoadingComplete();
-                }
-
-                @Override
-                public void onError(String error) {
-                    workoutCountChart.setNoDataText("Нет данных");
-                    workoutCountChart.invalidate();
-                    Toast.makeText(getContext(), "Ошибка загрузки: " + error, Toast.LENGTH_SHORT).show();
-                    checkLoadingComplete();
-                }
-            });
-        }
+        loadWorkoutData(period, startDate, endDate);
     }
 
     private List<WorkoutWeeklyStats> computeYearlyWorkoutStats(List<WorkoutMonthlyStats> monthlyStats) {
@@ -490,9 +436,61 @@ public class StatisticsFragment extends Fragment {
         return count;
     }
 
+    private Pair<String, String> getPeriodDates(int period) {
+        Calendar cal = Calendar.getInstance();
+        String startDate, endDate;
+
+        if (period == PERIOD_WEEKLY) {
+            // Полная неделя: понедельник текущей недели до воскресенья
+            cal.set(Calendar.DAY_OF_WEEK, Calendar.MONDAY);
+            cal.set(Calendar.HOUR_OF_DAY, 0);
+            cal.set(Calendar.MINUTE, 0);
+            cal.set(Calendar.SECOND, 0);
+            cal.set(Calendar.MILLISECOND, 0);
+            startDate = String.format(Locale.US, "%d-%02d-%02d",
+                    cal.get(Calendar.YEAR), cal.get(Calendar.MONTH) + 1, cal.get(Calendar.DAY_OF_MONTH));
+            // Воскресенье (через 6 дней после понедельника)
+            Calendar endCal = (Calendar) cal.clone();
+            endCal.add(Calendar.DAY_OF_YEAR, 6);
+            endDate = String.format(Locale.US, "%d-%02d-%02d",
+                    endCal.get(Calendar.YEAR), endCal.get(Calendar.MONTH) + 1, endCal.get(Calendar.DAY_OF_MONTH));
+        } else if (period == PERIOD_MONTHLY) {
+            // Полный месяц: с 1-го по последний день текущего месяца
+            cal.set(Calendar.DAY_OF_MONTH, 1);
+            cal.set(Calendar.HOUR_OF_DAY, 0);
+            cal.set(Calendar.MINUTE, 0);
+            cal.set(Calendar.SECOND, 0);
+            cal.set(Calendar.MILLISECOND, 0);
+            startDate = String.format(Locale.US, "%d-%02d-%02d",
+                    cal.get(Calendar.YEAR), cal.get(Calendar.MONTH) + 1, cal.get(Calendar.DAY_OF_MONTH));
+            // Последний день текущего месяца
+            Calendar endCal = (Calendar) cal.clone();
+            endCal.add(Calendar.MONTH, 1);
+            endCal.add(Calendar.DAY_OF_MONTH, -1);
+            endDate = String.format(Locale.US, "%d-%02d-%02d",
+                    endCal.get(Calendar.YEAR), endCal.get(Calendar.MONTH) + 1, endCal.get(Calendar.DAY_OF_MONTH));
+        } else { // YEARLY
+            // Полный год: с 1 января по 31 декабря текущего года
+            cal.set(Calendar.DAY_OF_YEAR, 1);
+            cal.set(Calendar.HOUR_OF_DAY, 0);
+            cal.set(Calendar.MINUTE, 0);
+            cal.set(Calendar.SECOND, 0);
+            cal.set(Calendar.MILLISECOND, 0);
+            startDate = String.format(Locale.US, "%d-%02d-%02d",
+                    cal.get(Calendar.YEAR), cal.get(Calendar.MONTH) + 1, cal.get(Calendar.DAY_OF_MONTH));
+            // 31 декабря текущего года
+            Calendar endCal = (Calendar) cal.clone();
+            endCal.add(Calendar.YEAR, 1);
+            endCal.add(Calendar.DAY_OF_YEAR, -1);
+            endDate = String.format(Locale.US, "%d-%02d-%02d",
+                    endCal.get(Calendar.YEAR), endCal.get(Calendar.MONTH) + 1, endCal.get(Calendar.DAY_OF_MONTH));
+        }
+        return new Pair<>(startDate, endDate);
+    }
+
     private void checkLoadingComplete() {
-        loadingCounter--;
-        if (loadingCounter <= 0) {
+        loadingCounter++;
+        if (loadingCounter >= totalLoads) {
             showLoading(false);
         }
     }
@@ -518,124 +516,365 @@ public class StatisticsFragment extends Fragment {
         }
     }
 
-    private void displayVolumeChart(List<MonthlyVolumeResponse> volumes) {
-        if (volumes == null || volumes.isEmpty()) {
-            volumeChart.setNoDataText("Нет данных");
-            volumeChart.invalidate();
-            return;
+    /**
+     * Возвращает количество дней в месяце для указанного года и месяца (1-12)
+     */
+    private int getDaysInMonth(int year, int month) {
+        Calendar cal = Calendar.getInstance();
+        cal.set(Calendar.YEAR, year);
+        cal.set(Calendar.MONTH, month - 1); // Calendar месяцы 0-11
+        return cal.getActualMaximum(Calendar.DAY_OF_MONTH);
+    }
+
+    /**
+     * Возвращает количество дней в году (365 или 366)
+     */
+    private int getDaysInYear(int year) {
+        Calendar cal = Calendar.getInstance();
+        cal.set(Calendar.YEAR, year);
+        return cal.getActualMaximum(Calendar.DAY_OF_YEAR);
+    }
+
+    /**
+     * Определяет, нужно ли использовать логарифмическую шкалу.
+     * Используется если отношение максимального значения к минимальному (положительному) больше threshold.
+     * @param values массив значений
+     * @param threshold порог (по умолчанию 50)
+     * @return true если нужна логарифмическая шкала
+     */
+    private boolean shouldUseLogScale(float[] values, float threshold) {
+        float minPositive = Float.MAX_VALUE;
+        float max = 0f;
+        for (float val : values) {
+            if (val > 0) {
+                minPositive = Math.min(minPositive, val);
+                max = Math.max(max, val);
+            }
         }
+        if (max == 0 || minPositive == Float.MAX_VALUE) return false;
+        return (max / minPositive) > threshold;
+    }
 
-        // Sort by month
-        List<MonthlyVolumeResponse> sorted = new ArrayList<>(volumes);
-        Collections.sort(sorted, (a, b) -> {
-            int ma = a.getMonth() != null ? a.getMonth() : 0;
-            int mb = b.getMonth() != null ? b.getMonth() : 0;
-            return Integer.compare(ma, mb);
-        });
+    private boolean shouldUseLogScale(float[] values) {
+        return shouldUseLogScale(values, 50f);
+    }
 
+    /**
+     * Преобразует значение в логарифмическую шкалу: log10(val + 1)
+     */
+    private float toLogScale(float val) {
+        return val > 0 ? (float) Math.log10(val + 1) : 0f;
+    }
+
+    /**
+     * Обратное преобразование из логарифмической шкалы в исходное значение
+     */
+    private double fromLogScale(float logVal) {
+        return Math.pow(10, logVal) - 1;
+    }
+
+    /**
+     * Форматирует значение для отображения (добавляет K/M для больших чисел)
+     */
+    private String formatValue(double value) {
+        if (value < 1) return "0";
+        if (value < 1000) return String.format(Locale.US, "%.0f", value);
+        else if (value < 1000000) return String.format(Locale.US, "%.1fK", value / 1000);
+        else return String.format(Locale.US, "%.1fM", value / 1000000);
+    }
+
+    /**
+     * Создает ValueFormatter для оси Y в зависимости от того, используется ли логарифмическая шкала
+     */
+    private ValueFormatter createAxisFormatter(boolean useLog) {
+        if (useLog) {
+            return new ValueFormatter() {
+                @Override
+                public String getAxisLabel(float value, AxisBase axis) {
+                    if (value <= 0) return "0";
+                    double original = fromLogScale(value);
+                    return formatValue(original);
+                }
+            };
+        } else {
+            return new ValueFormatter() {
+                @Override
+                public String getAxisLabel(float value, AxisBase axis) {
+                    return formatValue(value);
+                }
+            };
+        }
+    }
+
+    /**
+     * Создает ValueFormatter для отображения значений над столбцами
+     * При логарифмической шкале преобразует обратно в исходное значение
+     */
+    private ValueFormatter createBarValueFormatter(boolean useLog) {
+        if (useLog) {
+            return new ValueFormatter() {
+                @Override
+                public String getFormattedValue(float value) {
+                    // value — это логарифмическое значение из BarEntry
+                    double original = fromLogScale(value);
+                    return formatValue(original);
+                }
+            };
+        } else {
+            return new ValueFormatter() {
+                @Override
+                public String getFormattedValue(float value) {
+                    return formatValue(value);
+                }
+            };
+        }
+    }
+
+    private void displayVolumeChart(List<VolumeDailyResponse> dailyVolumes, int period, String startDate, String endDate) {
         List<BarEntry> entries = new ArrayList<>();
         List<String> labels = new ArrayList<>();
 
-        for (int i = 0; i < sorted.size(); i++) {
-            MonthlyVolumeResponse vol = sorted.get(i);
-            float val = vol.getTotalVolume() != null ? (float)(vol.getTotalVolume() / 1000.0) : 0f;
-            entries.add(new BarEntry(i, val));
-            labels.add(vol.getMonth() != null ? String.valueOf(vol.getMonth()) : "M" + (i + 1));
+        // Создаем мапу дата -> объем
+        Map<String, Float> dateToVolume = new HashMap<>();
+        if (dailyVolumes != null) {
+            for (VolumeDailyResponse vol : dailyVolumes) {
+                if (vol.getDate() != null && vol.getTotalVolume() != null) {
+                    dateToVolume.put(vol.getDate(), vol.getTotalVolume().floatValue());
+                }
+            }
+        }
+
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd", Locale.US);
+        Calendar cal = Calendar.getInstance();
+        float[] originalValues;
+
+        if (period == PERIOD_WEEKLY) {
+            String[] days = {"Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"};
+            originalValues = new float[7];
+            try {
+                cal.setTime(sdf.parse(startDate));
+                for (int i = 0; i < 7; i++) {
+                    String dateStr = sdf.format(cal.getTime());
+                    float val = dateToVolume.getOrDefault(dateStr, 0f);
+                    originalValues[i] = val;
+                    labels.add(days[i]);
+                    cal.add(Calendar.DAY_OF_MONTH, 1);
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+                originalValues = new float[7];
+            }
+        } else if (period == PERIOD_MONTHLY) {
+            try {
+                cal.setTime(sdf.parse(startDate));
+                int daysInMonth = getDaysInMonth(cal.get(Calendar.YEAR), cal.get(Calendar.MONTH) + 1);
+                originalValues = new float[daysInMonth];
+                for (int i = 0; i < daysInMonth; i++) {
+                    String dateStr = sdf.format(cal.getTime());
+                    float val = dateToVolume.getOrDefault(dateStr, 0f);
+                    originalValues[i] = val;
+                    labels.add(String.valueOf(i + 1));
+                    cal.add(Calendar.DAY_OF_MONTH, 1);
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+                originalValues = new float[30];
+            }
+        } else { // YEARLY
+            originalValues = new float[12];
+            if (dailyVolumes != null) {
+                for (VolumeDailyResponse vol : dailyVolumes) {
+                    if (vol.getDate() != null && vol.getTotalVolume() != null) {
+                        try {
+                            cal.setTime(sdf.parse(vol.getDate()));
+                            int month = cal.get(Calendar.MONTH);
+                            originalValues[month] += vol.getTotalVolume().floatValue();
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+                    }
+                }
+            }
+            for (int i = 0; i < 12; i++) {
+                labels.add(String.valueOf(i + 1));
+            }
+        }
+
+        // Определяем, нужна ли логарифмическая шкала
+        boolean useLog = shouldUseLogScale(originalValues);
+
+        // Создаем записи для графика
+        for (int i = 0; i < originalValues.length; i++) {
+            float val = originalValues[i];
+            float entryVal = useLog ? toLogScale(val) : val;
+            entries.add(new BarEntry(i, entryVal));
         }
 
         BarDataSet dataSet = new BarDataSet(entries, "Т (т)");
         dataSet.setColors(ColorTemplate.MATERIAL_COLORS);
         dataSet.setValueTextSize(10f);
+        dataSet.setValueFormatter(createBarValueFormatter(useLog));
+        dataSet.setDrawValues(true);
 
         BarData data = new BarData(dataSet);
         volumeChart.setData(data);
 
         volumeChart.getXAxis().setValueFormatter(new IndexAxisValueFormatter(labels));
         volumeChart.getAxisLeft().setAxisMinimum(0f);
+        volumeChart.getAxisLeft().setValueFormatter(createAxisFormatter(useLog));
+
+        volumeChart.setVisibleXRangeMaximum(period == PERIOD_WEEKLY ? 7 : (period == PERIOD_MONTHLY ? 10 : 12));
         volumeChart.invalidate();
     }
 
-    private void displayDurationChart(List<?> stats) {
-        if (stats == null || stats.isEmpty()) {
-            durationChart.setNoDataText("Нет данных");
-            durationChart.invalidate();
-            return;
+    private int getCurrentPeriod() {
+        int checkedChipId = chipGroupPeriod.getCheckedChipId();
+        if (checkedChipId == R.id.chip_monthly) {
+            return PERIOD_MONTHLY;
+        } else if (checkedChipId == R.id.chip_yearly) {
+            return PERIOD_YEARLY;
         }
+        return PERIOD_WEEKLY;
+    }
 
+    private void displayDurationChart(List<DurationDailyStats> dailyDurations, int period, String startDate, String endDate) {
         List<BarEntry> entries = new ArrayList<>();
         List<String> labels = new ArrayList<>();
 
-        if (stats.get(0) instanceof DurationWeeklyStats) {
-            // Weekly data
-            List<DurationWeeklyStats> weeklyStats = (List<DurationWeeklyStats>) stats;
-            Collections.sort(weeklyStats, (a, b) -> {
-                int wa = a.getWeek() != null ? a.getWeek() : 0;
-                int wb = b.getWeek() != null ? b.getWeek() : 0;
-                return Integer.compare(wa, wb);
-            });
-
-            for (int i = 0; i < weeklyStats.size(); i++) {
-                DurationWeeklyStats stat = weeklyStats.get(i);
-                float val = stat.getTotalDurationMinutes() != null ? stat.getTotalDurationMinutes().floatValue() : 0f;
-                entries.add(new BarEntry(i, val));
-                labels.add("Нед. " + (stat.getWeek() != null ? stat.getWeek() : (i + 1)));
-            }
-        } else {
-            // Monthly data - convert to weekly-like display
-            List<DurationMonthlyStats> monthlyStats = (List<DurationMonthlyStats>) stats;
-            Collections.sort(monthlyStats, (a, b) -> {
-                int ma = a.getMonth() != null ? a.getMonth() : 0;
-                int mb = b.getMonth() != null ? b.getMonth() : 0;
-                return Integer.compare(ma, mb);
-            });
-
-            for (int i = 0; i < monthlyStats.size(); i++) {
-                DurationMonthlyStats stat = monthlyStats.get(i);
-                float val = stat.getTotalDurationMinutes() != null ? stat.getTotalDurationMinutes().floatValue() : 0f;
-                entries.add(new BarEntry(i, val));
-                labels.add("Месяц " + (stat.getMonth() != null ? stat.getMonth() : (i + 1)));
+        Map<String, Float> dateToDuration = new HashMap<>();
+        if (dailyDurations != null) {
+            for (DurationDailyStats stat : dailyDurations) {
+                if (stat.getDate() != null && stat.getTotalDurationMinutes() != null) {
+                    dateToDuration.put(stat.getDate(), stat.getTotalDurationMinutes().floatValue());
+                }
             }
         }
 
-        // Set data
-        BarDataSet dataSet = new BarDataSet(entries, stats.get(0) instanceof DurationWeeklyStats ? "Минут" : "Месяц");
-        dataSet.setColors(stats.get(0) instanceof DurationWeeklyStats ? ColorTemplate.COLORFUL_COLORS : ColorTemplate.MATERIAL_COLORS);
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd", Locale.US);
+        Calendar cal = Calendar.getInstance();
+        float[] originalValues;
+
+        if (period == PERIOD_WEEKLY) {
+            String[] days = {"Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"};
+            originalValues = new float[7];
+            try {
+                cal.setTime(sdf.parse(startDate));
+                for (int i = 0; i < 7; i++) {
+                    String dateStr = sdf.format(cal.getTime());
+                    float val = dateToDuration.getOrDefault(dateStr, 0f);
+                    originalValues[i] = val;
+                    labels.add(days[i]);
+                    cal.add(Calendar.DAY_OF_MONTH, 1);
+                }
+            } catch (Exception e) { e.printStackTrace(); originalValues = new float[7]; }
+        } else if (period == PERIOD_MONTHLY) {
+            try {
+                cal.setTime(sdf.parse(startDate));
+                int daysInMonth = getDaysInMonth(cal.get(Calendar.YEAR), cal.get(Calendar.MONTH) + 1);
+                originalValues = new float[daysInMonth];
+                for (int i = 0; i < daysInMonth; i++) {
+                    String dateStr = sdf.format(cal.getTime());
+                    float val = dateToDuration.getOrDefault(dateStr, 0f);
+                    originalValues[i] = val;
+                    labels.add(String.valueOf(i + 1));
+                    cal.add(Calendar.DAY_OF_MONTH, 1);
+                }
+            } catch (Exception e) { e.printStackTrace(); originalValues = new float[30]; }
+        } else { // YEARLY
+            originalValues = new float[12];
+            if (dailyDurations != null) {
+                for (DurationDailyStats stat : dailyDurations) {
+                    if (stat.getDate() != null && stat.getTotalDurationMinutes() != null) {
+                        try {
+                            cal.setTime(sdf.parse(stat.getDate()));
+                            int month = cal.get(Calendar.MONTH);
+                            originalValues[month] += stat.getTotalDurationMinutes().floatValue();
+                        } catch (Exception e) { e.printStackTrace(); }
+                    }
+                }
+            }
+            for (int i = 0; i < 12; i++) {
+                labels.add(String.valueOf(i + 1));
+            }
+        }
+
+        // Определяем, нужна ли логарифмическая шкала
+        boolean useLog = shouldUseLogScale(originalValues);
+
+        // Создаем записи для графика
+        for (int i = 0; i < originalValues.length; i++) {
+            float val = originalValues[i];
+            float entryVal = useLog ? toLogScale(val) : val;
+            entries.add(new BarEntry(i, entryVal));
+        }
+
+        BarDataSet dataSet = new BarDataSet(entries, "Мин");
+        dataSet.setColors(ColorTemplate.MATERIAL_COLORS);
         dataSet.setValueTextSize(10f);
+        dataSet.setValueFormatter(createBarValueFormatter(useLog));
+        dataSet.setDrawValues(true);
 
         BarData data = new BarData(dataSet);
         durationChart.setData(data);
-
         durationChart.getXAxis().setValueFormatter(new IndexAxisValueFormatter(labels));
         durationChart.getAxisLeft().setAxisMinimum(0f);
+        durationChart.getAxisLeft().setValueFormatter(createAxisFormatter(useLog));
+
+        durationChart.setVisibleXRangeMaximum(period == PERIOD_WEEKLY ? 7 : (period == PERIOD_MONTHLY ? 10 : 12));
         durationChart.invalidate();
     }
 
     private void displaySetsChart(List<MuscleSetsStats> stats) {
-        if (stats == null || stats.isEmpty()) {
-            setsChart.setNoDataText("Нет данных");
-            setsChart.invalidate();
-            return;
-        }
-
         List<BarEntry> entries = new ArrayList<>();
         List<String> labels = new ArrayList<>();
 
-        for (int i = 0; i < stats.size(); i++) {
-            MuscleSetsStats stat = stats.get(i);
-            float val = stat.getTotalSets() != null ? stat.getTotalSets().floatValue() : 0f;
-            entries.add(new BarEntry(i, val));
-            labels.add(stat.getMuscleGroupName() != null ? stat.getMuscleGroupName() : "Группа " + (i + 1));
+        // Полный список групп мышц (из справочника)
+        String[] allMuscleGroups = {
+            "Грудь", "Спина", "Плечи", "Бицепс", "Трицепс", "Квадрицепс", "Бицепс бедра", "Ягодицы",
+            "Икры", "Пресс", "Предплечье", "Трапеция", "Шея", "Голень", "Стопы", "Дельтовидные"
+        };
+        float[] values = new float[allMuscleGroups.length];
+
+        // Заполняем из API, если есть
+        if (stats != null && !stats.isEmpty()) {
+            for (MuscleSetsStats stat : stats) {
+                String muscleName = stat.getMuscleGroupName();
+                if (muscleName != null) {
+                    for (int i = 0; i < allMuscleGroups.length; i++) {
+                        if (allMuscleGroups[i].equalsIgnoreCase(muscleName)) {
+                            values[i] = stat.getTotalSets() != null ? stat.getTotalSets().floatValue() : 0f;
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+
+        // Определяем, нужна ли логарифмическая шкала
+        boolean useLog = shouldUseLogScale(values);
+
+        // Создаем записи для графика
+        for (int i = 0; i < allMuscleGroups.length; i++) {
+            float val = values[i];
+            float entryVal = useLog ? toLogScale(val) : val;
+            entries.add(new BarEntry(i, entryVal));
+            labels.add(allMuscleGroups[i]);
         }
 
         BarDataSet dataSet = new BarDataSet(entries, "Подходов");
         dataSet.setColors(ColorTemplate.VORDIPLOM_COLORS);
         dataSet.setValueTextSize(10f);
+        dataSet.setValueFormatter(createBarValueFormatter(useLog));
+        dataSet.setDrawValues(true);
 
         BarData data = new BarData(dataSet);
         setsChart.setData(data);
 
         setsChart.getXAxis().setValueFormatter(new IndexAxisValueFormatter(labels));
         setsChart.getAxisLeft().setAxisMinimum(0f);
+        setsChart.getAxisLeft().setValueFormatter(createAxisFormatter(useLog));
+
+        setsChart.setVisibleXRangeMaximum(7); // Показываем 7 групп мышц за раз, прокрутка
         setsChart.invalidate();
     }
 
@@ -701,48 +940,74 @@ public class StatisticsFragment extends Fragment {
         progressBar.setVisibility(show ? View.VISIBLE : View.GONE);
     }
 
-    private void displayWorkoutCountChart(List<?> stats) {
-        if (stats == null || stats.isEmpty()) {
-            workoutCountChart.setNoDataText("Нет данных");
-            workoutCountChart.invalidate();
-            return;
-        }
-
+    private void displayWorkoutCountChart(List<WorkoutDailyStats> dailyWorkouts, int period, String startDate, String endDate) {
         List<BarEntry> entries = new ArrayList<>();
         List<String> labels = new ArrayList<>();
 
-        if (stats.get(0) instanceof WorkoutWeeklyStats) {
-            // Weekly data
-            List<WorkoutWeeklyStats> weeklyStats = (List<WorkoutWeeklyStats>) stats;
-            Collections.sort(weeklyStats, (a, b) -> {
-                int wa = a.getWeek() != null ? a.getWeek() : 0;
-                int wb = b.getWeek() != null ? b.getWeek() : 0;
-                return Integer.compare(wa, wb);
-            });
-
-            for (int i = 0; i < weeklyStats.size(); i++) {
-                WorkoutWeeklyStats stat = weeklyStats.get(i);
-                float val = stat.getWorkoutCount() != null ? stat.getWorkoutCount().floatValue() : 0f;
-                entries.add(new BarEntry(i, val));
-                labels.add("Нед. " + (stat.getWeek() != null ? stat.getWeek() : (i + 1)));
+        Map<String, Float> dateToCount = new HashMap<>();
+        if (dailyWorkouts != null) {
+            for (WorkoutDailyStats stat : dailyWorkouts) {
+                if (stat.getDate() != null && stat.getWorkoutCount() != null) {
+                    dateToCount.put(stat.getDate(), stat.getWorkoutCount().floatValue());
+                }
             }
-        } else {
-            // Yearly data - single bar
-            WorkoutWeeklyStats yearlyStat = (WorkoutWeeklyStats) stats.get(0);
-            float val = yearlyStat.getWorkoutCount() != null ? yearlyStat.getWorkoutCount().floatValue() : 0f;
-            entries.add(new BarEntry(0, val));
-            labels.add("Год");
         }
 
-        BarDataSet dataSet = new BarDataSet(entries, stats.get(0) instanceof WorkoutWeeklyStats ? "Кол-во" : "Год");
-        dataSet.setColor(stats.get(0) instanceof WorkoutWeeklyStats ? Color.rgb(98, 0, 238) : Color.rgb(98, 0, 238));
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd", Locale.US);
+        Calendar cal = Calendar.getInstance();
+
+        if (period == PERIOD_WEEKLY) {
+            String[] days = {"Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"};
+            try {
+                cal.setTime(sdf.parse(startDate));
+                for (int i = 0; i < 7; i++) {
+                    String dateStr = sdf.format(cal.getTime());
+                    float val = dateToCount.getOrDefault(dateStr, 0f);
+                    entries.add(new BarEntry(i, val));
+                    labels.add(days[i]);
+                    cal.add(Calendar.DAY_OF_MONTH, 1);
+                }
+            } catch (Exception e) { e.printStackTrace(); }
+        } else if (period == PERIOD_MONTHLY) {
+            try {
+                cal.setTime(sdf.parse(startDate));
+                int daysInMonth = getDaysInMonth(cal.get(Calendar.YEAR), cal.get(Calendar.MONTH) + 1);
+                for (int i = 0; i < daysInMonth; i++) {
+                    String dateStr = sdf.format(cal.getTime());
+                    float val = dateToCount.getOrDefault(dateStr, 0f);
+                    entries.add(new BarEntry(i, val));
+                    labels.add(String.valueOf(i + 1));
+                    cal.add(Calendar.DAY_OF_MONTH, 1);
+                }
+            } catch (Exception e) { e.printStackTrace(); }
+        } else { // YEARLY
+            float[] monthValues = new float[12];
+            if (dailyWorkouts != null) {
+                for (WorkoutDailyStats stat : dailyWorkouts) {
+                    if (stat.getDate() != null && stat.getWorkoutCount() != null) {
+                        try {
+                            cal.setTime(sdf.parse(stat.getDate()));
+                            int month = cal.get(Calendar.MONTH);
+                            monthValues[month] += stat.getWorkoutCount().floatValue();
+                        } catch (Exception e) { e.printStackTrace(); }
+                    }
+                }
+            }
+            for (int i = 0; i < 12; i++) {
+                entries.add(new BarEntry(i, monthValues[i]));
+                labels.add(String.valueOf(i + 1));
+            }
+        }
+
+        BarDataSet dataSet = new BarDataSet(entries, "Кол-во");
+        dataSet.setColor(Color.rgb(98, 0, 238));
         dataSet.setValueTextSize(10f);
 
         BarData data = new BarData(dataSet);
         workoutCountChart.setData(data);
-
         workoutCountChart.getXAxis().setValueFormatter(new IndexAxisValueFormatter(labels));
         workoutCountChart.getAxisLeft().setAxisMinimum(0f);
+        workoutCountChart.setVisibleXRangeMaximum(period == PERIOD_WEEKLY ? 7 : (period == PERIOD_MONTHLY ? 10 : 12));
         workoutCountChart.invalidate();
     }
 }

@@ -14,6 +14,7 @@ import retrofit2.Response;
 import timber.log.Timber;
 import ru.squidory.trainingdairymobile.data.model.BodyMeasurementProgress;
 import ru.squidory.trainingdairymobile.data.model.BodyMeasurementResponse;
+import ru.squidory.trainingdairymobile.data.model.DurationDailyStats;
 import ru.squidory.trainingdairymobile.data.model.DurationMonthlyStats;
 import ru.squidory.trainingdairymobile.data.model.DurationWeeklyStats;
 import ru.squidory.trainingdairymobile.data.model.ExerciseProgressResponse;
@@ -22,6 +23,8 @@ import ru.squidory.trainingdairymobile.data.model.MonthlyVolumeResponse;
 import ru.squidory.trainingdairymobile.data.model.MuscleSetsStats;
 import ru.squidory.trainingdairymobile.data.model.MuscleStatsResponse;
 import ru.squidory.trainingdairymobile.data.model.StatsSummaryResponse;
+import ru.squidory.trainingdairymobile.data.model.VolumeDailyResponse;
+import ru.squidory.trainingdairymobile.data.model.WorkoutDailyStats;
 import ru.squidory.trainingdairymobile.data.model.WorkoutMonthlyStats;
 import ru.squidory.trainingdairymobile.data.model.WorkoutStatsResponse;
 import ru.squidory.trainingdairymobile.data.model.WorkoutWeeklyStats;
@@ -109,6 +112,23 @@ public class StatsRepository {
 
     public interface WorkoutMonthlyCallback {
         void onSuccess(List<WorkoutMonthlyStats> stats);
+        void onError(String error);
+    }
+
+    // === Daily callbacks ===
+
+    public interface VolumeDailyCallback {
+        void onSuccess(List<VolumeDailyResponse> dailyVolumes);
+        void onError(String error);
+    }
+
+    public interface DurationDailyCallback {
+        void onSuccess(List<DurationDailyStats> dailyDurations);
+        void onError(String error);
+    }
+
+    public interface WorkoutDailyCallback {
+        void onSuccess(List<WorkoutDailyStats> dailyWorkouts);
         void onError(String error);
     }
 
@@ -286,6 +306,50 @@ public class StatsRepository {
             @Override
             public void onFailure(Call<List<WorkoutMonthlyStats>> call, Throwable t) {
                 handleFailure(t, callback::onError, "workout monthly");
+            }
+        });
+    }
+
+    // === Daily methods ===
+
+    /** Ежедневный тоннаж. */
+    public void getDailyVolume(String startDate, String endDate, VolumeDailyCallback callback) {
+        statisticsApi.getDailyVolume(startDate, endDate).enqueue(new Callback<List<VolumeDailyResponse>>() {
+            @Override
+            public void onResponse(Call<List<VolumeDailyResponse>> call, Response<List<VolumeDailyResponse>> response) {
+                handleResponse(response, callback::onSuccess, callback::onError, "daily volume");
+            }
+            @Override
+            public void onFailure(Call<List<VolumeDailyResponse>> call, Throwable t) {
+                handleFailure(t, callback::onError, "daily volume");
+            }
+        });
+    }
+
+    /** Ежедневная длительность. */
+    public void getDailyDuration(String startDate, String endDate, DurationDailyCallback callback) {
+        statisticsApi.getDailyDuration(startDate, endDate).enqueue(new Callback<List<DurationDailyStats>>() {
+            @Override
+            public void onResponse(Call<List<DurationDailyStats>> call, Response<List<DurationDailyStats>> response) {
+                handleResponse(response, callback::onSuccess, callback::onError, "daily duration");
+            }
+            @Override
+            public void onFailure(Call<List<DurationDailyStats>> call, Throwable t) {
+                handleFailure(t, callback::onError, "daily duration");
+            }
+        });
+    }
+
+    /** Ежедневные тренировки. */
+    public void getDailyWorkouts(String startDate, String endDate, WorkoutDailyCallback callback) {
+        statisticsApi.getDailyWorkouts(startDate, endDate).enqueue(new Callback<List<WorkoutDailyStats>>() {
+            @Override
+            public void onResponse(Call<List<WorkoutDailyStats>> call, Response<List<WorkoutDailyStats>> response) {
+                handleResponse(response, callback::onSuccess, callback::onError, "daily workouts");
+            }
+            @Override
+            public void onFailure(Call<List<WorkoutDailyStats>> call, Throwable t) {
+                handleFailure(t, callback::onError, "daily workouts");
             }
         });
     }

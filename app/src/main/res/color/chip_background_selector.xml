@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Выбранный чип: фиолетовый -->
+    <item android:state_checked="true" android:color="#6200EE" />
+    <!-- Не выбранный чип: прозрачный с серой границей -->
+    <item android:color="@android:color/transparent" />
+</selector>

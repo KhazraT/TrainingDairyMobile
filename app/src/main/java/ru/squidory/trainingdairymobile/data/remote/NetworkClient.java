@@ -35,6 +35,9 @@ public class NetworkClient {
             AuthInterceptor authInterceptor = new AuthInterceptor();
 
             OkHttpClient client = new OkHttpClient.Builder()
+                    .connectTimeout(15, java.util.concurrent.TimeUnit.SECONDS)
+                    .readTimeout(15, java.util.concurrent.TimeUnit.SECONDS)
+                    .writeTimeout(15, java.util.concurrent.TimeUnit.SECONDS)
                     .addInterceptor(loggingInterceptor)
                     .addInterceptor(authInterceptor)
                     .build();

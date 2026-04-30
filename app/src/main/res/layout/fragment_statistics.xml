@@ -33,19 +33,25 @@
                 android:id="@+id/chip_weekly"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Неделя" />
+                android:text="Неделя"
+                app:chipBackgroundColor="@color/chip_background_selector"
+                android:textColor="@color/chip_text_color_selector" />
 
             <com.google.android.material.chip.Chip
                 android:id="@+id/chip_monthly"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Месяц" />
+                android:text="Месяц"
+                app:chipBackgroundColor="@color/chip_background_selector"
+                android:textColor="@color/chip_text_color_selector" />
 
             <com.google.android.material.chip.Chip
                 android:id="@+id/chip_yearly"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Год" />
+                android:text="Год"
+                app:chipBackgroundColor="@color/chip_background_selector"
+                android:textColor="@color/chip_text_color_selector" />
         </com.google.android.material.chip.ChipGroup>
 
         <com.google.android.material.card.MaterialCardView
@@ -205,7 +211,7 @@
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="Тоннаж по месяцам"
+                    android:text="Тоннаж"
                     android:textAppearance="?attr/textAppearanceTitleLarge"
                     android:textStyle="bold"
                     android:layout_marginBottom="12dp" />
@@ -213,7 +219,8 @@
                 <com.github.mikephil.charting.charts.BarChart
                     android:id="@+id/volumeChart"
                     android:layout_width="match_parent"
-                    android:layout_height="200dp" />
+                    android:layout_height="200dp"
+                    android:nestedScrollingEnabled="false" />
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
@@ -269,7 +276,8 @@
                 <com.github.mikephil.charting.charts.BarChart
                     android:id="@+id/workoutCountChart"
                     android:layout_width="match_parent"
-                    android:layout_height="200dp" />
+                    android:layout_height="200dp"
+                    android:nestedScrollingEnabled="false" />
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
@@ -297,7 +305,8 @@
                 <com.github.mikephil.charting.charts.BarChart
                     android:id="@+id/durationChart"
                     android:layout_width="match_parent"
-                    android:layout_height="200dp" />
+                    android:layout_height="200dp"
+                    android:nestedScrollingEnabled="false" />
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
@@ -325,7 +334,8 @@
                 <com.github.mikephil.charting.charts.BarChart
                     android:id="@+id/setsChart"
                     android:layout_width="match_parent"
-                    android:layout_height="200dp" />
+                    android:layout_height="200dp"
+                    android:nestedScrollingEnabled="false" />
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 

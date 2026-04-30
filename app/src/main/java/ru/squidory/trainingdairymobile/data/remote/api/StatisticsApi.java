@@ -12,6 +12,7 @@ import retrofit2.http.Path;
 import retrofit2.http.Query;
 import ru.squidory.trainingdairymobile.data.model.BodyMeasurementProgress;
 import ru.squidory.trainingdairymobile.data.model.BodyMeasurementResponse;
+import ru.squidory.trainingdairymobile.data.model.DurationDailyStats;
 import ru.squidory.trainingdairymobile.data.model.DurationMonthlyStats;
 import ru.squidory.trainingdairymobile.data.model.DurationWeeklyStats;
 import ru.squidory.trainingdairymobile.data.model.ExerciseProgressResponse;
@@ -22,6 +23,8 @@ import ru.squidory.trainingdairymobile.data.model.MuscleStatsResponse;
 import ru.squidory.trainingdairymobile.data.model.StatisticsRequest;
 import ru.squidory.trainingdairymobile.data.model.StatisticsResponse;
 import ru.squidory.trainingdairymobile.data.model.StatsSummaryResponse;
+import ru.squidory.trainingdairymobile.data.model.VolumeDailyResponse;
+import ru.squidory.trainingdairymobile.data.model.WorkoutDailyStats;
 import ru.squidory.trainingdairymobile.data.model.WorkoutMonthlyStats;
 import ru.squidory.trainingdairymobile.data.model.WorkoutStatsResponse;
 import ru.squidory.trainingdairymobile.data.model.WorkoutWeeklyStats;
@@ -80,6 +83,36 @@ public interface StatisticsApi {
      */
     @GET("stats/exercises")
     Call<List<ExerciseStatsResponse>> getExerciseStats(
+            @Query("startDate") String startDate,
+            @Query("endDate") String endDate
+    );
+
+    /**
+     * Ежедневный тоннаж.
+     * GET /api/stats/volume/daily?startDate=...&endDate=...
+     */
+    @GET("stats/volume/daily")
+    Call<List<VolumeDailyResponse>> getDailyVolume(
+            @Query("startDate") String startDate,
+            @Query("endDate") String endDate
+    );
+
+    /**
+     * Ежедневная длительность.
+     * GET /api/stats/duration/daily?startDate=...&endDate=...
+     */
+    @GET("stats/duration/daily")
+    Call<List<DurationDailyStats>> getDailyDuration(
+            @Query("startDate") String startDate,
+            @Query("endDate") String endDate
+    );
+
+    /**
+     * Ежедневные тренировки.
+     * GET /api/stats/workouts/daily?startDate=...&endDate=...
+     */
+    @GET("stats/workouts/daily")
+    Call<List<WorkoutDailyStats>> getDailyWorkouts(
             @Query("startDate") String startDate,
             @Query("endDate") String endDate
     );

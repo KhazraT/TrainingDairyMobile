@@ -96,6 +96,7 @@ public class BodyMeasurementAdapter extends RecyclerView.Adapter<BodyMeasurement
             valueText.setText(formatValue(measurement));
             dateText.setText(formatDate(measurement.getMeasuredAt()));
 
+            // Комментарий отображаем на отдельной строке под всем
             if (measurement.getNotes() != null && !measurement.getNotes().isEmpty()) {
                 notesText.setText(measurement.getNotes());
                 notesText.setVisibility(View.VISIBLE);

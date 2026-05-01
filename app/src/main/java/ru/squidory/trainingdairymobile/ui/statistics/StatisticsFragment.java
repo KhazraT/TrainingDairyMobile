@@ -523,10 +523,10 @@ public class StatisticsFragment extends Fragment {
         avgDurationText.setText(String.format(Locale.getDefault(), "%d мин", avgDuration));
 
         if (summary.getFavoriteExercise() != null && !summary.getFavoriteExercise().isEmpty()
-                && !"Не указано".equals(summary.getFavoriteExercise())) {
-            favoriteExerciseText.setText(summary.getFavoriteExercise());
+                && !"Любимое упражнение: не обноружено".equals(summary.getFavoriteExercise())) {
+            favoriteExerciseText.setText("Любимое упражнение: " + summary.getFavoriteExercise());
         } else {
-            favoriteExerciseText.setText("Не указано");
+            favoriteExerciseText.setText("Любимое упражнение: не обноружено");
         }
         favoriteExerciseText.setVisibility(View.VISIBLE);
     }

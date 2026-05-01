@@ -127,6 +127,8 @@ public class BodyMeasurementsActivity extends AppCompatActivity {
             @Override
             public void onTabSelected(TabLayout.Tab tab) {
                 currentMeasurementType = measurementTypes[tab.getPosition()];
+                // Очищаем график при переключении вкладки
+                progressChart.clear();
                 loadData();
             }
 
@@ -171,7 +173,7 @@ public class BodyMeasurementsActivity extends AppCompatActivity {
 
     private void loadData() {
         showLoading(true);
-        
+
         // Загружаем последнее значение
         statsRepository.getLatestBodyMeasurement(currentMeasurementType, new StatsRepository.BodyMeasurementCallback() {
             @Override
@@ -190,15 +192,32 @@ public class BodyMeasurementsActivity extends AppCompatActivity {
         statsRepository.getBodyMeasurementsByType(currentMeasurementType, new StatsRepository.BodyMeasurementsCallback() {
             @Override
             public void onSuccess(List<BodyMeasurementResponse> measurements) {
-                adapter.setMeasurements(measurements);
+                // Сортируем по дате (старые первые) для графика
+                List<BodyMeasurementResponse> sortedForChart = new ArrayList<>(measurements);
+                sortedForChart.sort((a, b) -> {
+                    if (a.getMeasuredAt() == null) return 1;
+                    if (b.getMeasuredAt() == null) return -1;
+                    return a.getMeasuredAt().compareTo(b.getMeasuredAt());
+                });
+
+                // Сортируем в обратном порядке (новые первые) для списка
+                List<BodyMeasurementResponse> sortedForList = new ArrayList<>(measurements);
+                sortedForList.sort((a, b) -> {
+                    if (a.getMeasuredAt() == null) return 1;
+                    if (b.getMeasuredAt() == null) return -1;
+                    return b.getMeasuredAt().compareTo(a.getMeasuredAt()); // Обратный порядок
+                });
+
+                adapter.setMeasurements(sortedForList);
                 emptyText.setVisibility(measurements.isEmpty() ? View.VISIBLE : View.GONE);
-                displayProgressChart(measurements);
+                displayProgressChart(sortedForChart);
                 showLoading(false);
             }
 
             @Override
             public void onError(String error) {
                 Toast.makeText(BodyMeasurementsActivity.this, "Ошибка: " + error, Toast.LENGTH_SHORT).show();
+                progressChart.clear(); // Очищаем график при ошибке
                 showLoading(false);
             }
         });
@@ -207,21 +226,21 @@ public class BodyMeasurementsActivity extends AppCompatActivity {
     private void displayCurrentValue(BodyMeasurementResponse measurement) {
         if (measurement == null || measurement.getValue() == null) {
             currentValueText.setText("-");
-            changeText.setText("Нет данных");
+            changeText.setVisibility(View.GONE);
             return;
         }
 
         String unit = getUnitDisplay(measurement.getMeasurementType());
-        currentValueText.setText(String.format(Locale.getDefault(), "%.1f %s", 
+        currentValueText.setText(String.format(Locale.getDefault(), "%.1f %s",
             measurement.getValue(), unit));
-        
-        // Показываем изменение относительно предыдущего
-        // TODO: добавить логику сравнения с предыдущим измерением
-        changeText.setText("С последнего измерения");
+
+        // Скрываем поле изменения (пока не реализовано)
+        changeText.setVisibility(View.GONE);
     }
 
     private void displayProgressChart(List<BodyMeasurementResponse> measurements) {
         if (measurements == null || measurements.isEmpty()) {
+            progressChart.clear(); // Очищаем старые данные
             progressChart.setNoDataText("Нет данных");
             progressChart.invalidate();
             return;

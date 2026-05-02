@@ -1,7 +1,9 @@
 package ru.squidory.trainingdairymobile.data.model;
 
 import com.google.gson.annotations.SerializedName;
+import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.Locale;
 
 public class UserResponse {
 
@@ -15,7 +17,7 @@ public class UserResponse {
     private String email;
 
     @SerializedName("birthDate")
-    private Date birthDate;
+    private String birthDate; // Format: yyyy-MM-dd for backend compatibility
 
     @SerializedName("gender")
     private String gender;
@@ -31,8 +33,28 @@ public class UserResponse {
     public String getEmail() { return email; }
     public void setEmail(String email) { this.email = email; }
 
-    public Date getBirthDate() { return birthDate; }
-    public void setBirthDate(Date birthDate) { this.birthDate = birthDate; }
+    public Date getBirthDate() {
+        if (birthDate == null) return null;
+        try {
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd", Locale.US);
+            return sdf.parse(birthDate);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    public void setBirthDate(Date date) {
+        if (date == null) {
+            this.birthDate = null;
+        } else {
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd", Locale.US);
+            this.birthDate = sdf.format(date);
+        }
+    }
+
+    // For direct string access (used by Gson)
+    public String getBirthDateString() { return birthDate; }
+    public void setBirthDateString(String birthDate) { this.birthDate = birthDate; }
 
     public String getGender() { return gender; }
     public void setGender(String gender) { this.gender = gender; }

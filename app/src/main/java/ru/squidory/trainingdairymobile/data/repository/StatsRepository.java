@@ -18,6 +18,7 @@ import ru.squidory.trainingdairymobile.data.model.DurationDailyStats;
 import ru.squidory.trainingdairymobile.data.model.DurationMonthlyStats;
 import ru.squidory.trainingdairymobile.data.model.DurationWeeklyStats;
 import ru.squidory.trainingdairymobile.data.model.ExerciseProgressResponse;
+import ru.squidory.trainingdairymobile.data.model.ExerciseSessionsHistoryResponse;
 import ru.squidory.trainingdairymobile.data.model.ExerciseStatsResponse;
 import ru.squidory.trainingdairymobile.data.model.MonthlyVolumeResponse;
 import ru.squidory.trainingdairymobile.data.model.MuscleSetsStats;
@@ -85,6 +86,11 @@ public class StatsRepository {
 
     public interface ExerciseProgressCallback {
         void onSuccess(List<ExerciseProgressResponse> progress);
+        void onError(String error);
+    }
+
+    public interface ExerciseSessionsHistoryCallback {
+        void onSuccess(List<ExerciseSessionsHistoryResponse> history);
         void onError(String error);
     }
 
@@ -234,6 +240,20 @@ public class StatsRepository {
             @Override
             public void onFailure(Call<List<ExerciseProgressResponse>> call, Throwable t) {
                 handleFailure(t, callback::onError, "exercise progress");
+            }
+        });
+    }
+
+    /** Получить историю сессий для упражнения (все подходы). */
+    public void getExerciseSessionsHistory(long exerciseId, ExerciseSessionsHistoryCallback callback) {
+        statisticsApi.getExerciseSessionsHistory(exerciseId).enqueue(new Callback<List<ExerciseSessionsHistoryResponse>>() {
+            @Override
+            public void onResponse(Call<List<ExerciseSessionsHistoryResponse>> call, Response<List<ExerciseSessionsHistoryResponse>> response) {
+                handleResponse(response, callback::onSuccess, callback::onError, "exercise sessions history");
+            }
+            @Override
+            public void onFailure(Call<List<ExerciseSessionsHistoryResponse>> call, Throwable t) {
+                handleFailure(t, callback::onError, "exercise sessions history");
             }
         });
     }

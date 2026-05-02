@@ -43,48 +43,11 @@
                 android:textStyle="bold"
                 android:layout_marginBottom="8dp" />
 
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:layout_marginBottom="8dp">
-
-                <TextView
-                    android:id="@+id/periodLabel"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Период:"
-                    android:textAppearance="?attr/textAppearanceBodyMedium" />
-
-                <com.google.android.material.chip.ChipGroup
-                    android:id="@+id/periodChipGroup"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:layout_marginStart="8dp"
-                    app:singleSelection="true"
-                    app:checkedChip="@id/chipMonthly"
-                    app:selectionRequired="true">
-
-                    <com.google.android.material.chip.Chip
-                        android:id="@+id/chipWeekly"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Неделя" />
-
-                    <com.google.android.material.chip.Chip
-                        android:id="@+id/chipMonthly"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Месяц" />
-                </com.google.android.material.chip.ChipGroup>
-            </LinearLayout>
-
-            <com.github.mikephil.charting.charts.BarChart
+            <com.github.mikephil.charting.charts.CombinedChart
                 android:id="@+id/exerciseProgressChart"
                 android:layout_width="match_parent"
-                android:layout_height="220dp" />
+                android:layout_height="300dp"
+                android:layout_marginTop="16dp" />
         </LinearLayout>
     </com.google.android.material.card.MaterialCardView>
 

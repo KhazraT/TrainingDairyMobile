@@ -163,4 +163,64 @@
     <string name="history">История</string>
     <string name="session_history">История тренировок</string>
     <string name="expand_collapse">Раскрыть / свернуть</string>
+
+    <!-- Profile Screen -->
+    <string name="edit_profile">Редактировать профиль</string>
+    <string name="settings">Настройки</string>
+    <string name="export_data">Экспорт данных</string>
+    <string name="delete_account">Удалить аккаунт</string>
+    <string name="confirm_delete_account">Вы уверены, что хотите удалить аккаунт? Это действие необратимо.</string>
+
+    <!-- Edit Profile -->
+    <string name="title_edit_profile">Редактирование профиля</string>
+    <string name="hint_birth_date">Дата рождения</string>
+    <string name="hint_gender">Пол</string>
+    <string name="gender_male">Мужской</string>
+    <string name="gender_female">Женский</string>
+
+    <!-- Settings -->
+    <string name="title_settings">Настройки</string>
+    <string name="settings_units">Единицы измерения</string>
+    <string name="settings_weight_unit">Вес</string>
+    <string name="settings_length_unit">Длина</string>
+    <string name="settings_distance_unit">Дистанция</string>
+    <string name="settings_theme">Тема</string>
+    <string name="settings_language">Язык</string>
+    <string name="unit_kg">Кг</string>
+    <string name="unit_lb">Фунты</string>
+    <string name="unit_cm">См</string>
+    <string name="unit_inch">Дюймы</string>
+    <string name="unit_km">Км</string>
+    <string name="unit_miles">Мили</string>
+    <string name="theme_light">Светлая</string>
+    <string name="theme_dark">Тёмная</string>
+    <string name="lang_ru">Русский</string>
+    <string name="lang_en">English</string>
+
+    <!-- Arrays for Settings Spinners -->
+    <string-array name="weight_units_array">
+        <item>@string/unit_kg</item>
+        <item>@string/unit_lb</item>
+    </string-array>
+
+    <string-array name="length_units_array">
+        <item>@string/unit_cm</item>
+        <item>@string/unit_inch</item>
+    </string-array>
+
+    <string-array name="distance_units_array">
+        <item>@string/unit_km</item>
+        <item>@string/unit_miles</item>
+    </string-array>
+
+    <string-array name="theme_array">
+        <item>@string/theme_light</item>
+        <item>@string/theme_dark</item>
+    </string-array>
+
+    <string-array name="language_array">
+        <item>@string/lang_ru</item>
+        <item>@string/lang_en</item>
+    </string-array>
+
 </resources>

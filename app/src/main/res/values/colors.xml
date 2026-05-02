@@ -2,9 +2,16 @@
 <resources>
     <!-- Splash screen background - фиксированный фиолетовый цвет -->
     <color name="splash_background">#6200EE</color>
-    
+
     <!-- Chip colors -->
     <color name="primary_chip">#6200EE</color>
     <color name="secondary_chip">#9E9E9E</color>
     <color name="equipment_chip">#00B8D4</color>
+
+    <!-- Text colors -->
+    <color name="text_primary">#212121</color>
+    <color name="text_secondary">#757575</color>
+
+    <!-- Background -->
+    <color name="background_light">#F5F5F5</color>
 </resources>

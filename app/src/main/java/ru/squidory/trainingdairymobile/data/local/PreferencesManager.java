@@ -17,6 +17,13 @@ public class PreferencesManager {
     private static final String PREF_USER_ID = "user_id";
     private static final String PREF_USER_EMAIL = "user_email";
 
+    // Настройки приложения
+    private static final String PREF_WEIGHT_UNIT = "weight_unit";
+    private static final String PREF_LENGTH_UNIT = "length_unit";
+    private static final String PREF_DISTANCE_UNIT = "distance_unit";
+    private static final String PREF_THEME = "theme";
+    private static final String PREF_LANGUAGE = "language";
+
     private static PreferencesManager instance;
 
     private PreferencesManager(Context context) {
@@ -98,5 +105,47 @@ public class PreferencesManager {
 
     public void clearAll() {
         sharedPreferences.edit().clear().apply();
+    }
+
+    // ==================== Настройки приложения ====================
+
+    public String getWeightUnit() {
+        return sharedPreferences.getString(PREF_WEIGHT_UNIT, "kg");
+    }
+
+    public void setWeightUnit(String unit) {
+        sharedPreferences.edit().putString(PREF_WEIGHT_UNIT, unit).apply();
+    }
+
+    public String getLengthUnit() {
+        return sharedPreferences.getString(PREF_LENGTH_UNIT, "cm");
+    }
+
+    public void setLengthUnit(String unit) {
+        sharedPreferences.edit().putString(PREF_LENGTH_UNIT, unit).apply();
+    }
+
+    public String getDistanceUnit() {
+        return sharedPreferences.getString(PREF_DISTANCE_UNIT, "km");
+    }
+
+    public void setDistanceUnit(String unit) {
+        sharedPreferences.edit().putString(PREF_DISTANCE_UNIT, unit).apply();
+    }
+
+    public String getTheme() {
+        return sharedPreferences.getString(PREF_THEME, "light");
+    }
+
+    public void setTheme(String theme) {
+        sharedPreferences.edit().putString(PREF_THEME, theme).apply();
+    }
+
+    public String getLanguage() {
+        return sharedPreferences.getString(PREF_LANGUAGE, "ru");
+    }
+
+    public void setLanguage(String language) {
+        sharedPreferences.edit().putString(PREF_LANGUAGE, language).apply();
     }
 }

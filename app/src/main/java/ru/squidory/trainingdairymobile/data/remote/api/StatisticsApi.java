@@ -16,6 +16,7 @@ import ru.squidory.trainingdairymobile.data.model.DurationDailyStats;
 import ru.squidory.trainingdairymobile.data.model.DurationMonthlyStats;
 import ru.squidory.trainingdairymobile.data.model.DurationWeeklyStats;
 import ru.squidory.trainingdairymobile.data.model.ExerciseProgressResponse;
+import ru.squidory.trainingdairymobile.data.model.ExerciseSessionsHistoryResponse;
 import ru.squidory.trainingdairymobile.data.model.ExerciseStatsResponse;
 import ru.squidory.trainingdairymobile.data.model.MonthlyVolumeResponse;
 import ru.squidory.trainingdairymobile.data.model.MuscleSetsStats;
@@ -139,16 +140,25 @@ public interface StatisticsApi {
             @Query("endDate") String endDate
     );
 
-    /** 
-     * Прогресс упражнения. 
-     * GET /api/stats/exercises/{exerciseId}/progress?periodType=...&year=... 
-     * periodType: DAILY, WEEKLY, MONTHLY 
-     */ 
-    @GET("stats/exercises/{exerciseId}/progress") 
-    Call<List<ExerciseProgressResponse>> getExerciseProgress( 
-            @Path("exerciseId") Long exerciseId, 
-            @Query("periodType") String periodType, 
-            @Query("year") Integer year 
+    /**
+     * Прогресс упражнения.
+     * GET /api/stats/exercises/{exerciseId}/progress?periodType=...&year=...
+     * periodType: DAILY, WEEKLY, MONTHLY
+     */
+    @GET("stats/exercises/{exerciseId}/progress")
+    Call<List<ExerciseProgressResponse>> getExerciseProgress(
+            @Path("exerciseId") Long exerciseId,
+            @Query("periodType") String periodType,
+            @Query("year") Integer year
+    );
+
+    /**
+     * История сессий для конкретного упражнения (все подходы).
+     * GET /api/stats/exercises/{exerciseId}/sessions-history
+     */
+    @GET("stats/exercises/{exerciseId}/sessions-history")
+    Call<List<ExerciseSessionsHistoryResponse>> getExerciseSessionsHistory(
+            @Path("exerciseId") Long exerciseId
     );
 
     // === Новые эндпоинты для расширенной статистики ===

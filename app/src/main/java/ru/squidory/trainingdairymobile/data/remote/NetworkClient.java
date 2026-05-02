@@ -9,6 +9,8 @@ import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
 import ru.squidory.trainingdairymobile.data.remote.api.AuthApi;
 import ru.squidory.trainingdairymobile.data.remote.api.ExerciseApi;
+import ru.squidory.trainingdairymobile.data.remote.api.ExportApi;
+import ru.squidory.trainingdairymobile.data.remote.api.ImportApi;
 import ru.squidory.trainingdairymobile.data.remote.api.ProgramApi;
 import ru.squidory.trainingdairymobile.data.remote.api.SessionApi;
 import ru.squidory.trainingdairymobile.data.remote.api.StatisticsApi;
@@ -20,6 +22,8 @@ public class NetworkClient {
     private static Retrofit retrofit;
     private static AuthApi authApi;
     private static ExerciseApi exerciseApi;
+    private static ExportApi exportApi;
+    private static ImportApi importApi;
     private static ProgramApi programApi;
     private static SessionApi sessionApi;
     private static StatisticsApi statisticsApi;
@@ -93,5 +97,19 @@ public class NetworkClient {
             userApi = getRetrofit().create(UserApi.class);
         }
         return userApi;
+    }
+
+    public static ExportApi getExportApi() {
+        if (exportApi == null) {
+            exportApi = getRetrofit().create(ExportApi.class);
+        }
+        return exportApi;
+    }
+
+    public static ImportApi getImportApi() {
+        if (importApi == null) {
+            importApi = getRetrofit().create(ImportApi.class);
+        }
+        return importApi;
     }
 }

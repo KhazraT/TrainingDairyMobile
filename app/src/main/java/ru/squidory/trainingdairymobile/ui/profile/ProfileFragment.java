@@ -31,7 +31,7 @@ import ru.squidory.trainingdairymobile.data.local.PreferencesManager;
 public class ProfileFragment extends BaseFragment {
 
     private TextView tvName, tvEmail, tvBirthDate, tvGender;
-    private Button btnEditProfile, btnSettings, btnExportData, btnDeleteAccount, btnLogout;
+    private Button btnEditProfile, btnExportData, btnImportData, btnDeleteAccount, btnLogout;
     private UserRepository userRepository;
     private PreferencesManager preferencesManager;
     private ActivityResultLauncher<Intent> editProfileLauncher;
@@ -65,6 +65,7 @@ public class ProfileFragment extends BaseFragment {
 
         btnEditProfile = view.findViewById(R.id.btn_edit_profile);
         btnExportData = view.findViewById(R.id.btn_export_data);
+        btnImportData = view.findViewById(R.id.btn_import_data);
         btnDeleteAccount = view.findViewById(R.id.btn_delete_account);
         btnLogout = view.findViewById(R.id.btn_logout);
     }
@@ -76,8 +77,13 @@ public class ProfileFragment extends BaseFragment {
         });
 
         btnExportData.setOnClickListener(v -> {
-            // TODO: реализовать экспорт данных
-            Toast.makeText(getContext(), R.string.export_data, Toast.LENGTH_SHORT).show();
+            Intent intent = new Intent(getContext(), ExportDataActivity.class);
+            startActivity(intent);
+        });
+
+        btnImportData.setOnClickListener(v -> {
+            Intent intent = new Intent(getContext(), ImportDataActivity.class);
+            startActivity(intent);
         });
 
         btnDeleteAccount.setOnClickListener(v -> {

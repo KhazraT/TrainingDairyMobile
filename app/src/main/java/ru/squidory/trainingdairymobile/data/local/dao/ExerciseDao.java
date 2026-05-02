@@ -32,6 +32,9 @@ public interface ExerciseDao {
     @Query("SELECT * FROM exercises_cache WHERE userId = :userId")
     List<ExerciseEntity> getUserExercises(long userId);
 
+    @Query("SELECT * FROM exercises_cache WHERE isCustom = 1 ORDER BY name ASC")
+    List<ExerciseEntity> getCustomExercises();
+
     @Query("SELECT * FROM exercises_cache WHERE exerciseType = :type")
     List<ExerciseEntity> getExercisesByType(String type);
 

@@ -1,6 +1,7 @@
 package ru.squidory.trainingdairymobile.ui.trainings;
 
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.ProgressBar;
 import android.widget.TextView;
@@ -75,22 +76,30 @@ public class SessionHistoryActivity extends AppCompatActivity implements Session
     private void loadHistory() {
         showLoading(true);
 
-        // Получаем текущий год и месяц
+        // Загружаем историю за текущий год БЕЗ указания месяца (бэкенд вернёт все сессии за год)
         Calendar calendar = Calendar.getInstance();
         int year = calendar.get(Calendar.YEAR);
-        int month = calendar.get(Calendar.MONTH) + 1; // Calendar.MONTH is 0-based
+        Integer month = null; // не передаём месяц, чтобы получить все сессии за год
 
-        repository.getSessionHistory(year, month, 0, 20, new SessionRepository.SessionHistoryCallback() {
+        Log.d("SessionHistory", "Запрос истории: year=" + year + ", month=null, page=0, size=100");
+
+        repository.getSessionHistory(year, month, 0, 100, new SessionRepository.SessionHistoryCallback() {
             @Override
             public void onSuccess(SessionHistoryResponse history) {
                 showLoading(false);
+                Log.d("SessionHistory", "Получено дней: " + (history.getSessionHistory() != null ? history.getSessionHistory().size() : 0));
+                if (history.getSessionHistory() != null) {
+                    for (SessionHistoryResponse.DaySessions day : history.getSessionHistory()) {
+                        Log.d("SessionHistory", "Дата: " + day.getDate() + ", сессий: " + (day.getSessions() != null ? day.getSessions().size() : 0));
+                    }
+                }
                 if (history.getSessionHistory() != null && !history.getSessionHistory().isEmpty()) {
                     daySessionsList.clear();
                     daySessionsList.addAll(history.getSessionHistory());
                     adapter.setDaySessionsList(daySessionsList);
                     checkEmptyState();
                 } else {
-                    emptyText.setText("В этом месяце нет тренировок");
+                    emptyText.setText("В этом году нет тренировок");
                     emptyText.setVisibility(View.VISIBLE);
                     historyRecyclerView.setVisibility(View.GONE);
                 }
@@ -99,6 +108,7 @@ public class SessionHistoryActivity extends AppCompatActivity implements Session
             @Override
             public void onError(String error) {
                 showLoading(false);
+                Log.e("SessionHistory", "Ошибка: " + error);
                 emptyText.setText("Ошибка: " + error);
                 emptyText.setVisibility(View.VISIBLE);
                 historyRecyclerView.setVisibility(View.GONE);

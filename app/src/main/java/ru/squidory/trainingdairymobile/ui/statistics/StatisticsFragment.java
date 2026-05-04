@@ -127,9 +127,14 @@ public class StatisticsFragment extends Fragment {
         musclesPieChart.setDrawHoleEnabled(true);
         musclesPieChart.setHoleColor(Color.TRANSPARENT);
         musclesPieChart.setTransparentCircleRadius(0f);
+        // Отключаем подписи на секторах (не вмещаются) и включаем легенду
+        musclesPieChart.setDrawEntryLabels(false);
         musclesPieChart.getLegend().setEnabled(true);
-        musclesPieChart.setEntryLabelColor(Color.BLACK);
-        musclesPieChart.setEntryLabelTextSize(12f);
+        musclesPieChart.getLegend().setWordWrapEnabled(true); // Перенос текста в легенде
+        musclesPieChart.getLegend().setTextSize(10f);
+        musclesPieChart.getLegend().setVerticalAlignment(Legend.LegendVerticalAlignment.BOTTOM);
+        musclesPieChart.getLegend().setHorizontalAlignment(Legend.LegendHorizontalAlignment.CENTER);
+        musclesPieChart.getLegend().setOrientation(Legend.LegendOrientation.HORIZONTAL);
 
         // Configure Duration chart
         durationChart.getDescription().setEnabled(false);

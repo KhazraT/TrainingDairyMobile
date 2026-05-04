@@ -58,6 +58,8 @@ class SetsDialogManager {
     // UI Elements
     private TextView dialogTitle;
     private MaterialButton typeRegularButton, typeDropsetButton;
+    private View setTypeButtonsLayout;
+    private TextView setTypeLabel;
     private TextInputLayout restTimeInputLayout;
     private TextInputEditText restTimeInput;
     private View dropsetDivider;
@@ -110,6 +112,8 @@ class SetsDialogManager {
         dialogTitle = v.findViewById(R.id.dialogTitle);
         typeRegularButton = v.findViewById(R.id.typeRegularButton);
         typeDropsetButton = v.findViewById(R.id.typeDropsetButton);
+        setTypeButtonsLayout = v.findViewById(R.id.setTypeButtonsLayout);
+        setTypeLabel = v.findViewById(R.id.setTypeLabel);
         restTimeInputLayout = v.findViewById(R.id.restTimeInputLayout);
         restTimeInput = v.findViewById(R.id.restTimeInput);
         dropsetDivider = v.findViewById(R.id.dropsetDivider);
@@ -140,8 +144,12 @@ class SetsDialogManager {
         restTimeInput.setOnClickListener(view -> showTimePickerDialog(restTimeInput));
 
         boolean isRepsWeight = REPS_WEIGHT.equals(exerciseType);
-        v.findViewById(R.id.setTypeLabel).setVisibility(isRepsWeight ? View.VISIBLE : View.GONE);
-        v.findViewById(R.id.setTypeButtonsLayout).setVisibility(isRepsWeight ? View.VISIBLE : View.GONE);
+        if (setTypeLabel != null) {
+            setTypeLabel.setVisibility(isRepsWeight ? View.VISIBLE : View.GONE);
+        }
+        if (setTypeButtonsLayout != null) {
+            setTypeButtonsLayout.setVisibility(isRepsWeight ? View.VISIBLE : View.GONE);
+        }
 
         typeRegularButton.setOnClickListener(view -> switchMode(false));
         typeDropsetButton.setOnClickListener(view -> switchMode(true));
@@ -157,8 +165,16 @@ class SetsDialogManager {
         if (isEdit) {
             dialogTitle.setText(isDropsetMode ? "Редактировать дропсет" : "Редактировать подход");
             // В режиме редактирования нельзя менять тип
-            activity.findViewById(R.id.setTypeButtonsLayout).setVisibility(View.GONE);
-            activity.findViewById(R.id.setTypeLabel).setVisibility(View.GONE);
+            if (typeRegularButton != null && typeDropsetButton != null) {
+                typeRegularButton.setVisibility(View.GONE);
+                typeDropsetButton.setVisibility(View.GONE);
+            }
+            if (setTypeButtonsLayout != null) {
+                setTypeButtonsLayout.setVisibility(View.GONE);
+            }
+            if (setTypeLabel != null) {
+                setTypeLabel.setVisibility(View.GONE);
+            }
         } else {
             dialogTitle.setText("Добавить подход");
         }

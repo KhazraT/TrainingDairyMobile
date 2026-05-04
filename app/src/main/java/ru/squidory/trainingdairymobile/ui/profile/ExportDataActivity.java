@@ -5,32 +5,27 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.widget.Button;
 import android.widget.RadioGroup;
-import android.widget.TextView;
 import android.widget.Toast;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import ru.squidory.trainingdairymobile.R;
 import ru.squidory.trainingdairymobile.util.DataExportManager;
 
-import java.io.InputStream;
 import java.io.OutputStream;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
 
 /**
- * Активность для полного экспорта и импорта данных пользователя.
- * Использует SAF (Storage Access Framework) для выбора файлов без разрешений.
- * Вызывает /api/export/full для экспорта и POST /api/import/full для импорта.
+ * Активность для экспорта данных пользователя.
+ * Использует SAF (Storage Access Framework) для выбора места сохранения.
+ * Вызывает /api/export/full для получения всех данных (программы, упражнения, сессии, подходы).
  */
 public class ExportDataActivity extends AppCompatActivity {
 
     private static final int SAF_EXPORT_REQUEST_CODE = 1001;
-    private static final int SAF_IMPORT_REQUEST_CODE = 1002;
-
     private RadioGroup rgFormat;
     private Button btnExport;
-    private Button btnImport;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -46,13 +41,9 @@ public class ExportDataActivity extends AppCompatActivity {
 
         rgFormat = findViewById(R.id.rg_format);
         btnExport = findViewById(R.id.btn_export);
-        btnImport = findViewById(R.id.btn_import);
 
         btnExport.setOnClickListener(v -> startExportWithSAF());
-        btnImport.setOnClickListener(v -> startImportWithSAF());
     }
-
-    // ==================== ЭКСПОРТ ====================
 
     private void startExportWithSAF() {
         int formatId = rgFormat.getCheckedRadioButtonId();
@@ -73,34 +64,14 @@ public class ExportDataActivity extends AppCompatActivity {
         startActivityForResult(intent, SAF_EXPORT_REQUEST_CODE);
     }
 
-    // ==================== ИМПОРТ ====================
-
-    private void startImportWithSAF() {
-        Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
-        intent.addCategory(Intent.CATEGORY_OPENABLE);
-        intent.setType("application/json");
-        startActivityForResult(intent, SAF_IMPORT_REQUEST_CODE);
-    }
-
-    // ==================== ОБРАБОТЧИКИ SAF ====================
-
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-
-        if (resultCode != RESULT_OK || data == null) {
-            return;
-        }
-
-        Uri uri = data.getData();
-        if (uri == null) {
-            return;
-        }
-
-        if (requestCode == SAF_EXPORT_REQUEST_CODE) {
-            exportToUri(uri);
-        } else if (requestCode == SAF_IMPORT_REQUEST_CODE) {
-            importFromUri(uri);
+        if (requestCode == SAF_EXPORT_REQUEST_CODE && resultCode == RESULT_OK && data != null) {
+            Uri uri = data.getData();
+            if (uri != null) {
+                exportToUri(uri);
+            }
         }
     }
 
@@ -132,39 +103,6 @@ public class ExportDataActivity extends AppCompatActivity {
                 });
             } catch (Exception e) {
                 android.util.Log.e("ExportDataActivity", "Export error", e);
-                runOnUiThread(() -> Toast.makeText(ExportDataActivity.this, "Ошибка: " + e.getMessage(), Toast.LENGTH_LONG).show());
-            }
-        }).start();
-    }
-
-    private void importFromUri(Uri uri) {
-        new Thread(() -> {
-            android.os.StrictMode.setThreadPolicy(
-                new android.os.StrictMode.ThreadPolicy.Builder()
-                    .permitAll()
-                    .build()
-            );
-
-            try {
-                android.util.Log.d("ExportDataActivity", "Начало импорта из файла...");
-                InputStream is = getContentResolver().openInputStream(uri);
-                if (is == null) {
-                    runOnUiThread(() -> Toast.makeText(ExportDataActivity.this, "Ошибка: не удалось открыть файл", Toast.LENGTH_LONG).show());
-                    return;
-                }
-
-                boolean success = DataExportManager.importFullData(is);
-                is.close();
-
-                runOnUiThread(() -> {
-                    if (success) {
-                        Toast.makeText(ExportDataActivity.this, "Импорт завершён успешно. Данные восстановлены.", Toast.LENGTH_LONG).show();
-                    } else {
-                        Toast.makeText(ExportDataActivity.this, "Ошибка при импорте данных. Проверьте формат файла.", Toast.LENGTH_LONG).show();
-                    }
-                });
-            } catch (Exception e) {
-                android.util.Log.e("ExportDataActivity", "Import error", e);
                 runOnUiThread(() -> Toast.makeText(ExportDataActivity.this, "Ошибка: " + e.getMessage(), Toast.LENGTH_LONG).show());
             }
         }).start();

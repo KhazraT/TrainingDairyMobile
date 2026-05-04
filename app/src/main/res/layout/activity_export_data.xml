@@ -14,21 +14,11 @@
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Экспорт и импорт данных"
+        android:text="Экспорт данных"
         android:textSize="24sp"
         android:textStyle="bold"
         android:textColor="?android:attr/textColorPrimary"
         android:layout_marginBottom="24dp" />
-
-    <!-- Секция экспорта -->
-    <TextView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Экспорт"
-        android:textSize="18sp"
-        android:textStyle="bold"
-        android:textColor="?android:attr/textColorPrimary"
-        android:layout_marginBottom="12dp" />
 
     <TextView
         android:layout_width="match_parent"
@@ -64,7 +54,7 @@
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Экспортируются все данные: профиль, программы, упражнения, история тренировок с подходами."
+        android:text="Будут экспортированы все данные: профиль, программы, упражнения, история тренировок с подходами."
         android:textSize="14sp"
         android:textColor="?android:attr/textColorSecondary"
         android:layout_marginBottom="16dp" />
@@ -74,40 +64,6 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="ЭКСПОРТ"
-        style="@style/Widget.MaterialComponents.Button"
-        android:layout_marginBottom="32dp" />
-
-    <!-- Разделитель -->
-    <View
-        android:layout_width="match_parent"
-        android:layout_height="1dp"
-        android:background="?android:attr/dividerHorizontal"
-        android:layout_marginBottom="32dp" />
-
-    <!-- Секция импорта -->
-    <TextView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Импорт"
-        android:textSize="18sp"
-        android:textStyle="bold"
-        android:textColor="?android:attr/textColorPrimary"
-        android:layout_marginBottom="12dp" />
-
-    <TextView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Выберите файл экспорта (.json) для восстановления данных. Внимание: существующие данные могут быть перезаписаны."
-        android:textSize="14sp"
-        android:textColor="?android:attr/textColorSecondary"
-        android:layout_marginBottom="16dp" />
-
-    <Button
-        android:id="@+id/btn_import"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="ИМПОРТ"
-        style="@style/Widget.MaterialComponents.Button"
-        android:backgroundTint="?android:attr/colorAccent" />
+        style="@style/Widget.MaterialComponents.Button" />
 
 </LinearLayout>

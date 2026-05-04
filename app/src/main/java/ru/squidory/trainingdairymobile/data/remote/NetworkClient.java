@@ -7,6 +7,7 @@ import okhttp3.OkHttpClient;
 import okhttp3.logging.HttpLoggingInterceptor;
 import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
+import ru.squidory.trainingdairymobile.data.remote.AuthAuthenticator;
 import ru.squidory.trainingdairymobile.data.remote.api.AuthApi;
 import ru.squidory.trainingdairymobile.data.remote.api.ExerciseApi;
 import ru.squidory.trainingdairymobile.data.remote.api.ExportApi;
@@ -39,6 +40,7 @@ public class NetworkClient {
 
             // Interceptor для авторизации
             AuthInterceptor authInterceptor = new AuthInterceptor();
+            AuthAuthenticator authAuthenticator = new AuthAuthenticator();
 
             OkHttpClient client = new OkHttpClient.Builder()
                     .connectTimeout(15, java.util.concurrent.TimeUnit.SECONDS)
@@ -46,6 +48,7 @@ public class NetworkClient {
                     .writeTimeout(15, java.util.concurrent.TimeUnit.SECONDS)
                     .addInterceptor(loggingInterceptor)
                     .addInterceptor(authInterceptor)
+                    .authenticator(authAuthenticator)
                     .build();
 
             Gson gson = new GsonBuilder().serializeNulls().create();

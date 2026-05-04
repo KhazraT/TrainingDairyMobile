@@ -90,7 +90,10 @@ public class ArticleDetailActivity extends AppCompatActivity {
         }
 
         // Контент
-        contentView.setText(article.getContent() != null ? article.getContent() : "Контент отсутствует");
+        String content = article.getContent() != null ? article.getContent() : "Контент отсутствует";
+        // Заменяем экранированные переносы строк на реальные
+        content = content.replace("\\n", "\n").replace("\\t", "\t");
+        contentView.setText(content);
     }
 
     private String getReadableCategory(String category) {

@@ -132,6 +132,6 @@
         android:src="@android:drawable/ic_menu_recent_history"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:tint="@android:color/white" />
+        app:tint="?attr/colorOnPrimaryFixed" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

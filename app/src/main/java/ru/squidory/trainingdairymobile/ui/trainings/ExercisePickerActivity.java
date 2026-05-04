@@ -224,8 +224,8 @@ public class ExercisePickerActivity extends AppCompatActivity {
     }
 
     private void setupMusclesFallback() {
-        String[] muscles = {"Грудь","Спина","Ноги","Плечи","Бицепсы","Трицепсы","Пресс","Предплечья","Икры","Ягодицы"};
-        long[] ids = {1,2,3,4,5,6,7,8,9,10};
+        String[] muscles = {"Шея", "Трапеция", "Грудь", "Бицепс", "Трицепс", "Спина", "Пресс", "Квадрицепс", "Бицепс бедра", "Ягодичные", "Икроножные", "Плечи", "Поясница", "Кардио"};
+        long[] ids = {1,2,3,4,5,6,7,8,9,10,11,12,13,14};
         for (int i = 0; i < muscles.length; i++) {
             final int idx = i;
             Chip chip = new Chip(this);

@@ -20,8 +20,9 @@ import ru.squidory.trainingdairymobile.data.model.PlannedSetResponse;
 public interface ProgramApi {
 
     // Программы тренировок
+    // mine: null или false — публичные + свои, true — только свои
     @GET("programs")
-    Call<List<ProgramResponse>> getPrograms();
+    Call<List<ProgramResponse>> getPrograms(@retrofit2.http.Query("mine") Boolean mine);
 
     @GET("programs/{id}")
     Call<ProgramResponse> getProgramById(@Path("id") long id);

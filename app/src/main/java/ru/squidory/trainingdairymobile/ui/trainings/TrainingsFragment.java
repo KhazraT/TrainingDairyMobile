@@ -321,6 +321,12 @@ public class TrainingsFragment extends BaseFragment {
     }
 
     private void showDeleteProgramConfirmation(ProgramResponse program) {
+        // Не удалять публичные программы
+        boolean isPublic = Boolean.TRUE.equals(program.getIsPublic()) || program.getUserId() == null;
+        if (isPublic) {
+            Toast.makeText(getContext(), "Публичную программу нельзя удалить", Toast.LENGTH_SHORT).show();
+            return;
+        }
         new AlertDialog.Builder(requireContext())
                 .setTitle(R.string.delete_program)
                 .setMessage(R.string.delete_program_confirm)

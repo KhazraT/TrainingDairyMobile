@@ -81,7 +81,8 @@ public class ProgramRepository {
     // ==================== Программы ====================
 
     public void getPrograms(ProgramsCallback callback) {
-        programApi.getPrograms().enqueue(new Callback<List<ProgramResponse>>() {
+        // null = публичные + свои (по умолчанию), true = только свои
+        programApi.getPrograms(null).enqueue(new Callback<List<ProgramResponse>>() {
             @Override
             public void onResponse(Call<List<ProgramResponse>> call, Response<List<ProgramResponse>> response) {
                 if (response.isSuccessful() && response.body() != null) {

@@ -108,12 +108,16 @@ public class ProgramAdapter extends RecyclerView.Adapter<ProgramAdapter.ProgramV
             // Количество тренировок
             Integer count = workoutCounts.get(program.getId());
             if (count != null) {
-                workoutsCountText.setText(String.format(java.util.Locale.getDefault(), 
+                workoutsCountText.setText(String.format(java.util.Locale.getDefault(),
                     itemView.getContext().getString(R.string.workouts_count), count));
                 workoutsCountText.setVisibility(View.VISIBLE);
             } else {
                 workoutsCountText.setVisibility(View.GONE);
             }
+
+            // Скрыть кнопку удаления для публичных программ (user == null или isPublic == true)
+            boolean isPublic = Boolean.TRUE.equals(program.getIsPublic()) || program.getUserId() == null;
+            deleteButton.setVisibility(isPublic ? View.GONE : View.VISIBLE);
 
             // Обработчики кликов
             itemView.setOnClickListener(v -> {

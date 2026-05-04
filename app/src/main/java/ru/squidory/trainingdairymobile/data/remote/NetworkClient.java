@@ -15,6 +15,7 @@ import ru.squidory.trainingdairymobile.data.remote.api.ProgramApi;
 import ru.squidory.trainingdairymobile.data.remote.api.SessionApi;
 import ru.squidory.trainingdairymobile.data.remote.api.StatisticsApi;
 import ru.squidory.trainingdairymobile.data.remote.api.UserApi;
+import ru.squidory.trainingdairymobile.data.remote.ArticlesApi;
 import ru.squidory.trainingdairymobile.util.Constants;
 
 public class NetworkClient {
@@ -28,6 +29,7 @@ public class NetworkClient {
     private static SessionApi sessionApi;
     private static StatisticsApi statisticsApi;
     private static UserApi userApi;
+    private static ArticlesApi articlesApi;
 
     private static Retrofit getRetrofit() {
         if (retrofit == null) {
@@ -111,5 +113,12 @@ public class NetworkClient {
             importApi = getRetrofit().create(ImportApi.class);
         }
         return importApi;
+    }
+
+    public static ArticlesApi getArticlesApi() {
+        if (articlesApi == null) {
+            articlesApi = getRetrofit().create(ArticlesApi.class);
+        }
+        return articlesApi;
     }
 }

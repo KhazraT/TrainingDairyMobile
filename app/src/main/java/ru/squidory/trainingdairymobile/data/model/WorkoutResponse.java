@@ -19,6 +19,9 @@ public class WorkoutResponse {
     @SerializedName("workoutOrder")
     private Integer workoutOrder;
 
+    @SerializedName("isDeleted")
+    private Boolean isDeleted;
+
     public WorkoutResponse() {}
 
     public long getId() { return id; }
@@ -35,4 +38,7 @@ public class WorkoutResponse {
 
     public Integer getWorkoutOrder() { return workoutOrder; }
     public void setWorkoutOrder(Integer workoutOrder) { this.workoutOrder = workoutOrder; }
+
+    public Boolean getIsDeleted() { return isDeleted; }
+    public void setIsDeleted(Boolean isDeleted) { this.isDeleted = isDeleted; }
 }

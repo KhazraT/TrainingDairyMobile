@@ -20,6 +20,9 @@ public class ProgramResponse {
     @SerializedName("isPublic")
     private Boolean isPublic;
 
+    @SerializedName("isDeleted")
+    private Boolean isDeleted;
+
     @SerializedName("createdAt")
     private Date createdAt;
 
@@ -39,6 +42,9 @@ public class ProgramResponse {
 
     public Boolean getIsPublic() { return isPublic; }
     public void setIsPublic(Boolean isPublic) { this.isPublic = isPublic; }
+
+    public Boolean getIsDeleted() { return isDeleted; }
+    public void setIsDeleted(Boolean isDeleted) { this.isDeleted = isDeleted; }
 
     public Date getCreatedAt() { return createdAt; }
     public void setCreatedAt(Date createdAt) { this.createdAt = createdAt; }

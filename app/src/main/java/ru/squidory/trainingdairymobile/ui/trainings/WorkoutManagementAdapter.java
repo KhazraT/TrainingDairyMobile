@@ -89,7 +89,7 @@ public class WorkoutManagementAdapter extends RecyclerView.Adapter<WorkoutManage
             });
 
             deleteButton.setOnClickListener(v -> {
-                if (listener != null) {
+                if (listener != null && !Boolean.TRUE.equals(workout.getIsDeleted())) {
                     listener.onDeleteWorkout(workout);
                 }
             });

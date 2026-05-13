@@ -115,9 +115,10 @@ public class ProgramAdapter extends RecyclerView.Adapter<ProgramAdapter.ProgramV
                 workoutsCountText.setVisibility(View.GONE);
             }
 
-            // Скрыть кнопку удаления для публичных программ (user == null или isPublic == true)
-            boolean isPublic = Boolean.TRUE.equals(program.getIsPublic()) || program.getUserId() == null;
-            deleteButton.setVisibility(isPublic ? View.GONE : View.VISIBLE);
+            // Скрыть кнопку удаления для публичных или удалённых программ
+            boolean isPublic = Boolean.TRUE.equals(program.getIsPublic());
+            boolean isDeleted = Boolean.TRUE.equals(program.getIsDeleted());
+            deleteButton.setVisibility((isPublic || isDeleted) ? View.GONE : View.VISIBLE);
 
             // Обработчики кликов
             itemView.setOnClickListener(v -> {

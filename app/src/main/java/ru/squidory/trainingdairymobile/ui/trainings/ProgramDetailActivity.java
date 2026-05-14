@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.Map;
 
 import ru.squidory.trainingdairymobile.R;
+import ru.squidory.trainingdairymobile.data.local.PreferencesManager;
 import ru.squidory.trainingdairymobile.data.model.ProgramRequest;
 import ru.squidory.trainingdairymobile.data.model.WorkoutExerciseResponse;
 import ru.squidory.trainingdairymobile.data.model.WorkoutRequest;
@@ -41,6 +42,8 @@ public class ProgramDetailActivity extends AppCompatActivity {
     public static final String EXTRA_PROGRAM_ID = "program_id";
     public static final String EXTRA_PROGRAM_NAME = "program_name";
     public static final String EXTRA_PROGRAM_DESCRIPTION = "program_description";
+    public static final String EXTRA_PROGRAM_USER_ID = "program_user_id";
+    public static final String EXTRA_PROGRAM_IS_PUBLIC = "program_is_public";
 
     private MaterialToolbar toolbar;
     private TextView programDescriptionText;
@@ -55,6 +58,8 @@ public class ProgramDetailActivity extends AppCompatActivity {
     private long programId;
     private String programName;
     private String programDescription;
+    private Long programUserId;
+    private Boolean programIsPublic;
     private boolean editMode = false;
 
     @Override
@@ -66,6 +71,8 @@ public class ProgramDetailActivity extends AppCompatActivity {
         programId = getIntent().getLongExtra(EXTRA_PROGRAM_ID, -1);
         programName = getIntent().getStringExtra(EXTRA_PROGRAM_NAME);
         programDescription = getIntent().getStringExtra(EXTRA_PROGRAM_DESCRIPTION);
+        programUserId = getIntent().hasExtra(EXTRA_PROGRAM_USER_ID) ? getIntent().getLongExtra(EXTRA_PROGRAM_USER_ID, -1L) : null;
+        programIsPublic = getIntent().hasExtra(EXTRA_PROGRAM_IS_PUBLIC) ? getIntent().getBooleanExtra(EXTRA_PROGRAM_IS_PUBLIC, false) : null;
 
         if (programId == -1) {
             Toast.makeText(this, "Ошибка: программа не найдена", Toast.LENGTH_SHORT).show();
@@ -115,9 +122,17 @@ public class ProgramDetailActivity extends AppCompatActivity {
         }
         toolbar.setNavigationOnClickListener(v -> finish());
 
-        // Кнопка редактирования программы
+        // Кнопка редактирования программы - показываем только владельцу программы
+        long currentUserId = PreferencesManager.getInstance().getUserId();
+        boolean isOwner = programUserId != null && programUserId.equals(currentUserId);
+
         if (editProgramButton != null) {
-            editProgramButton.setOnClickListener(v -> toggleEditMode());
+            if (isOwner) {
+                editProgramButton.setVisibility(View.VISIBLE);
+                editProgramButton.setOnClickListener(v -> toggleEditMode());
+            } else {
+                editProgramButton.setVisibility(View.GONE);
+            }
         }
     }
 
@@ -327,7 +342,7 @@ public class ProgramDetailActivity extends AppCompatActivity {
                 });
                 adapter.setWorkouts(workoutList);
 
-                // Загружаем количество упражнений для каждой тренировки
+                // Загружаем количество упражнений intercada para cada entrenamiento
                 loadExerciseCounts(workoutList);
             }
 

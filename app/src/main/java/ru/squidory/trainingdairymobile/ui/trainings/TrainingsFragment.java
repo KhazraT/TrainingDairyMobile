@@ -109,6 +109,8 @@ public class TrainingsFragment extends BaseFragment {
                 intent.putExtra(ProgramDetailActivity.EXTRA_PROGRAM_ID, program.getId());
                 intent.putExtra(ProgramDetailActivity.EXTRA_PROGRAM_NAME, program.getName());
                 intent.putExtra(ProgramDetailActivity.EXTRA_PROGRAM_DESCRIPTION, program.getDescription());
+                intent.putExtra(ProgramDetailActivity.EXTRA_PROGRAM_USER_ID, program.getUserId());
+                intent.putExtra(ProgramDetailActivity.EXTRA_PROGRAM_IS_PUBLIC, program.getIsPublic());
                 programDetailLauncher.launch(intent);
             }
 

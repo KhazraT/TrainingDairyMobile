@@ -484,11 +484,14 @@ public class ProgramDetailActivity extends AppCompatActivity {
         View dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_create_workout, null);
         builder.setView(dialogView);
 
+        TextView dialogTitle = dialogView.findViewById(R.id.dialogTitle);
         TextInputLayout nameLayout = dialogView.findViewById(R.id.workoutNameLayout);
         TextInputEditText nameInput = dialogView.findViewById(R.id.workoutNameInput);
         TextInputEditText commentInput = dialogView.findViewById(R.id.workoutCommentInput);
         MaterialButton cancelButton = dialogView.findViewById(R.id.dialogCancelButton);
         MaterialButton saveButton = dialogView.findViewById(R.id.dialogSaveButton);
+
+        dialogTitle.setText(R.string.edit_workout);
 
         // Заполняем текущими данными
         nameInput.setText(workout.getName());
@@ -542,12 +545,15 @@ public class ProgramDetailActivity extends AppCompatActivity {
         View dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_create_program, null);
         builder.setView(dialogView);
 
+        TextView dialogTitle = dialogView.findViewById(R.id.dialogTitle);
         TextInputLayout nameLayout = dialogView.findViewById(R.id.programNameLayout);
         TextInputLayout descriptionLayout = dialogView.findViewById(R.id.programDescriptionLayout);
         TextInputEditText nameInput = dialogView.findViewById(R.id.programNameInput);
         TextInputEditText descriptionInput = dialogView.findViewById(R.id.programDescriptionInput);
         MaterialButton cancelButton = dialogView.findViewById(R.id.dialogCancelButton);
         MaterialButton saveButton = dialogView.findViewById(R.id.dialogSaveButton);
+
+        dialogTitle.setText(R.string.edit_program);
 
         // Заполняем текущими данными (не показывая заглушку "Описание отсутствует")
         boolean hasName = programName != null && !programName.isEmpty();

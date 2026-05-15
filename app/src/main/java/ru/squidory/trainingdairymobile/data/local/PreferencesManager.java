@@ -148,4 +148,12 @@ public class PreferencesManager {
     public void setLanguage(String language) {
         sharedPreferences.edit().putString(PREF_LANGUAGE, language).apply();
     }
+
+    public boolean getBoolean(String key, boolean defaultValue) {
+        return sharedPreferences.getBoolean(key, defaultValue);
+    }
+
+    public void putBoolean(String key, boolean value) {
+        sharedPreferences.edit().putBoolean(key, value).apply();
+    }
 }

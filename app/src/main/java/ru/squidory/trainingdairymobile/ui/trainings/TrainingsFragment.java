@@ -9,6 +9,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.text.Editable;
 import android.text.TextWatcher;
+import android.view.Gravity;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ProgressBar;
@@ -130,11 +131,8 @@ public class TrainingsFragment extends BaseFragment {
     private void setupListeners() {
         addProgramButton.setOnClickListener(v -> showCreateProgramDialog());
 
-        // Обработчик кнопки истории
-        historyFab.setOnClickListener(v -> {
-            Intent intent = new Intent(getContext(), SessionHistoryActivity.class);
-            startActivity(intent);
-        });
+        // Обработчик кнопки истории - теперь показывает меню с опциями
+        historyFab.setOnClickListener(v -> showFabMenu());
 
         searchEditText.addTextChangedListener(new TextWatcher() {
             @Override
@@ -159,6 +157,33 @@ public class TrainingsFragment extends BaseFragment {
         });
     }
 
+    /**
+     * Shows a popup menu for the FAB with options for History and Anti-G training.
+     * The menu appears above the FAB button. FAB icon toggles between expand_less and expand_more.
+     */
+    private void showFabMenu() {
+        historyFab.setImageResource(R.drawable.ic_expand_more);
+
+        androidx.appcompat.widget.PopupMenu popup = new androidx.appcompat.widget.PopupMenu(requireContext(), historyFab);
+        popup.getMenuInflater().inflate(R.menu.fab_menu, popup.getMenu());
+        popup.setGravity(Gravity.TOP | Gravity.END);
+        popup.setOnMenuItemClickListener(item -> {
+            int id = item.getItemId();
+            if (id == R.id.action_history) {
+                Intent intent = new Intent(getContext(), SessionHistoryActivity.class);
+                startActivity(intent);
+                return true;
+            } else if (id == R.id.action_anti_g) {
+                Intent intent = new Intent(getContext(), AntiGActivity.class);
+                startActivity(intent);
+                return true;
+            }
+            return false;
+        });
+        popup.setOnDismissListener(menu -> historyFab.setImageResource(R.drawable.ic_expand_less));
+        popup.show();
+    }
+        
     private void applyFilters() {
         List<ProgramResponse> filtered = new ArrayList<>();
         for (ProgramResponse p : allPrograms) {

@@ -2,12 +2,20 @@ package ru.squidory.trainingdairymobile.data.remote;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.TypeAdapter;
+import com.google.gson.stream.JsonReader;
+import com.google.gson.stream.JsonWriter;
+
+import java.io.IOException;
+import java.time.OffsetDateTime;
+import java.time.format.DateTimeFormatter;
 
 import okhttp3.OkHttpClient;
 import okhttp3.logging.HttpLoggingInterceptor;
 import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
 import ru.squidory.trainingdairymobile.data.remote.AuthAuthenticator;
+import ru.squidory.trainingdairymobile.data.remote.api.AntiGSessionApi;
 import ru.squidory.trainingdairymobile.data.remote.api.AuthApi;
 import ru.squidory.trainingdairymobile.data.remote.api.ExerciseApi;
 import ru.squidory.trainingdairymobile.data.remote.api.ExportApi;
@@ -23,6 +31,7 @@ public class NetworkClient {
 
     private static Retrofit retrofit;
     private static AuthApi authApi;
+    private static AntiGSessionApi antiGSessionApi;
     private static ExerciseApi exerciseApi;
     private static ExportApi exportApi;
     private static ImportApi importApi;
@@ -51,7 +60,30 @@ public class NetworkClient {
                     .authenticator(authAuthenticator)
                     .build();
 
-            Gson gson = new GsonBuilder().serializeNulls().create();
+            Gson gson = new GsonBuilder()
+                    .serializeNulls()
+                    .registerTypeAdapter(OffsetDateTime.class, new TypeAdapter<OffsetDateTime>() {
+                        private final DateTimeFormatter formatter = DateTimeFormatter.ISO_OFFSET_DATE_TIME;
+
+                        @Override
+                        public void write(JsonWriter out, OffsetDateTime value) throws IOException {
+                            if (value == null) {
+                                out.nullValue();
+                            } else {
+                                out.value(formatter.format(value));
+                            }
+                        }
+
+                        @Override
+                        public OffsetDateTime read(JsonReader in) throws IOException {
+                            if (in.peek() == com.google.gson.stream.JsonToken.NULL) {
+                                in.nextNull();
+                                return null;
+                            }
+                            return OffsetDateTime.parse(in.nextString(), formatter);
+                        }
+                    })
+                    .create();
 
             retrofit = new Retrofit.Builder()
                     .baseUrl(Constants.BASE_URL)
@@ -67,6 +99,13 @@ public class NetworkClient {
             authApi = getRetrofit().create(AuthApi.class);
         }
         return authApi;
+    }
+
+    public static AntiGSessionApi getAntiGSessionApi() {
+        if (antiGSessionApi == null) {
+            antiGSessionApi = getRetrofit().create(AntiGSessionApi.class);
+        }
+        return antiGSessionApi;
     }
 
     public static ExerciseApi getExerciseApi() {

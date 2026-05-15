@@ -59,6 +59,7 @@ public class DatabaseClient {
         return activeSessionDao;
     }
 
+
     public static UserDao getUserDao() {
         if (userDao == null) {
             userDao = getDatabase().userDao();

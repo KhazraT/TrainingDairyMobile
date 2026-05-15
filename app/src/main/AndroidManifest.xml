@@ -4,6 +4,7 @@
 
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.VIBRATE" />
 
     <application
         android:name=".App"
@@ -104,6 +105,16 @@
             android:name=".ui.trainings.SessionDetailActivity"
             android:exported="false"
             android:parentActivityName=".ui.trainings.SessionHistoryActivity" />
+
+        <!-- Anti-G Activity (анти-G дыхание) -->
+        <activity
+            android:name=".ui.trainings.AntiGActivity"
+            android:exported="false" />
+
+        <!-- Anti-G History Activity (история анти-G дыхания) -->
+        <activity
+            android:name=".ui.trainings.AntiGHistoryActivity"
+            android:exported="false" />
 
         <!-- Body Measurements Activity (измерения тела) -->
         <activity

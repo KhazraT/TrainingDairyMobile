@@ -27,7 +27,7 @@
     <string name="error_unknown">Произошла ошибка. Попробуйте позже.</string>
 
     <!-- Main Navigation -->
-    <string name="nav_trainings">Тренировки</string>
+    <string name="nav_trainings">Программы</string>
     <string name="nav_statistics">Статистика</string>
     <string name="nav_exercises">Упражнения</string>
     <string name="nav_articles">Инфо</string>

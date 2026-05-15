@@ -23,7 +23,7 @@ import ru.squidory.trainingdairymobile.util.Converters;
         ActiveSessionEntity.class,
         UserEntity.class
     },
-    version = 2,
+    version = 3,
     exportSchema = false
 )
 @TypeConverters(Converters.class)

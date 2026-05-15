@@ -43,7 +43,7 @@ public class ProgramRepositoryTest {
         response.setIsPublic(false);
 
         assertEquals(1L, response.getId());
-        assertEquals(21L, response.getUserId());
+        assertEquals(21L, response.getUserId().longValue());
         assertEquals("Набор массы", response.getName());
         assertEquals("Программа для набора массы", response.getDescription());
         assertEquals(Boolean.FALSE, response.getIsPublic());

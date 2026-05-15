@@ -826,8 +826,8 @@ public class SessionExerciseAdapter extends RecyclerView.Adapter<RecyclerView.Vi
                     timeColumn.setVisibility(View.GONE);
                     distanceColumn.setVisibility(View.GONE);
                     deleteSetButton.setVisibility(View.GONE);
-                    startRestTimerButton.setBackgroundTintList(null);
-                    
+                    startRestTimerButton.setBackgroundTintList(android.content.res.ColorStateList.valueOf(0xFF6200EE));
+
                     // Показываем отдых
                     restTimeRow.setVisibility(View.VISIBLE);
                     Integer restTime = set.getRestTime();
@@ -953,7 +953,7 @@ public class SessionExerciseAdapter extends RecyclerView.Adapter<RecyclerView.Vi
                     if (isDropsetSet || isDropsetPart) {
                         startRestTimerButton.setBackgroundTintList(android.content.res.ColorStateList.valueOf(0xFFFF9800));
                     } else {
-                        startRestTimerButton.setBackgroundTintList(null);
+                        startRestTimerButton.setBackgroundTintList(android.content.res.ColorStateList.valueOf(0xFF6200EE));
                     }
 
                     restTimeInput.setOnClickListener(v -> showRestTimePickerForSet(set));

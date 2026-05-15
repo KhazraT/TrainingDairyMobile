@@ -1,5 +1,7 @@
 package ru.squidory.trainingdairymobile.ui.profile;
 
+import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -8,21 +10,22 @@ import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
-import android.content.Intent;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
 
 import ru.squidory.trainingdairymobile.R;
+import ru.squidory.trainingdairymobile.data.local.PreferencesManager;
 import ru.squidory.trainingdairymobile.data.model.UserResponse;
 import ru.squidory.trainingdairymobile.data.repository.UserRepository;
 import ru.squidory.trainingdairymobile.ui.main.BaseFragment;
-import ru.squidory.trainingdairymobile.data.local.PreferencesManager;
+import ru.squidory.trainingdairymobile.util.DataExportManager;
+import ru.squidory.trainingdairymobile.util.DataImportManager;
 
 /**
  * Фрагмент раздела "Профиль".
@@ -35,6 +38,8 @@ public class ProfileFragment extends BaseFragment {
     private UserRepository userRepository;
     private PreferencesManager preferencesManager;
     private ActivityResultLauncher<Intent> editProfileLauncher;
+    private ActivityResultLauncher<Intent> exportLauncher;
+    private ActivityResultLauncher<Intent> importLauncher;
 
     @Nullable
     @Override
@@ -48,6 +53,32 @@ public class ProfileFragment extends BaseFragment {
         editProfileLauncher = registerForActivityResult(
                 new ActivityResultContracts.StartActivityForResult(),
                 result -> loadUserProfile()
+        );
+
+        // Launcher для экспорта: SAF picker → запись в выбранный URI
+        exportLauncher = registerForActivityResult(
+                new ActivityResultContracts.StartActivityForResult(),
+                result -> {
+                    if (result.getResultCode() == android.app.Activity.RESULT_OK && result.getData() != null) {
+                        Uri uri = result.getData().getData();
+                        if (uri != null) {
+                            performExport(uri);
+                        }
+                    }
+                }
+        );
+
+        // Launcher для импорта: SAF picker → чтение из выбранного URI
+        importLauncher = registerForActivityResult(
+                new ActivityResultContracts.StartActivityForResult(),
+                result -> {
+                    if (result.getResultCode() == android.app.Activity.RESULT_OK && result.getData() != null) {
+                        Uri uri = result.getData().getData();
+                        if (uri != null) {
+                            performImport(uri);
+                        }
+                    }
+                }
         );
 
         initViews(view);
@@ -76,15 +107,9 @@ public class ProfileFragment extends BaseFragment {
             editProfileLauncher.launch(intent);
         });
 
-        btnExportData.setOnClickListener(v -> {
-            Intent intent = new Intent(getContext(), ExportDataActivity.class);
-            startActivity(intent);
-        });
+        btnExportData.setOnClickListener(v -> startExportWithSAF());
 
-        btnImportData.setOnClickListener(v -> {
-            Intent intent = new Intent(getContext(), ImportDataActivity.class);
-            startActivity(intent);
-        });
+        btnImportData.setOnClickListener(v -> startImportWithSAF());
 
         btnDeleteAccount.setOnClickListener(v -> {
             // Показываем диалог подтверждения
@@ -177,5 +202,99 @@ public class ProfileFragment extends BaseFragment {
     @Override
     public String getTitle() {
         return getString(R.string.fragment_profile);
+    }
+
+    // ==================== ЭКСПОРТ ====================
+
+    private void startExportWithSAF() {
+        String timestamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(new Date());
+        String fileName = "training_dairy_full_export_" + timestamp + ".json";
+
+        Intent intent = new Intent(Intent.ACTION_CREATE_DOCUMENT);
+        intent.addCategory(Intent.CATEGORY_OPENABLE);
+        intent.setType("application/json");
+        intent.putExtra(Intent.EXTRA_TITLE, fileName);
+        exportLauncher.launch(intent);
+    }
+
+    private void performExport(Uri uri) {
+        new Thread(() -> {
+            android.os.StrictMode.setThreadPolicy(
+                    new android.os.StrictMode.ThreadPolicy.Builder()
+                            .permitAll()
+                            .build()
+            );
+            try {
+                android.util.Log.d("ProfileFragment", "Начало полного экспорта...");
+                java.io.OutputStream os = requireContext().getContentResolver().openOutputStream(uri);
+                if (os == null) {
+                    requireActivity().runOnUiThread(() ->
+                            Toast.makeText(requireContext(), "Ошибка: не удалось открыть файл", Toast.LENGTH_LONG).show()
+                    );
+                    return;
+                }
+
+                boolean success = DataExportManager.exportFullData(os);
+                os.close();
+
+                requireActivity().runOnUiThread(() -> {
+                    if (success) {
+                        Toast.makeText(requireContext(), "Полный экспорт завершён успешно", Toast.LENGTH_LONG).show();
+                    } else {
+                        Toast.makeText(requireContext(), "Ошибка при экспорте данных", Toast.LENGTH_LONG).show();
+                    }
+                });
+            } catch (Exception e) {
+                android.util.Log.e("ProfileFragment", "Export error", e);
+                requireActivity().runOnUiThread(() ->
+                        Toast.makeText(requireContext(), "Ошибка: " + e.getMessage(), Toast.LENGTH_LONG).show()
+                );
+            }
+        }).start();
+    }
+
+    // ==================== ИМПОРТ ====================
+
+    private void startImportWithSAF() {
+        Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+        intent.addCategory(Intent.CATEGORY_OPENABLE);
+        intent.setType("*/*");
+        importLauncher.launch(intent);
+    }
+
+    private void performImport(Uri uri) {
+        new Thread(() -> {
+            android.os.StrictMode.setThreadPolicy(
+                    new android.os.StrictMode.ThreadPolicy.Builder()
+                            .permitAll()
+                            .build()
+            );
+            try {
+                android.util.Log.d("ProfileFragment", "Начало импорта из файла...");
+                java.io.InputStream is = requireContext().getContentResolver().openInputStream(uri);
+                if (is == null) {
+                    requireActivity().runOnUiThread(() ->
+                            Toast.makeText(requireContext(), "Ошибка: не удалось открыть файл", Toast.LENGTH_LONG).show()
+                    );
+                    return;
+                }
+
+                boolean success = DataImportManager.importFullData(is);
+                is.close();
+
+                requireActivity().runOnUiThread(() -> {
+                    if (success) {
+                        Toast.makeText(requireContext(), "Импорт завершён успешно. Данные восстановлены.", Toast.LENGTH_LONG).show();
+                    } else {
+                        Toast.makeText(requireContext(), "Ошибка при импорте данных. Проверьте формат файла.", Toast.LENGTH_LONG).show();
+                    }
+                });
+            } catch (Exception e) {
+                android.util.Log.e("ProfileFragment", "Import error", e);
+                requireActivity().runOnUiThread(() ->
+                        Toast.makeText(requireContext(), "Ошибка: " + e.getMessage(), Toast.LENGTH_LONG).show()
+                );
+            }
+        }).start();
     }
 }

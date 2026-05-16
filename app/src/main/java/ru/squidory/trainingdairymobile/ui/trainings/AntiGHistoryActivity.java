@@ -39,6 +39,7 @@ import ru.squidory.trainingdairymobile.R;
 import ru.squidory.trainingdairymobile.data.local.PreferencesManager;
 import ru.squidory.trainingdairymobile.data.model.AntiGSessionResponse;
 import ru.squidory.trainingdairymobile.data.repository.AntiGSessionRepository;
+import ru.squidory.trainingdairymobile.util.ThemeUtils;
 
 /**
  * Activity for displaying history and statistics of anti-G breathing training.
@@ -152,7 +153,9 @@ public class AntiGHistoryActivity extends AppCompatActivity {
             return;
         }
 
-        // Aggregate cycles by day for last 30 days
+        int textColor = ThemeUtils.getChartTextColor(this);
+        int axisTextColor = ThemeUtils.getChartAxisTextColor(this);
+
         Map<Long, Integer> dateToCycles = new HashMap<>();
         for (AntiGSessionResponse session : sessions) {
             OffsetDateTime offsetDateTime = session.getDate();
@@ -165,7 +168,6 @@ public class AntiGHistoryActivity extends AppCompatActivity {
             dateToCycles.merge(dayStart, session.getAmount(), Integer::sum);
         }
 
-        // Get the last 10 days including today
         List<Long> last10Days = new ArrayList<>();
         for (int i = 9; i >= 0; i--) {
             Calendar day = Calendar.getInstance();
@@ -177,7 +179,6 @@ public class AntiGHistoryActivity extends AppCompatActivity {
             last10Days.add(day.getTimeInMillis());
         }
 
-        // Build entries and labels
         List<BarEntry> entries = new ArrayList<>();
         List<String> labels = new ArrayList<>();
         SimpleDateFormat sdf = new SimpleDateFormat("dd.MM", Locale.getDefault());
@@ -190,8 +191,9 @@ public class AntiGHistoryActivity extends AppCompatActivity {
         }
 
         BarDataSet dataSet = new BarDataSet(entries, "Циклы");
-        dataSet.setColor(0xFF4CAF50); // green
+        dataSet.setColor(0xFF4CAF50);
         dataSet.setValueTextSize(9f);
+        dataSet.setValueTextColor(textColor);
         dataSet.setDrawValues(true);
         dataSet.setValueFormatter(new com.github.mikephil.charting.formatter.ValueFormatter() {
             @Override
@@ -205,16 +207,16 @@ public class AntiGHistoryActivity extends AppCompatActivity {
 
         barChart.setData(data);
 
-        // X-axis
         XAxis xAxis = barChart.getXAxis();
         xAxis.setPosition(XAxis.XAxisPosition.BOTTOM);
+        xAxis.setTextColor(axisTextColor);
         xAxis.setGranularity(1f);
-        xAxis.setLabelCount(7, true); // show ~7 labels
+        xAxis.setLabelCount(7, true);
         xAxis.setValueFormatter(new IndexAxisValueFormatter(labels));
         xAxis.setDrawGridLines(false);
 
-        // Y-axis
         YAxis leftAxis = barChart.getAxisLeft();
+        leftAxis.setTextColor(axisTextColor);
         leftAxis.setGranularity(1f);
         leftAxis.setAxisMinimum(0f);
         YAxis rightAxis = barChart.getAxisRight();

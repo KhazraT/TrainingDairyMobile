@@ -42,6 +42,7 @@ import ru.squidory.trainingdairymobile.R;
 import ru.squidory.trainingdairymobile.data.model.BodyMeasurementProgress;
 import ru.squidory.trainingdairymobile.data.model.BodyMeasurementResponse;
 import ru.squidory.trainingdairymobile.data.repository.StatsRepository;
+import ru.squidory.trainingdairymobile.util.ThemeUtils;
 
 /**
  * Activity для просмотра и управления измерениями тела.
@@ -158,16 +159,24 @@ public class BodyMeasurementsActivity extends AppCompatActivity {
     }
 
     private void setupChart() {
+        int textColor = ThemeUtils.getChartTextColor(this);
+        int axisTextColor = ThemeUtils.getChartAxisTextColor(this);
+        int gridColor = ThemeUtils.getChartGridColor(this);
+
         progressChart.getDescription().setEnabled(false);
         progressChart.setDrawGridBackground(false);
         progressChart.getLegend().setEnabled(true);
+        progressChart.getLegend().setTextColor(textColor);
         
         XAxis xAxis = progressChart.getXAxis();
         xAxis.setPosition(XAxis.XAxisPosition.BOTTOM);
+        xAxis.setTextColor(axisTextColor);
         xAxis.setDrawGridLines(false);
         xAxis.setGranularity(1f);
         
+        progressChart.getAxisLeft().setTextColor(axisTextColor);
         progressChart.getAxisLeft().setDrawGridLines(true);
+        progressChart.getAxisLeft().setGridColor(gridColor);
         progressChart.getAxisRight().setEnabled(false);
     }
 
@@ -282,6 +291,7 @@ public class BodyMeasurementsActivity extends AppCompatActivity {
         dataSet.setCircleRadius(4f);
         dataSet.setDrawValues(true);
         dataSet.setValueTextSize(10f);
+        dataSet.setValueTextColor(ThemeUtils.getChartTextColor(this));
 
         LineData data = new LineData(dataSet);
         progressChart.setData(data);

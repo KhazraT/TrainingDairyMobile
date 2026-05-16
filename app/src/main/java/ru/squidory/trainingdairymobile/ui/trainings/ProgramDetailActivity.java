@@ -33,6 +33,7 @@ import ru.squidory.trainingdairymobile.data.model.WorkoutExerciseResponse;
 import ru.squidory.trainingdairymobile.data.model.WorkoutRequest;
 import ru.squidory.trainingdairymobile.data.model.WorkoutResponse;
 import ru.squidory.trainingdairymobile.data.repository.ProgramRepository;
+import ru.squidory.trainingdairymobile.util.ThemeUtils;
 
 /**
  * Activity для просмотра деталей программы и списка тренировок.
@@ -169,12 +170,12 @@ public class ProgramDetailActivity extends AppCompatActivity {
 
         if (hasDescription) {
             programDescriptionText.setText(programDescription);
-            programDescriptionText.setTextColor(getResources().getColor(android.R.color.secondary_text_light, null));
+            programDescriptionText.setTextColor(ThemeUtils.getProgramDescriptionColor(this));
             programDescriptionText.setTypeface(null, android.graphics.Typeface.NORMAL);
             programDescriptionText.setVisibility(View.VISIBLE);
         } else {
             programDescriptionText.setText(R.string.no_description);
-            programDescriptionText.setTextColor(getResources().getColor(android.R.color.darker_gray, null));
+            programDescriptionText.setTextColor(ThemeUtils.getProgramDescriptionPlaceholderColor(this));
             programDescriptionText.setTypeface(null, android.graphics.Typeface.ITALIC);
             programDescriptionText.setVisibility(View.VISIBLE);
         }

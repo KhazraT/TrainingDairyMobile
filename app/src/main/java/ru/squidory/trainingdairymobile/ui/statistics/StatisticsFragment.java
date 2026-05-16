@@ -14,6 +14,7 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.util.Pair;
 import android.widget.Toast;
+import androidx.core.content.ContextCompat;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -58,6 +59,7 @@ import ru.squidory.trainingdairymobile.data.model.WorkoutDailyStats;
 import ru.squidory.trainingdairymobile.data.model.WorkoutMonthlyStats;
 import ru.squidory.trainingdairymobile.data.model.WorkoutWeeklyStats;
 import ru.squidory.trainingdairymobile.data.repository.StatsRepository;
+import ru.squidory.trainingdairymobile.util.ThemeUtils;
 
 /**
  * Фрагмент раздела "Статистика".
@@ -105,6 +107,10 @@ public class StatisticsFragment extends Fragment {
     }
 
     private void setupCharts() {
+        int textColor = ThemeUtils.getChartTextColor(requireContext());
+        int axisTextColor = ThemeUtils.getChartAxisTextColor(requireContext());
+        int gridColor = ThemeUtils.getChartGridColor(requireContext());
+
         // Configure Volume chart
         volumeChart.setDrawGridBackground(false);
         volumeChart.setDrawBarShadow(false);
@@ -112,11 +118,13 @@ public class StatisticsFragment extends Fragment {
         volumeChart.getLegend().setEnabled(false);
         XAxis volumeXAxis = volumeChart.getXAxis();
         volumeXAxis.setPosition(XAxis.XAxisPosition.BOTTOM);
+        volumeXAxis.setTextColor(axisTextColor);
         volumeXAxis.setDrawGridLines(false);
         volumeXAxis.setGranularity(1f);
+        volumeChart.getAxisLeft().setTextColor(axisTextColor);
         volumeChart.getAxisLeft().setDrawGridLines(true);
+        volumeChart.getAxisLeft().setGridColor(gridColor);
         volumeChart.getAxisRight().setEnabled(false);
-        // Настройка горизонтальной прокрутки и масштабирования
         volumeChart.setDragEnabled(true);
         volumeChart.setScaleEnabled(true);
         volumeChart.setVisibleXRangeMaximum(7);
@@ -127,11 +135,11 @@ public class StatisticsFragment extends Fragment {
         musclesPieChart.setDrawHoleEnabled(true);
         musclesPieChart.setHoleColor(Color.TRANSPARENT);
         musclesPieChart.setTransparentCircleRadius(0f);
-        // Отключаем подписи на секторах (не вмещаются) и включаем легенду
         musclesPieChart.setDrawEntryLabels(false);
         musclesPieChart.getLegend().setEnabled(true);
-        musclesPieChart.getLegend().setWordWrapEnabled(true); // Перенос текста в легенде
+        musclesPieChart.getLegend().setWordWrapEnabled(true);
         musclesPieChart.getLegend().setTextSize(10f);
+        musclesPieChart.getLegend().setTextColor(textColor);
         musclesPieChart.getLegend().setVerticalAlignment(Legend.LegendVerticalAlignment.BOTTOM);
         musclesPieChart.getLegend().setHorizontalAlignment(Legend.LegendHorizontalAlignment.CENTER);
         musclesPieChart.getLegend().setOrientation(Legend.LegendOrientation.HORIZONTAL);
@@ -144,11 +152,13 @@ public class StatisticsFragment extends Fragment {
         durationChart.getLegend().setEnabled(false);
         XAxis durationXAxis = durationChart.getXAxis();
         durationXAxis.setPosition(XAxis.XAxisPosition.BOTTOM);
+        durationXAxis.setTextColor(axisTextColor);
         durationXAxis.setDrawGridLines(false);
         durationXAxis.setGranularity(1f);
+        durationChart.getAxisLeft().setTextColor(axisTextColor);
         durationChart.getAxisLeft().setDrawGridLines(true);
+        durationChart.getAxisLeft().setGridColor(gridColor);
         durationChart.getAxisRight().setEnabled(false);
-        // Настройка горизонтальной прокрутки и масштабирования
         durationChart.setDragEnabled(true);
         durationChart.setScaleEnabled(true);
         durationChart.setVisibleXRangeMaximum(7);
@@ -161,11 +171,13 @@ public class StatisticsFragment extends Fragment {
         setsChart.getLegend().setEnabled(false);
         XAxis setsXAxis = setsChart.getXAxis();
         setsXAxis.setPosition(XAxis.XAxisPosition.BOTTOM);
+        setsXAxis.setTextColor(axisTextColor);
         setsXAxis.setDrawGridLines(false);
         setsXAxis.setGranularity(1f);
+        setsChart.getAxisLeft().setTextColor(axisTextColor);
         setsChart.getAxisLeft().setDrawGridLines(true);
+        setsChart.getAxisLeft().setGridColor(gridColor);
         setsChart.getAxisRight().setEnabled(false);
-        // Настройка горизонтальной прокрутки и масштабирования
         setsChart.setDragEnabled(true);
         setsChart.setScaleEnabled(true);
         setsChart.setVisibleXRangeMaximum(7);
@@ -178,11 +190,13 @@ public class StatisticsFragment extends Fragment {
         workoutCountChart.getLegend().setEnabled(false);
         XAxis wcXAxis = workoutCountChart.getXAxis();
         wcXAxis.setPosition(XAxis.XAxisPosition.BOTTOM);
+        wcXAxis.setTextColor(axisTextColor);
         wcXAxis.setDrawGridLines(false);
         wcXAxis.setGranularity(1f);
+        workoutCountChart.getAxisLeft().setTextColor(axisTextColor);
         workoutCountChart.getAxisLeft().setDrawGridLines(true);
+        workoutCountChart.getAxisLeft().setGridColor(gridColor);
         workoutCountChart.getAxisRight().setEnabled(false);
-        // Настройка горизонтальной прокрутки и масштабирования
         workoutCountChart.setDragEnabled(true);
         workoutCountChart.setScaleEnabled(true);
         workoutCountChart.setVisibleXRangeMaximum(7);
@@ -733,6 +747,7 @@ public class StatisticsFragment extends Fragment {
         BarDataSet dataSet = new BarDataSet(entries, "Т (т)");
         dataSet.setColors(ColorTemplate.MATERIAL_COLORS);
         dataSet.setValueTextSize(10f);
+        dataSet.setValueTextColor(ThemeUtils.getChartTextColor(requireContext()));
         dataSet.setValueFormatter(createBarValueFormatter(useLog));
         dataSet.setDrawValues(true);
 
@@ -831,6 +846,7 @@ public class StatisticsFragment extends Fragment {
         BarDataSet dataSet = new BarDataSet(entries, "Мин");
         dataSet.setColors(ColorTemplate.MATERIAL_COLORS);
         dataSet.setValueTextSize(10f);
+        dataSet.setValueTextColor(ThemeUtils.getChartTextColor(requireContext()));
         dataSet.setValueFormatter(createBarValueFormatter(useLog));
         dataSet.setDrawValues(true);
 
@@ -899,6 +915,7 @@ public class StatisticsFragment extends Fragment {
         BarDataSet dataSet = new BarDataSet(entries, "Подходов");
         dataSet.setColors(ColorTemplate.VORDIPLOM_COLORS);
         dataSet.setValueTextSize(10f);
+        dataSet.setValueTextColor(ThemeUtils.getChartTextColor(requireContext()));
         dataSet.setValueFormatter(createBarValueFormatter(useLog));
         dataSet.setDrawValues(true);
 
@@ -958,7 +975,7 @@ public class StatisticsFragment extends Fragment {
         musclesPieChart.setData(data);
         musclesPieChart.setCenterText("Распределение\nподходов");
         musclesPieChart.setCenterTextSize(12f);
-        musclesPieChart.setCenterTextColor(Color.DKGRAY);
+        musclesPieChart.setCenterTextColor(ThemeUtils.getChartTextColor(requireContext()));
 
         Legend legend = musclesPieChart.getLegend();
         legend.setVerticalAlignment(Legend.LegendVerticalAlignment.BOTTOM);
@@ -1037,6 +1054,7 @@ public class StatisticsFragment extends Fragment {
         BarDataSet dataSet = new BarDataSet(entries, "Кол-во");
         dataSet.setColor(Color.rgb(98, 0, 238));
         dataSet.setValueTextSize(10f);
+        dataSet.setValueTextColor(ThemeUtils.getChartTextColor(requireContext()));
 
         BarData data = new BarData(dataSet);
         workoutCountChart.setData(data);

@@ -40,6 +40,7 @@ import ru.squidory.trainingdairymobile.data.model.ExerciseStatsResponse;
 import ru.squidory.trainingdairymobile.data.model.SessionSetHistoryResponse;
 import ru.squidory.trainingdairymobile.data.repository.StatsRepository;
 import ru.squidory.trainingdairymobile.util.Constants;
+import ru.squidory.trainingdairymobile.util.ThemeUtils;
 import timber.log.Timber;
 
 /**
@@ -108,36 +109,40 @@ public class ExerciseStatsActivity extends AppCompatActivity {
     }
 
     private void setupChart() {
+        int textColor = ThemeUtils.getChartTextColor(this);
+        int axisTextColor = ThemeUtils.getChartAxisTextColor(this);
+
         exerciseProgressChart.getDescription().setEnabled(false);
         exerciseProgressChart.setDrawGridBackground(false);
 
-        // Настраиваем только горизонтальный скролл, отключаем масштабирование
         exerciseProgressChart.setTouchEnabled(true);
         exerciseProgressChart.setDragEnabled(true);
         exerciseProgressChart.setScaleEnabled(false);
         exerciseProgressChart.setPinchZoom(false);
         exerciseProgressChart.setDoubleTapToZoomEnabled(false);
 
-        // Полностью отключаем подсветку (линии)
         exerciseProgressChart.setHighlightPerTapEnabled(false);
         exerciseProgressChart.setHighlightPerDragEnabled(false);
-        exerciseProgressChart.setMaxHighlightDistance(Float.MAX_VALUE); // Невозможно подсветить
+        exerciseProgressChart.setMaxHighlightDistance(Float.MAX_VALUE);
         exerciseProgressChart.setMarker(null);
         exerciseProgressChart.setHighlightFullBarEnabled(false);
 
         exerciseProgressChart.getLegend().setEnabled(true);
+        exerciseProgressChart.getLegend().setTextColor(textColor);
 
         XAxis xAxis = exerciseProgressChart.getXAxis();
         xAxis.setPosition(XAxis.XAxisPosition.BOTTOM);
+        xAxis.setTextColor(axisTextColor);
         xAxis.setDrawGridLines(false);
         xAxis.setGranularity(1f);
 
-        // Отступ сверху для свободного пространства
         exerciseProgressChart.setExtraTopOffset(40f);
 
-        // Включаем правую ось Y для второго типа данных (дистанция/повторения)
         exerciseProgressChart.getAxisRight().setEnabled(true);
+        exerciseProgressChart.getAxisRight().setTextColor(axisTextColor);
         exerciseProgressChart.getAxisRight().setDrawGridLines(false);
+
+        exerciseProgressChart.getAxisLeft().setTextColor(axisTextColor);
     }
 
     private void loadExerciseStats() {
@@ -352,6 +357,7 @@ public class ExerciseStatsActivity extends AppCompatActivity {
         BarDataSet barDataSet = new BarDataSet(barEntries, "Вес (кг)");
         barDataSet.setColor(Color.parseColor("#6200EE")); // Фиолетовый
         barDataSet.setValueTextSize(9f);
+        barDataSet.setValueTextColor(ThemeUtils.getChartTextColor(this));
         barDataSet.setDrawValues(true);
         barDataSet.setAxisDependency(YAxis.AxisDependency.LEFT); // Левая ось Y
         // Показываем оригинальное значение сверху (не логарифмическое)
@@ -389,6 +395,7 @@ public class ExerciseStatsActivity extends AppCompatActivity {
         lineDataSet.setLineWidth(2f);
         lineDataSet.setCircleRadius(3f);
         lineDataSet.setValueTextSize(10f);
+        lineDataSet.setValueTextColor(ThemeUtils.getChartTextColor(this));
         lineDataSet.setDrawValues(true);
         lineDataSet.setAxisDependency(YAxis.AxisDependency.RIGHT); // Правая ось Y для повторений
         lineDataSet.setValueFormatter(new ValueFormatter() {
@@ -425,6 +432,7 @@ public class ExerciseStatsActivity extends AppCompatActivity {
         lineDataSet.setLineWidth(2f);
         lineDataSet.setCircleRadius(3f);
         lineDataSet.setValueTextSize(10f);
+        lineDataSet.setValueTextColor(ThemeUtils.getChartTextColor(this));
         lineDataSet.setDrawValues(true);
         lineDataSet.setAxisDependency(YAxis.AxisDependency.RIGHT); // Правая ось Y для времени
         lineDataSet.setValueFormatter(new ValueFormatter() {
@@ -461,6 +469,7 @@ public class ExerciseStatsActivity extends AppCompatActivity {
         lineDataSet.setLineWidth(2f);
         lineDataSet.setCircleRadius(3f);
         lineDataSet.setValueTextSize(10f);
+        lineDataSet.setValueTextColor(ThemeUtils.getChartTextColor(this));
         lineDataSet.setDrawValues(true);
         lineDataSet.setAxisDependency(YAxis.AxisDependency.RIGHT); // Правая ось Y для дистанции
         lineDataSet.setValueFormatter(new ValueFormatter() {
@@ -492,6 +501,7 @@ public class ExerciseStatsActivity extends AppCompatActivity {
         BarDataSet barDataSet = new BarDataSet(barEntries, "Время (сек)");
         barDataSet.setColor(Color.parseColor("#FF9800")); // Оранжевый
         barDataSet.setValueTextSize(9f);
+        barDataSet.setValueTextColor(ThemeUtils.getChartTextColor(this));
         barDataSet.setDrawValues(true);
         barDataSet.setAxisDependency(YAxis.AxisDependency.LEFT); // Левая ось Y для времени
         barDataSet.setValueFormatter(new ValueFormatter() {

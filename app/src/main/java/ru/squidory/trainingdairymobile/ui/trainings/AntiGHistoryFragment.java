@@ -31,6 +31,7 @@ import ru.squidory.trainingdairymobile.R;
 import ru.squidory.trainingdairymobile.data.local.PreferencesManager;
 import ru.squidory.trainingdairymobile.data.model.AntiGSessionResponse;
 import ru.squidory.trainingdairymobile.data.repository.AntiGSessionRepository;
+import ru.squidory.trainingdairymobile.util.ThemeUtils;
 
 /**
  * Fragment for displaying history and statistics of anti-G breathing training.
@@ -214,10 +215,10 @@ public class AntiGHistoryFragment extends Fragment {
             // Date label
             TextView dateLabel = new TextView(requireContext());
             SimpleDateFormat sdf = new SimpleDateFormat("dd.MM", Locale.getDefault());
-            String dateString = sdf.format(new Date(day * 1000L)); // Convert milliseconds to Date
+            String dateString = sdf.format(new Date(day * 1000L));
             dateLabel.setText(dateString);
             dateLabel.setTextSize(10);
-            dateLabel.setTextColor(Color.GRAY);
+            dateLabel.setTextColor(ThemeUtils.getCustomChartDateLabelColor(requireContext()));
 
             barContainer.addView(barView);
             barContainer.addView(dateLabel);
